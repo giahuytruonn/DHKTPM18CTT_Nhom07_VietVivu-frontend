@@ -28,6 +28,7 @@ const LoginPage: React.FC = () => {
         >
           Đăng nhập với Google
         </button>
+        <h2 className="text-center m-2 text-blue-500">Bạn chưa có tài khoản? <button>Tạo ngay!</button> </h2>
       </div>
     </div>
   );

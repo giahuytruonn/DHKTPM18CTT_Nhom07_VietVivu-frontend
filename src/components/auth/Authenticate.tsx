@@ -2,11 +2,13 @@ import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { loginWithGoogle } from "../../services/auth.service";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Authenticate: React.FC = () => {
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
   const handled = useRef(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (handled.current) return;
@@ -21,21 +23,21 @@ const Authenticate: React.FC = () => {
       (async () => {
         try {
           const res = await loginWithGoogle(authCode);
-
           if (res && res.authenticated && res.token) {
             setAuth(res.token, true);
+            queryClient.clear();
             navigate("/", { replace: true });
           } else {
             navigate("/login", { replace: true });
           }
-        } catch (error) {
+        } catch {
           navigate("/login", { replace: true });
         }
       })();
     } else {
       navigate("/login", { replace: true });
     }
-  }, [navigate, setAuth]);
+  }, [navigate, setAuth, queryClient]);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-50">

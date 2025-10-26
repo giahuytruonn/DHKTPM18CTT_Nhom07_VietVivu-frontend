@@ -1,76 +1,56 @@
-import React, { useEffect, useState } from "react";
-import { useAuthStore } from "../stores/useAuthStore";
-import { logout as logoutWeb } from "../services/auth.service";
-import { getUserProfile, createPassword } from "../services/user.servie";
-import type { PasswordCreationRequest, UserResponse } from "../types/user";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../stores/useAuthStore";
+import { logout as logoutApi } from "../services/auth.service";
+import { createPassword } from "../services/user.servie";
+import type { PasswordCreationRequest } from "../types/user";
+import { useUser } from "../hooks/useUser";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { token, logout } = useAuthStore();
-  const [userDetails, setUserDetails] = useState<UserResponse | null>(null);
   const [password, setPassword] =
     useState<PasswordCreationRequest["password"]>("");
-  const [loading, setLoading] = useState(true);
-  const [creatingPassword, setCreatingPassword] = useState(false);
 
-  const performLogout = async () => {
-    const currentToken = token;
+  const { user, isLoading, isError, refetch } = useUser();
 
-    try {
+  const createPasswordMutation = useMutation({
+    mutationFn: (data: PasswordCreationRequest) => createPassword(data),
+    onSuccess: () => {
+      toast.success("Tạo mật khẩu thành công!");
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      setPassword("");
+    },
+    onError: () => {
+      toast.error("Tạo mật khẩu thất bại!");
+    },
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const currentToken = token || localStorage.getItem("token");
       if (currentToken) {
-        await logoutWeb(currentToken);
-      } else {
+        await logoutApi(currentToken);
       }
-    } catch (err) {
-      console.error("❌ Logout API error:", err);
-    } finally {
+    },
+    onSuccess: () => {
+      toast.info("Đăng xuất thành công!");
+    },
+    onError: () => {
+      toast.error("Lỗi khi đăng xuất!");
+    },
+    onSettled: () => {
       logout();
-      localStorage.removeItem("token");
-      localStorage.removeItem("auth-store");
+      localStorage.clear();
+      queryClient.clear();
       navigate("/login", { replace: true });
-    }
-  };
+    },
+  });
 
-  const fetchUserDetails = async () => {
-    try {
-      setLoading(true);
-      const res = await getUserProfile();
-      setUserDetails(res);
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-      performLogout();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreatePassword = async () => {
-    if (!password.trim()) {
-      alert("Vui lòng nhập mật khẩu!");
-      return;
-    }
-
-    try {
-      setCreatingPassword(true);
-      const res = await createPassword({ password });
-      if (res) {
-        alert("Tạo mật khẩu thành công!");
-        await fetchUserDetails();
-      }
-    } catch (error) {
-      console.error("Error creating password:", error);
-      alert("Tạo mật khẩu thất bại!");
-    } finally {
-      setCreatingPassword(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUserDetails();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -79,11 +59,27 @@ const Home: React.FC = () => {
     );
   }
 
+  if (isError || !user) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-red-50">
+        <p className="text-red-600 text-lg mb-4">
+          Lỗi tải thông tin người dùng!
+        </p>
+        <button
+          onClick={() => refetch()}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+        >
+          Thử lại
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
       <h1 className="text-3xl font-bold mb-6">Trang chủ</h1>
 
-      {userDetails?.noPassword ? (
+      {user.noPassword ? (
         <div className="flex flex-col items-center mb-6">
           <input
             type="password"
@@ -93,26 +89,39 @@ const Home: React.FC = () => {
             className="border border-gray-300 rounded-lg px-4 py-2 mb-4 focus:ring focus:ring-blue-300 outline-none"
           />
           <button
-            onClick={handleCreatePassword}
-            disabled={creatingPassword}
+            onClick={() => {
+              if (!password.trim()) {
+                toast.warning("Vui lòng nhập mật khẩu!");
+                return;
+              }
+              createPasswordMutation.mutate({ password });
+            }}
+            disabled={createPasswordMutation.isPending}
             className={`${
-              creatingPassword ? "bg-blue-300" : "bg-blue-500 hover:bg-blue-600"
+              createPasswordMutation.isPending
+                ? "bg-blue-300"
+                : "bg-blue-500 hover:bg-blue-600"
             } text-white px-4 py-2 rounded-lg transition`}
           >
-            {creatingPassword ? "Đang tạo..." : "Tạo mật khẩu"}
+            {createPasswordMutation.isPending ? "Đang tạo..." : "Tạo mật khẩu"}
           </button>
         </div>
       ) : (
         <p className="text-gray-700 mb-6">
-          Chào mừng, <span className="font-semibold">{userDetails?.name}</span>!
+          Chào mừng, <span className="font-semibold">{user.name}</span>!
         </p>
       )}
 
       <button
-        onClick={performLogout}
-        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
+        onClick={() => logoutMutation.mutate()}
+        disabled={logoutMutation.isPending}
+        className={`${
+          logoutMutation.isPending
+            ? "bg-red-300"
+            : "bg-red-500 hover:bg-red-600"
+        } text-white px-4 py-2 rounded-lg transition`}
       >
-        Đăng xuất
+        {logoutMutation.isPending ? "Đang đăng xuất..." : "Đăng xuất"}
       </button>
     </div>
   );
