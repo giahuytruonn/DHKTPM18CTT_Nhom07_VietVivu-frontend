@@ -189,7 +189,15 @@ const BookingRequestDetailPage = () => {
       <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 3 }}>
         Chi tiết Booking Request
       </Typography>
-
+      <Button
+        variant="outlined"
+        size="small"
+        onClick={() => {
+          navigate(`/`);
+        }}
+      >
+        Go back
+      </Button>
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
@@ -210,7 +218,9 @@ const BookingRequestDetailPage = () => {
               <Typography>
                 <strong>Loại yêu cầu:</strong>{" "}
                 <Chip
-                  label={request.requestType === "CANCEL" ? "Hủy tour" : "Đổi tour"}
+                  label={
+                    request.requestType === "CANCEL" ? "Hủy tour" : "Đổi tour"
+                  }
                   color={request.requestType === "CANCEL" ? "error" : "primary"}
                   size="small"
                 />
@@ -278,7 +288,9 @@ const BookingRequestDetailPage = () => {
                   color="success"
                   onClick={handleAccept}
                   disabled={actionLoading}
-                  startIcon={actionLoading ? <CircularProgress size={20} /> : null}
+                  startIcon={
+                    actionLoading ? <CircularProgress size={20} /> : null
+                  }
                 >
                   Chấp nhận
                 </Button>
@@ -287,7 +299,9 @@ const BookingRequestDetailPage = () => {
                   color="error"
                   onClick={handleDeny}
                   disabled={actionLoading}
-                  startIcon={actionLoading ? <CircularProgress size={20} /> : null}
+                  startIcon={
+                    actionLoading ? <CircularProgress size={20} /> : null
+                  }
                 >
                   Từ chối
                 </Button>
@@ -305,8 +319,8 @@ const BookingRequestDetailPage = () => {
           {!canAcceptDeny && (
             <Box>
               <Alert severity="info">
-                Request này không thể chấp nhận hoặc từ chối. Trạng thái hiện tại:{" "}
-                {request.status}
+                Request này không thể chấp nhận hoặc từ chối. Trạng thái hiện
+                tại: {request.status}
               </Alert>
               <Button
                 variant="outlined"
@@ -324,4 +338,3 @@ const BookingRequestDetailPage = () => {
 };
 
 export default BookingRequestDetailPage;
-

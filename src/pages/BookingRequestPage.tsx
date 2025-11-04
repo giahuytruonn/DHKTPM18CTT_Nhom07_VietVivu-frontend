@@ -81,7 +81,15 @@ const BookingRequestPage = () => {
       <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 3 }}>
         Danh sách Booking Requests đang chờ xử lý
       </Typography>
-
+      <Button
+        variant="outlined"
+        size="small"
+        onClick={() => {
+          navigate(`/`);
+        }}
+      >
+        Go back
+      </Button>
       {loading ? (
         <Box
           sx={{
