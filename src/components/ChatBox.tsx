@@ -26,35 +26,46 @@ const ChatBox: React.FC = () => {
 
   const handleSend = async () => {
     if (!input.trim()) return;
-
     const userMessage: ChatMessage = { sender: "user", text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8080/vietvivu/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }),
-      });
+      const response = await fetch(
+        "http://localhost:8080/vietvivu/ai/chat",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        }
+      );
 
-      const data = await res.json();
-      const botReply = data.result?.reply || data.result || "Xin lỗi, tôi chưa hiểu yêu cầu của bạn 😅";
-      const suggestedTours = data.result?.tours || [];
+      if (!response.body) throw new Error("No stream body");
 
-      const botMessage: ChatMessage = {
-        sender: "bot",
-        text: botReply,
-        tours: suggestedTours,
-      };
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
 
-      setMessages((prev) => [...prev, botMessage]);
+      let botText = "";
+      setMessages((prev) => [...prev, { sender: "bot", text: "" }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        botText += chunk;
+
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { sender: "bot", text: botText };
+          return updated;
+        });
+      }
     } catch (err) {
       console.error(err);
       setMessages((prev) => [
         ...prev,
-        { sender: "bot", text: "Lỗi khi kết nối với AI Server 😢" },
+        { sender: "bot", text: "⚠️ Lỗi khi kết nối stream tới AI server" },
       ]);
     } finally {
       setLoading(false);
@@ -117,7 +128,9 @@ const ChatBox: React.FC = () => {
             ))}
 
             {loading && (
-              <div className="text-gray-400 text-sm italic">AI đang trả lời...</div>
+              <div className="text-gray-400 text-sm italic">
+                AI đang trả lời...
+              </div>
             )}
             <div ref={messagesEndRef} />
           </div>
