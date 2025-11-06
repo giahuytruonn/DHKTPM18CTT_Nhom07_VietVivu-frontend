@@ -78,7 +78,12 @@ const Home: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
       <h1 className="text-3xl font-bold mb-6">Trang chủ</h1>
-
+      <button
+        onClick={() => navigate("/payment")}
+        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+      >
+        Test payment
+      </button>
       {user.noPassword ? (
         <div className="flex flex-col items-center mb-6">
           <input
