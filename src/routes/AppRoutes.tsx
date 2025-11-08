@@ -24,8 +24,8 @@ const AppRoutes = () => {
         />
         <Route path="/authenticate" element={<Authenticate />} />
         <Route path="/payment" element={<Payment />} />
-        <Route path="/payment-success" element={<PaymentSuccess />} />   {/* ✅ */}
-        <Route path="/payment-cancel" element={<PaymentCancel />} />     {/* ✅ */}
+        <Route path="/payment-success" element={<PaymentSuccess />} />   
+        <Route path="/payment-cancel" element={<PaymentCancel />} />     
         <Route
           path="/"
           element={authenticated ? <Home /> : <Navigate to="/login" replace />}
