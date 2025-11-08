@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { usePayOS, type PayOSConfig } from "@payos/payos-checkout"; 
-import { createPaymentLink } from "../services/payments";
+import { createPaymentLink } from "../services/payments.services";
+import { useNavigate } from "react-router-dom";
 
 const Payment: React.FC = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isCreatingLink, setIsCreatingLink] = useState(false);
   const [message, setMessage] = useState("");
@@ -13,6 +15,7 @@ const Payment: React.FC = () => {
     CHECKOUT_URL: "",
     embedded: true,
     onSuccess: () => {
+      navigate("/payment-success")
       setMessage("✅ Thanh toán thành công!");
       setIsOpen(false);
     },
