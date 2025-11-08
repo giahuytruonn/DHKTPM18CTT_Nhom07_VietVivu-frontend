@@ -1,9 +1,9 @@
 export interface TourResponse {
-  id: string;
+  tourId: string;
   title: string;
+  description?: string;
   destination: string;
-  price: number;   
-  duration: string;  
-  rating?: number;
-  imageUrl?: string;
+  priceAdult: number;
+  priceChild?: number;
+  imageUrls?: string[];
 }
