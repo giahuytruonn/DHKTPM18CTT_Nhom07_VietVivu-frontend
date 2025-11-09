@@ -204,12 +204,27 @@ const BookingPage = () => {
           );
         }
 
-        // Không hiển thị button cho tour đã hoàn thành
+        // Hiển thị button đánh giá cho tour đã hoàn thành
         if (status === "COMPLETED") {
           return (
-            <Typography variant="body2" color="info.main">
-              Đã hoàn thành
-            </Typography>
+            <Stack direction="row" spacing={1} justifyContent="center">
+              <Button
+                variant="contained"
+                color="warning"
+                size="small"
+                onClick={() => {
+                  navigate("/my-reviews", {
+                    state: {
+                      bookingId: row.bookingId,
+                      tourId: row.tourId,
+                      action: "CREATE_REVIEW",
+                    },
+                  });
+                }}
+              >
+                Đánh giá
+              </Button>
+            </Stack>
           );
         }
 

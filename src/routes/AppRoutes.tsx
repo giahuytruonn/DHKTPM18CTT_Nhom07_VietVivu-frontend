@@ -22,6 +22,9 @@ import PaymentCancel from "../pages/PaymentCancel";
 import BookingStepper from "../components/ui/BookingStepper";
 import BookingRequestPage from "../pages/BookingRequestPage";
 import BookingRequestDetailPage from "../pages/BookingRequestDetailPage";
+import FavoriteToursPage from "../pages/FavoriteToursPage";
+import MyReviewsPage from "../pages/MyReviewsPage";
+import ToursPage from "../pages/ToursPage";
 
 const AppRoutes = () => {
   const authenticated = useAuthStore((s) => s.authenticated);
@@ -80,6 +83,36 @@ const AppRoutes = () => {
           element={
             authenticated ? (
               <RequestBookingPage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/favorite-tours"
+          element={
+            authenticated ? (
+              <FavoriteToursPage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/my-reviews"
+          element={
+            authenticated ? (
+              <MyReviewsPage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/tours"
+          element={
+            authenticated ? (
+              <ToursPage />
             ) : (
               <Navigate to="/login" replace />
             )

@@ -101,6 +101,24 @@ const Home: React.FC = () => {
       >
         🔖 Booking Request List
       </button>
+      <button
+        onClick={() => navigate("/favorite-tours")}
+        className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 cursor-pointer transition mb-6"
+      >
+        ❤️ Tour yêu thích
+      </button>
+      <button
+        onClick={() => navigate("/my-reviews")}
+        className="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 cursor-pointer transition mb-6"
+      >
+        ⭐ Đánh giá của tôi
+      </button>
+      <button
+        onClick={() => navigate("/tours")}
+        className="bg-indigo-500 text-white px-6 py-2 rounded-lg hover:bg-indigo-600 cursor-pointer transition mb-6"
+      >
+        🗺️ Khám phá Tour
+      </button>
 
       {user.noPassword ? (
         <div className="flex flex-col items-center mb-6">
