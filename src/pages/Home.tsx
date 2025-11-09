@@ -7,6 +7,7 @@ import type { PasswordCreationRequest } from "../types/user";
 import { useUser } from "../hooks/useUser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import ChatBox from "../components/ChatBox";
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -78,6 +79,8 @@ const Home: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
       <h1 className="text-3xl font-bold mb-6">Trang chủ</h1>
+
+      <ChatBox />
 
       {/* ✅ Nút chuyển sang Stepper booking */}
       <button
