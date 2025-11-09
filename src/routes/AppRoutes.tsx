@@ -1,9 +1,15 @@
 // src/routes/AppRoutes.tsx
-import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+} from "react-router-dom";
 import Home from "../pages/Home";
 import Authenticate from "../components/auth/Authenticate";
 import Login from "../pages/LoginPage";
 import { useAuthStore } from "../stores/useAuthStore";
+import BookingPage from "../pages/BookingPage";
 
 const AppRoutes = () => {
   const authenticated = useAuthStore((s) => s.authenticated);
@@ -11,11 +17,20 @@ const AppRoutes = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={authenticated ? <Navigate to="/" replace /> : <Login />} />
+        <Route
+          path="/login"
+          element={authenticated ? <Navigate to="/" replace /> : <Login />}
+        />
         <Route path="/authenticate" element={<Authenticate />} />
         <Route
           path="/"
           element={authenticated ? <Home /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/bookings"
+          element={
+            authenticated ? <BookingPage /> : <Navigate to="/login" replace />
+          }
         />
       </Routes>
     </Router>
