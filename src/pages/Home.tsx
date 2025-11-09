@@ -1,148 +1,8 @@
-// import React, { useState } from "react";
-// import { useNavigate } from "react-router-dom";
-// import { useAuthStore } from "../stores/useAuthStore";
-// import { logout as logoutApi } from "../services/auth.service";
-// import { createPassword } from "../services/user.servie";
-// import type { PasswordCreationRequest } from "../types/user";
-// import { useUser } from "../hooks/useUser";
-// import { useMutation, useQueryClient } from "@tanstack/react-query";
-// import { toast } from "sonner";
-
-// const Home: React.FC = () => {
-//   const navigate = useNavigate();
-//   const queryClient = useQueryClient();
-//   const { token, logout } = useAuthStore();
-//   const [password, setPassword] =
-//     useState<PasswordCreationRequest["password"]>("");
-
-//   const { user, isLoading, isError, refetch } = useUser();
-
-//   const createPasswordMutation = useMutation({
-//     mutationFn: (data: PasswordCreationRequest) => createPassword(data),
-//     onSuccess: () => {
-//       toast.success("Tạo mật khẩu thành công!");
-//       queryClient.invalidateQueries({ queryKey: ["userProfile"] });
-//       setPassword("");
-//     },
-//     onError: () => {
-//       toast.error("Tạo mật khẩu thất bại!");
-//     },
-//   });
-
-//   const logoutMutation = useMutation({
-//     mutationFn: async () => {
-//       const currentToken = token || localStorage.getItem("token");
-//       if (currentToken) {
-//         await logoutApi(currentToken);
-//       }
-//     },
-//     onSuccess: () => {
-//       toast.info("Đăng xuất thành công!");
-//     },
-//     onError: () => {
-//       toast.error("Lỗi khi đăng xuất!");
-//     },
-//     onSettled: () => {
-//       logout();
-//       localStorage.clear();
-//       queryClient.clear();
-//       navigate("/login", { replace: true });
-//     },
-//   });
-
-//   if (isLoading) {
-//     return (
-//       <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
-//         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-//         <p className="text-gray-600">Đang tải thông tin người dùng...</p>
-//       </div>
-//     );
-//   }
-
-//   if (isError || !user) {
-//     return (
-//       <div className="flex flex-col items-center justify-center h-screen bg-red-50">
-//         <p className="text-red-600 text-lg mb-4">
-//           Lỗi tải thông tin người dùng!
-//         </p>
-//         <button
-//           onClick={() => refetch()}
-//           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-//         >
-//           Thử lại
-//         </button>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
-//       <h1 className="text-3xl font-bold mb-6">Trang chủ</h1>
-
-//       {/* ✅ Nút chuyển sang Stepper booking */}
-//       <button
-//         onClick={() => navigate("/book-tour")}
-//         className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition mb-6"
-//       >
-//         🧳 Đặt tour ngay
-//       </button>
-
-//       {user.noPassword ? (
-//         <div className="flex flex-col items-center mb-6">
-//           <input
-//             type="password"
-//             placeholder="Nhập mật khẩu mới"
-//             value={password}
-//             onChange={(e) => setPassword(e.target.value)}
-//             className="border border-gray-300 rounded-lg px-4 py-2 mb-4 focus:ring focus:ring-blue-300 outline-none"
-//           />
-//           <button
-//             onClick={() => {
-//               if (!password.trim()) {
-//                 toast.warning("Vui lòng nhập mật khẩu!");
-//                 return;
-//               }
-//               createPasswordMutation.mutate({ password });
-//             }}
-//             disabled={createPasswordMutation.isPending}
-//             className={`${
-//               createPasswordMutation.isPending
-//                 ? "bg-blue-300"
-//                 : "bg-blue-500 hover:bg-blue-600"
-//             } text-white px-4 py-2 rounded-lg transition`}
-//           >
-//             {createPasswordMutation.isPending ? "Đang tạo..." : "Tạo mật khẩu"}
-//           </button>
-//         </div>
-//       ) : (
-//         <p className="text-gray-700 mb-6">
-//           Chào mừng, <span className="font-semibold">{user.name}</span>!
-//         </p>
-//       )}
-
-//       <button
-//         onClick={() => logoutMutation.mutate()}
-//         disabled={logoutMutation.isPending}
-//         className={`${
-//           logoutMutation.isPending
-//             ? "bg-red-300"
-//             : "bg-red-500 hover:bg-red-600"
-//         } text-white px-4 py-2 rounded-lg transition`}
-//       >
-//         {logoutMutation.isPending ? "Đang đăng xuất..." : "Đăng xuất"}
-//       </button>
-//     </div>
-//   );
-// };
-
-// export default Home;
-
-
 import { Link } from "react-router-dom";
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
 import SearchBar from "../components/layout/SearchBar";
-import { Users, Shield, Clock, Star, ChevronRight } from "lucide-react";
+import { Users, Shield, Clock, Star, ChevronRight, Heart, MapPin, Globe, MessageCircle, ArrowRight } from "lucide-react";
 
 const spotlight = [
   "Hà Nội", "Đà Nẵng", "Hội An", "Sapa", "Huế", "Nha Trang",
@@ -160,12 +20,109 @@ const blogPosts = [
   { date: "Oct 14 2025", title: "Tại sao nên đi tour riêng?", excerpt: "Trải nghiệm chân thực, linh hoạt...", link: "#" },
 ];
 
+const localGuides = [
+  {
+    id: 1,
+    name: 'Nguyễn Văn A',
+    location: 'Hà Nội, Việt Nam',
+    rating: 5,
+    reviews: 124,
+    languages: ['Tiếng Việt', 'English', 'Français'],
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    tours: 15
+  },
+  {
+    id: 2,
+    name: 'Trần Thị B',
+    location: 'Hội An, Quảng Nam',
+    rating: 5,
+    reviews: 98,
+    languages: ['Tiếng Việt', 'English', 'Japanese'],
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
+    tours: 12
+  },
+  {
+    id: 3,
+    name: 'Lê Văn C',
+    location: 'Sapa, Lào Cai',
+    rating: 5,
+    reviews: 156,
+    languages: ['Tiếng Việt', 'English', 'Korean'],
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
+    tours: 18
+  },
+  {
+    id: 4,
+    name: 'Phạm Thị D',
+    location: 'Đà Nẵng, Việt Nam',
+    rating: 4.9,
+    reviews: 87,
+    languages: ['Tiếng Việt', 'English', 'Chinese'],
+    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
+    tours: 10
+  },
+];
+
+const spotlightDestinations = [
+  { name: 'Hà Nội', image: 'https://images.unsplash.com/photo-1509023464722-18d996393ca8?w=400' },
+  { name: 'Đà Nẵng', image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=400' },
+  { name: 'Hội An', image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400' },
+  { name: 'Sapa', image: 'https://images.unsplash.com/photo-1528127269322-539801943592?w=400' },
+  { name: 'Huế', image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400' },
+  { name: 'Nha Trang', image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=400' },
+  { name: 'Phú Quốc', image: 'https://images.unsplash.com/photo-1528127269322-539801943592?w=400' },
+  { name: 'Đà Lạt', image: 'https://images.unsplash.com/photo-1509023464722-18d996393ca8?w=400' },
+  { name: 'Vũng Tàu', image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=400' },
+  { name: 'Cần Thơ', image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400' },
+  { name: 'Hạ Long', image: 'https://images.unsplash.com/photo-1528127269322-539801943592?w=400' },
+  { name: 'Phong Nha', image: 'https://images.unsplash.com/photo-1509023464722-18d996393ca8?w=400' },
+];
+
+const featuredTours = [
+  {
+    id: 1,
+    title: 'Khám phá Hà Nội cổ kính',
+    destination: 'Hà Nội',
+    duration: '1 ngày',
+    priceAdult: 1200000,
+    priceChild: 800000,
+    rating: 4.8,
+    reviews: 234,
+    image: 'https://images.unsplash.com/photo-1509023464722-18d996393ca8?w=600',
+    guide: 'Nguyễn Văn A'
+  },
+  {
+    id: 2,
+    title: 'Vịnh Hạ Long – Kỳ quan thiên nhiên',
+    destination: 'Quảng Ninh',
+    duration: '2 ngày 1 đêm',
+    priceAdult: 2500000,
+    priceChild: 1800000,
+    rating: 4.9,
+    reviews: 456,
+    image: 'https://images.unsplash.com/photo-1528127269322-539801943592?w=600',
+    guide: 'Trần Thị B'
+  },
+  {
+    id: 3,
+    title: 'Phú Quốc – Thiên đường biển đảo',
+    destination: 'Kiên Giang',
+    duration: '3 ngày 2 đêm',
+    priceAdult: 3500000,
+    priceChild: 2500000,
+    rating: 4.7,
+    reviews: 189,
+    image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=600',
+    guide: 'Lê Văn C'
+  },
+];
+
 export default function Home() {
   return (
     <>
       <Header />
 
-      
+
       <section className="relative bg-gradient-to-br from-indigo-50 to-blue-100 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
@@ -178,7 +135,154 @@ export default function Home() {
         </div>
       </section>
 
-      
+
+
+
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-center mb-12">Điểm đến nổi bật</h2>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {spotlightDestinations.map((dest, index) => (
+              <Link
+                key={index}
+                to="#"
+                className="group relative overflow-hidden rounded-xl shadow-md hover:shadow-xl transition-all duration-300"
+              >
+                <img
+                  src={dest.image}
+                  alt={dest.name}
+                  className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-center justify-center">
+                  <p className="text-white font-semibold text-lg">{dest.name}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <Users className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Gặp gỡ hướng dẫn viên địa phương của bạn
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {localGuides.map((guide) => (
+              <div key={guide.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group">
+                <div className="relative">
+                  <img
+                    src={guide.avatar}
+                    alt={guide.name}
+                    className="w-full h-64 object-cover"
+                  />
+                  <button className="absolute top-4 right-4 bg-white p-2 rounded-full hover:bg-gray-100 transition">
+                    <Heart className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">{guide.name}</h3>
+
+                  <div className="flex items-center text-sm text-gray-600 mb-3">
+                    <MapPin className="w-4 h-4 mr-1" />
+                    <span>{guide.location}</span>
+                  </div>
+
+                  <div className="flex items-center mb-3">
+                    <span className="text-lg font-bold text-gray-900 mr-1">{guide.rating}</span>
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+                    ))}
+                    <span className="ml-2 text-sm text-gray-600">({guide.reviews})</span>
+                  </div>
+
+                  <div className="flex items-center text-sm text-gray-600 mb-4">
+                    <Globe className="w-4 h-4 mr-2" />
+                    <span className="line-clamp-1">{guide.languages.join(', ')}</span>
+                  </div>
+
+                  <button className="w-full bg-white border-2 border-gray-300 text-gray-700 py-2 rounded-full hover:border-blue-600 hover:text-blue-600 transition font-medium flex items-center justify-center">
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Nhắn tin
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-12">
+            <Link to="/guides" className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium text-lg">
+              Xem tất cả hướng dẫn viên
+              <ChevronRight className="w-5 h-5 ml-1" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section id="tours" className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold">Tour nổi bật</h2>
+            <Link to="/tours" className="text-blue-600 hover:text-blue-700 flex items-center font-medium">
+              Xem tất cả <ChevronRight size={20} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {featuredTours.map((tour) => (
+              <Link
+                key={tour.id}
+                to={`/tours/${tour.id}`}
+                className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300"
+              >
+                <img
+                  src={tour.image}
+                  alt={tour.title}
+                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+
+                <div className="p-6">
+                  <div className="flex items-center text-sm text-gray-600 mb-2">
+                    <MapPin className="w-4 h-4 mr-1" />
+                    <span>{tour.destination}</span>
+                  </div>
+
+                  <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition line-clamp-2">
+                    {tour.title}
+                  </h3>
+
+                  <div className="flex items-center mb-3">
+                    <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                    <span className="ml-1 text-sm font-medium">{tour.rating}</span>
+                    <span className="ml-1 text-sm text-gray-600">({tour.reviews})</span>
+                  </div>
+
+                  <div className="flex items-center text-sm text-gray-600 mb-4">
+                    <Clock className="w-4 h-4 mr-1" />
+                    <span>{tour.duration}</span>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-2xl font-bold text-blue-600">
+                        {tour.priceAdult.toLocaleString('vi-VN')}₫
+                      </span>
+                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
@@ -200,70 +304,7 @@ export default function Home() {
         </div>
       </section>
 
-     
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">Điểm đến nổi bật</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {spotlight.map((d) => (
-              <Link
-                key={d}
-                to="#"
-                className="group relative overflow-hidden rounded-xl shadow-md hover:shadow-xl transition"
-              >
-                <div className="bg-gray-200 border-2 border-dashed rounded-xl w-full h-32" />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 flex items-center justify-center transition">
-                  <p className="text-white font-semibold opacity-0 group-hover:opacity-100">{d}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
-     
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">Tour nổi bật</h2>
-            <Link to="/tours" className="text-indigo-600 hover:text-indigo-700 flex items-center">
-              Xem tất cả <ChevronRight size={20} />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {mockTours.map((t) => (
-              <Link
-                key={t.id}
-                to={`/tours/${t.id}`}
-                className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition"
-              >
-                <div className="bg-gray-200 border-2 border-dashed rounded-t-xl w-full h-48" />
-                <div className="p-6">
-                  <h3 className="font-semibold text-lg text-gray-900 group-hover:text-indigo-600 transition">
-                    {t.title}
-                  </h3>
-                  <p className="text-gray-600 mt-1">{t.destination}</p>
-                  <div className="flex justify-between items-center mt-4">
-                    <span className="text-2xl font-bold text-indigo-600">
-                      {t.price.toLocaleString("vi-VN")}₫
-                    </span>
-                    <span className="text-sm text-gray-600">{t.duration}</span>
-                  </div>
-                  {t.rating && (
-                    <div className="flex items-center mt-2">
-                      <Star className="text-yellow-400 fill-current" size={16} />
-                      <span className="ml-1 text-sm text-gray-700">{t.rating}</span>
-                    </div>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-    
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">

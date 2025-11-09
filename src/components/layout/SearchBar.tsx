@@ -41,7 +41,7 @@ export default function SearchBar({ className }: Props) {
           {isFetching ? (
             <p className="p-4 text-gray-500">Đang tìm...</p>
           ) : results.length > 0 ? (
-            results.map((t) => (
+            results.map((t: TourResponse) => (
               <Link
                 key={t.tourId}
                 to={`/tours/${t.tourId}`}
@@ -57,7 +57,7 @@ export default function SearchBar({ className }: Props) {
                   </span>
                 </div>
               </Link>
-            )))
+            ))
           ) : (
             <p className="p-4 text-gray-500 text-center">Không tìm thấy</p>
           )}
