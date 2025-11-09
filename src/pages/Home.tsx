@@ -79,6 +79,14 @@ const Home: React.FC = () => {
     <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
       <h1 className="text-3xl font-bold mb-6">Trang chủ</h1>
 
+      {/* ✅ Nút chuyển sang Stepper booking */}
+      <button
+        onClick={() => navigate("/book-tour")}
+        className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition mb-6"
+      >
+        🧳 Đặt tour ngay
+      </button>
+
       {user.noPassword ? (
         <div className="flex flex-col items-center mb-6">
           <input
