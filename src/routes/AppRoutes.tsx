@@ -1,11 +1,3 @@
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  Navigate,
-} from "react-router-dom";
-import { useAuthStore } from "../stores/useAuthStore";
-
 // 🏠 Pages
 // src/routes/AppRoutes.tsx
 import {
@@ -17,6 +9,8 @@ import {
 import Home from "../pages/Home";
 import Login from "../pages/LoginPage";
 import Authenticate from "../components/auth/Authenticate";
+import { useAuthStore } from "../stores/useAuthStore";
+import BookingPage from "../pages/BookingPage";
 
 // 💳 Payment Flow
 import Payment from "../pages/Payment";
@@ -51,6 +45,12 @@ const AppRoutes = () => {
         <Route
           path="/"
           element={authenticated ? <Home /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/bookings"
+          element={
+            authenticated ? <BookingPage /> : <Navigate to="/login" replace />
+          }
         />
 
         {/* ❓ Fallback route */}
