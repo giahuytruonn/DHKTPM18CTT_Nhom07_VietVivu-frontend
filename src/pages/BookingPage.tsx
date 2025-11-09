@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import Paper from "@mui/material/Paper";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -8,17 +9,29 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
-import { Box, Typography, Chip, CircularProgress } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Chip,
+  CircularProgress,
+  Button,
+  Stack,
+} from "@mui/material";
 import { getBookings } from "../services/booking.services";
 import type { BookingResponse } from "../services/booking.services";
 
 const BookingPage = () => {
+  const navigate = useNavigate();
+
   interface Column {
     id: keyof BookingResponse | "actions";
     label: string;
     minWidth?: number;
     align?: "right" | "left" | "center";
-    format?: (value: string | number | null) => string | React.ReactNode;
+    format?: (
+      value: string | number | null,
+      row?: BookingResponse
+    ) => string | React.ReactNode;
   }
 
   const formatCurrency = (value: number) => {
@@ -150,6 +163,79 @@ const BookingPage = () => {
       format: (value: string | number | null) =>
         value ? formatDate(String(value)) : "-",
     },
+    {
+      id: "actions",
+      label: "Thao tác",
+      minWidth: 200,
+      align: "center",
+      format: (_value: string | number | null, row?: BookingResponse) => {
+        if (!row) return "-";
+
+        const status = row.bookingStatus;
+
+        // Không hiển thị button cho các status đã hủy hoặc đang chờ xử lý hủy
+        if (
+          status === "PENDING_CANCELLATION" ||
+          status === "CONFIRMED_CANCELLATION" ||
+          status === "CANCELLED"
+        ) {
+          if (status === "PENDING_CANCELLATION") {
+            return (
+              <Typography variant="body2" color="text.secondary">
+                Đang chờ xử lý hủy
+              </Typography>
+            );
+          }
+          if (status === "CONFIRMED_CANCELLATION" || status === "CANCELLED") {
+            return (
+              <Typography variant="body2" color="error">
+                Đã hủy
+              </Typography>
+            );
+          }
+        }
+
+        // Không hiển thị button cho các status đang chờ xử lý đổi tour
+        if (status === "PENDING_CHANGE") {
+          return (
+            <Typography variant="body2" color="text.secondary">
+              Đang chờ xử lý đổi tour
+            </Typography>
+          );
+        }
+
+        // Không hiển thị button cho tour đã hoàn thành
+        if (status === "COMPLETED") {
+          return (
+            <Typography variant="body2" color="info.main">
+              Đã hoàn thành
+            </Typography>
+          );
+        }
+
+        // Chỉ hiển thị button cho các status có thể hủy: PENDING, CONFIRMED
+        return (
+          <Stack direction="row" spacing={1} justifyContent="center">
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              onClick={() => {
+                navigate("/bookings-request-cancel", {
+                  state: {
+                    bookingId: row.bookingId,
+                    action: "CANCEL",
+                    booking: row,
+                  },
+                });
+              }}
+            >
+              Hủy tour
+            </Button>
+          </Stack>
+        );
+      },
+    },
   ];
 
   const [page, setPage] = useState(0);
@@ -249,11 +335,18 @@ const BookingPage = () => {
                         key={row.bookingId}
                       >
                         {columns.map((column) => {
+                          if (column.id === "actions") {
+                            return (
+                              <TableCell key={column.id} align={column.align}>
+                                {column.format ? column.format(null, row) : "-"}
+                              </TableCell>
+                            );
+                          }
                           const value = row[column.id as keyof BookingResponse];
                           return (
                             <TableCell key={column.id} align={column.align}>
                               {column.format
-                                ? column.format(value)
+                                ? column.format(value, row)
                                 : value !== null && value !== undefined
                                 ? String(value)
                                 : "-"}

@@ -11,6 +11,7 @@ import Login from "../pages/LoginPage";
 import Authenticate from "../components/auth/Authenticate";
 import { useAuthStore } from "../stores/useAuthStore";
 import BookingPage from "../pages/BookingPage";
+import RequestBookingPage from "../pages/RequestBookingPage";
 
 // 💳 Payment Flow
 import Payment from "../pages/Payment";
@@ -19,6 +20,8 @@ import PaymentCancel from "../pages/PaymentCancel";
 
 // 🧭 Booking Flow (Stepper UI)
 import BookingStepper from "../components/ui/BookingStepper";
+import BookingRequestPage from "../pages/BookingRequestPage";
+import BookingRequestDetailPage from "../pages/BookingRequestDetailPage";
 
 const AppRoutes = () => {
   const authenticated = useAuthStore((s) => s.authenticated);
@@ -50,6 +53,36 @@ const AppRoutes = () => {
           path="/bookings"
           element={
             authenticated ? <BookingPage /> : <Navigate to="/login" replace />
+          }
+        />
+        <Route
+          path="/bookings-request"
+          element={
+            authenticated ? (
+              <BookingRequestPage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/bookings-request/:requestId"
+          element={
+            authenticated ? (
+              <BookingRequestDetailPage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/bookings-request-cancel"
+          element={
+            authenticated ? (
+              <RequestBookingPage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
           }
         />
 

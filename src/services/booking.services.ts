@@ -68,3 +68,5 @@ export const getBookings = async (): Promise<BookingResponse[]> => {
   const response = await api.get<ApiResponse<BookingResponse[]>>("/bookings");
   return response.data.result;
 };
+
+
