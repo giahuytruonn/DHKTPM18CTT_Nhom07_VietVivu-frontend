@@ -85,9 +85,21 @@ const Home: React.FC = () => {
       {/* ✅ Nút chuyển sang Stepper booking */}
       <button
         onClick={() => navigate("/book-tour")}
-        className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition mb-6"
+        className="bg-green-500 text-white px-6 py-2 rounded-lg cursor-pointer hover:bg-green-600 transition mb-6"
       >
         🧳 Đặt tour ngay
+      </button>
+      <button
+        onClick={() => navigate("/bookings")}
+        className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 cursor-pointer transition mb-6"
+      >
+        📃 Booking List
+      </button>
+      <button
+        onClick={() => navigate("/bookings-request")}
+        className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 cursor-pointer transition mb-6"
+      >
+        🔖 Booking Request List
       </button>
 
       {user.noPassword ? (
