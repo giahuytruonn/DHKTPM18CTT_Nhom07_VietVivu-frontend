@@ -9,6 +9,7 @@ export default function BookingForm({
 }) {
   const [form, setForm] = useState({
     tourId: "083d54e7-89d5-44e8-8032-32acf651aab5",
+    userId: "7471aab5-5a11-4404-a514-65acc0deed05",
     name: "",
     email: "",
     phone: "",
