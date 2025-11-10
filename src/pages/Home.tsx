@@ -15,8 +15,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getTours } from "../services/tour.service"; // Sử dụng service
-import type { TourResponse } from "../types/tour"; // Import kiểu dữ liệu
+import { getTours } from "../services/tour.service"; 
+import type { TourResponse } from "../types/tour"; 
 
 const blogPosts = [
   {

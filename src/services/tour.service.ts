@@ -2,10 +2,21 @@ import api from "./api";
 import type { ApiResponse } from "../types/apiresponse";
 import type { TourResponse, TourStatus } from "../types/tour";
 
-
 export const getTours = async (): Promise<TourResponse[]> => {
   const res = await api.get<ApiResponse<TourResponse[]>>("/tours");
-  return res.data.result; // Trả về mảng tour
+  return res.data.result;
+};
+
+
+export const getAllToursAdmin = async (): Promise<TourResponse[]> => {
+  const res = await api.get<ApiResponse<TourResponse[]>>("/tours/admin/all");
+  return res.data.result;
+};
+
+
+export const getTourById = async (tourId: string): Promise<TourResponse> => {
+  const res = await api.get<ApiResponse<TourResponse>>(`/tours/${tourId}`);
+  return res.data.result;
 };
 
 
@@ -24,8 +35,6 @@ export interface TourSearchParams {
 export const searchTours = async (
   params: TourSearchParams
 ): Promise<TourResponse[]> => {
-  
- 
   const cleanParams = Object.fromEntries(
     Object.entries(params).filter(
       ([_, v]) => v !== null && v !== undefined && v !== ""
@@ -33,7 +42,7 @@ export const searchTours = async (
   );
 
   const res = await api.get<ApiResponse<TourResponse[]>>("/tours/search", {
-    params: cleanParams, 
+    params: cleanParams,
   });
   return res.data.result;
 };
