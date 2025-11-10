@@ -7,7 +7,6 @@ import { getMyReviews, deleteReview } from "../services/review.services";
 import { QUERY_KEYS } from "../utiils/queryKeys";
 import { useUser } from "../hooks/useUser";
 import ReviewForm from "../components/review/ReviewForm";
-import type { ReviewResponse } from "../types/review";
 
 const MyReviewsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -52,8 +51,7 @@ const MyReviewsPage: React.FC = () => {
       });
     },
     onError: (error: any) => {
-      const errorMessage =
-        error.response?.data?.message || "Có lỗi xảy ra";
+      const errorMessage = error.response?.data?.message || "Có lỗi xảy ra";
       toast.error(errorMessage);
     },
   });
@@ -105,32 +103,32 @@ const MyReviewsPage: React.FC = () => {
             <ArrowLeft className="w-5 h-5" />
             <span>Quay lại</span>
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Đánh giá của tôi
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900">Đánh giá của tôi</h1>
           <p className="mt-2 text-gray-600">
             Bạn đã có {reviews?.length || 0} đánh giá
           </p>
         </div>
 
         {/* Form tạo đánh giá mới từ BookingPage */}
-        {showCreateForm && createFormData?.bookingId && createFormData?.tourId && (
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 mb-6">
-            <h2 className="text-xl font-semibold mb-4">Tạo đánh giá mới</h2>
-            <ReviewForm
-              bookingId={createFormData.bookingId}
-              tourId={createFormData.tourId}
-              onSuccess={() => {
-                setShowCreateForm(false);
-                setCreateFormData(null);
-              }}
-              onCancel={() => {
-                setShowCreateForm(false);
-                setCreateFormData(null);
-              }}
-            />
-          </div>
-        )}
+        {showCreateForm &&
+          createFormData?.bookingId &&
+          createFormData?.tourId && (
+            <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 mb-6">
+              <h2 className="text-xl font-semibold mb-4">Tạo đánh giá mới</h2>
+              <ReviewForm
+                bookingId={createFormData.bookingId}
+                tourId={createFormData.tourId}
+                onSuccess={() => {
+                  setShowCreateForm(false);
+                  setCreateFormData(null);
+                }}
+                onCancel={() => {
+                  setShowCreateForm(false);
+                  setCreateFormData(null);
+                }}
+              />
+            </div>
+          )}
 
         {/* Danh sách đánh giá */}
         {!reviews || reviews.length === 0 ? (
@@ -199,25 +197,10 @@ const MyReviewsPage: React.FC = () => {
                               {
                                 year: "numeric",
                                 month: "long",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
+                                day: "numeric"
                               }
                             )}
-                            {review.updatedAt !== review.createdAt && (
-                              <span className="ml-2">
-                                (Đã chỉnh sửa:{" "}
-                                {new Date(review.updatedAt).toLocaleDateString(
-                                  "vi-VN",
-                                  {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                  }
-                                )}
-                                )
-                              </span>
-                            )}
+                            {/* updatedAt removed: frontend shows only createdAt */}
                           </p>
                         </div>
                         <div className="flex gap-2 ml-4">
@@ -251,4 +234,3 @@ const MyReviewsPage: React.FC = () => {
 };
 
 export default MyReviewsPage;
-
