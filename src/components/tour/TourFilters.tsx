@@ -1,6 +1,7 @@
-import React from "react";
+// src/components/tour/TourFilters.tsx - IMPROVED VERSION
+import React, { useState } from "react";
 import type { TourSearchParams } from "../../services/tour.service";
-import { RotateCcw, Search, Filter, MapPin, DollarSign, Calendar, Clock, Users, Tag } from "lucide-react";
+import { RotateCcw, Search, Filter, MapPin, Calendar, Clock, Users, Tag } from "lucide-react";
 
 interface Props {
     filters: TourSearchParams;
@@ -9,6 +10,7 @@ interface Props {
         value: TourSearchParams[K]
     ) => void;
     onReset: () => void;
+    onApplyFilters: () => void;
     isAdmin?: boolean;
 }
 
@@ -16,17 +18,66 @@ const TourFilters: React.FC<Props> = ({
     filters,
     onFilterChange,
     onReset,
+    onApplyFilters,
     isAdmin = false,
 }) => {
-    const handleNumericChange = (
-        key: keyof TourSearchParams,
-        value: string
+    const [localFilters, setLocalFilters] = useState<TourSearchParams>(filters);
+    const [priceRange, setPriceRange] = useState({
+        min: filters.minPrice || 0,
+        max: filters.maxPrice || 50000000,
+    });
+
+    const MAX_PRICE = 50000000;
+
+    const handleLocalChange = <K extends keyof TourSearchParams>(
+        key: K,
+        value: TourSearchParams[K]
     ) => {
-        const num = value === "" ? null : parseFloat(value);
-        if (num === null || (!isNaN(num) && num >= 0)) {
-            onFilterChange(key, num);
-        }
+        setLocalFilters(prev => ({ ...prev, [key]: value }));
     };
+
+    const handlePriceSliderChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'min' | 'max') => {
+        const value = Number(e.target.value);
+        setPriceRange(prev => {
+            const newRange = { ...prev, [type]: value };
+            // Ensure min <= max
+            if (type === 'min' && value > prev.max) {
+                newRange.max = value;
+            }
+            if (type === 'max' && value < prev.min) {
+                newRange.min = value;
+            }
+            return newRange;
+        });
+        handleLocalChange(type === 'min' ? 'minPrice' : 'maxPrice', value);
+    };
+
+    const handleApply = () => {
+        Object.entries(localFilters).forEach(([key, value]) => {
+            onFilterChange(key as keyof TourSearchParams, value);
+        });
+        onApplyFilters();
+    };
+
+    const handleResetLocal = () => {
+        const resetFilters: TourSearchParams = {
+            keyword: null,
+            destination: null,
+            minPrice: null,
+            maxPrice: null,
+            startDate: null,
+            durationDays: null,
+            minQuantity: null,
+            tourStatus: null,
+        };
+        setLocalFilters(resetFilters);
+        setPriceRange({ min: 0, max: MAX_PRICE });
+        onReset();
+    };
+
+    const activeFiltersCount = Object.values(localFilters).filter(
+        v => v !== null && v !== undefined && v !== ''
+    ).length;
 
     return (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden sticky top-24">
@@ -53,8 +104,8 @@ const TourFilters: React.FC<Props> = ({
                     <input
                         type="text"
                         placeholder="Tên tour, mô tả..."
-                        value={filters.keyword || ""}
-                        onChange={(e) => onFilterChange("keyword", e.target.value)}
+                        value={localFilters.keyword || ""}
+                        onChange={(e) => handleLocalChange("keyword", e.target.value)}
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                     />
                 </div>
@@ -68,39 +119,87 @@ const TourFilters: React.FC<Props> = ({
                     <input
                         type="text"
                         placeholder="Hà Nội, Đà Nẵng, Nha Trang..."
-                        value={filters.destination || ""}
-                        onChange={(e) => onFilterChange("destination", e.target.value)}
+                        value={localFilters.destination || ""}
+                        onChange={(e) => handleLocalChange("destination", e.target.value)}
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                     />
                 </div>
 
-                {/* Khoảng giá */}
+                {/* Khoảng giá với Range Slider */}
                 <div className="space-y-3">
                     <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                        <DollarSign className="w-4 h-4 text-indigo-600" />
-                        Khoảng giá (VNĐ)
+                        💰 Khoảng giá
                     </label>
-                    <div className="grid grid-cols-2 gap-3">
+                    
+                    {/* Price Display */}
+                    <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">
+                            {priceRange.min.toLocaleString('vi-VN')}₫
+                        </span>
+                        <span className="text-gray-400">-</span>
+                        <span className="text-gray-600">
+                            {priceRange.max.toLocaleString('vi-VN')}₫
+                        </span>
+                    </div>
+
+                    {/* Min Price Slider */}
+                    <div className="space-y-1">
+                        <label className="text-xs text-gray-500">Giá tối thiểu</label>
+                        <input
+                            type="range"
+                            min="0"
+                            max={MAX_PRICE}
+                            step="500000"
+                            value={priceRange.min}
+                            onChange={(e) => handlePriceSliderChange(e, 'min')}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                        />
+                    </div>
+
+                    {/* Max Price Slider */}
+                    <div className="space-y-1">
+                        <label className="text-xs text-gray-500">Giá tối đa</label>
+                        <input
+                            type="range"
+                            min="0"
+                            max={MAX_PRICE}
+                            step="500000"
+                            value={priceRange.max}
+                            onChange={(e) => handlePriceSliderChange(e, 'max')}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                        />
+                    </div>
+
+                    {/* Price Input Fields */}
+                    <div className="grid grid-cols-2 gap-3 mt-2">
                         <div>
-                            <label className="text-xs text-gray-500 mb-1 block">Từ</label>
                             <input
                                 type="number"
-                                placeholder="0"
-                                min="0"
-                                value={filters.minPrice ?? ""}
-                                onChange={(e) => handleNumericChange("minPrice", e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm"
+                                placeholder="Từ"
+                                value={priceRange.min || ""}
+                                onChange={(e) => {
+                                    const value = Number(e.target.value);
+                                    if (value >= 0 && value <= MAX_PRICE) {
+                                        setPriceRange(prev => ({ ...prev, min: value }));
+                                        handleLocalChange("minPrice", value);
+                                    }
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                             />
                         </div>
                         <div>
-                            <label className="text-xs text-gray-500 mb-1 block">Đến</label>
                             <input
                                 type="number"
-                                placeholder="10.000.000"
-                                min="0"
-                                value={filters.maxPrice ?? ""}
-                                onChange={(e) => handleNumericChange("maxPrice", e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm"
+                                placeholder="Đến"
+                                value={priceRange.max || ""}
+                                onChange={(e) => {
+                                    const value = Number(e.target.value);
+                                    if (value >= 0 && value <= MAX_PRICE) {
+                                        setPriceRange(prev => ({ ...prev, max: value }));
+                                        handleLocalChange("maxPrice", value);
+                                    }
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                             />
                         </div>
                     </div>
@@ -114,8 +213,8 @@ const TourFilters: React.FC<Props> = ({
                     </label>
                     <input
                         type="date"
-                        value={filters.startDate || ""}
-                        onChange={(e) => onFilterChange("startDate", e.target.value)}
+                        value={localFilters.startDate || ""}
+                        onChange={(e) => handleLocalChange("startDate", e.target.value)}
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                     />
                 </div>
@@ -130,11 +229,13 @@ const TourFilters: React.FC<Props> = ({
                         type="number"
                         placeholder="VD: 3 (nghĩa là 3N-2Đ)"
                         min="1"
-                        value={filters.durationDays ?? ""}
-                        onChange={(e) => handleNumericChange("durationDays", e.target.value)}
+                        value={localFilters.durationDays ?? ""}
+                        onChange={(e) => {
+                            const value = e.target.value === "" ? null : parseInt(e.target.value);
+                            handleLocalChange("durationDays", value);
+                        }}
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Nhập số ngày (VD: 3 cho tour 3N-2Đ)</p>
                 </div>
 
                 {/* Số chỗ tối thiểu */}
@@ -147,8 +248,11 @@ const TourFilters: React.FC<Props> = ({
                         type="number"
                         placeholder="VD: 5"
                         min="1"
-                        value={filters.minQuantity ?? ""}
-                        onChange={(e) => handleNumericChange("minQuantity", e.target.value)}
+                        value={localFilters.minQuantity ?? ""}
+                        onChange={(e) => {
+                            const value = e.target.value === "" ? null : parseInt(e.target.value);
+                            handleLocalChange("minQuantity", value);
+                        }}
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                     />
                 </div>
@@ -161,8 +265,8 @@ const TourFilters: React.FC<Props> = ({
                             Trạng thái tour
                         </label>
                         <select
-                            value={filters.tourStatus || ""}
-                            onChange={(e) => onFilterChange("tourStatus", e.target.value as any)}
+                            value={localFilters.tourStatus || ""}
+                            onChange={(e) => handleLocalChange("tourStatus", e.target.value as any)}
                             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white"
                         >
                             <option value="">Tất cả trạng thái</option>
@@ -172,23 +276,27 @@ const TourFilters: React.FC<Props> = ({
                         </select>
                     </div>
                 )}
-
-                {/* Reset Button */}
-                <button
-                    type="button"
-                    onClick={onReset}
-                    className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 py-3 px-4 rounded-lg transition-all border border-gray-200 shadow-sm hover:shadow group"
-                >
-                    <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-                    Xóa tất cả bộ lọc
-                </button>
             </div>
 
-            {/* Active Filters Count */}
-            <div className="px-6 pb-4">
-                <div className="text-xs text-gray-500 text-center">
-                    {Object.values(filters).filter(v => v !== null && v !== undefined && v !== '').length} bộ lọc đang áp dụng
-                </div>
+            {/* Action Buttons */}
+            <div className="p-4 border-t border-gray-200 space-y-2">
+                <button
+                    type="button"
+                    onClick={handleApply}
+                    className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg"
+                >
+                    <Search className="w-4 h-4" />
+                    Áp dụng lọc ({activeFiltersCount})
+                </button>
+
+                <button
+                    type="button"
+                    onClick={handleResetLocal}
+                    className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 py-3 px-4 rounded-lg transition-all"
+                >
+                    <RotateCcw className="w-4 h-4" />
+                    Xóa tất cả bộ lọc
+                </button>
             </div>
         </div>
     );

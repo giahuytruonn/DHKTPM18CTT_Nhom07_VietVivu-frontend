@@ -1,4 +1,4 @@
-// src/main.tsx
+// src/main.tsx - UPDATED VERSION
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AllToursPage from "./pages/AllToursPage";
+import TourDetailPage from "./pages/TourDetailPage";
 import FavoriteToursPage from "./pages/FavoriteToursPage";
 import Authenticate from "./components/auth/Authenticate";
 
@@ -17,6 +18,9 @@ import Authenticate from "./components/auth/Authenticate";
 import AdminLayout from "./components/layout/AdminLayout";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminToursManagement from "./pages/AdminToursManagement";
+import AdminToursPage from "./pages/AdminTourPage";
+import CreateTourPage from "./pages/CreateTourPage";
+import EditTourPage from "./pages/EditTourPage";
 
 import "./index.css";
 import Header from "./components/layout/Header";
@@ -31,7 +35,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return authenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
-// Admin Route Component with redirect logic
+// Admin Route Component
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { authenticated, token } = useAuthStore();
   
@@ -50,15 +54,6 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const TourDetailPagePlaceholder = () => (
-  <div className="h-screen flex items-center justify-center">
-    <div className="text-center">
-      <h2 className="text-2xl font-bold mb-4">Trang chi tiết Tour</h2>
-      <p className="text-gray-600">Đang phát triển...</p>
-    </div>
-  </div>
-);
-
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
@@ -76,7 +71,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="/register" element={<RegisterPage />} />
                   <Route path="/authenticate" element={<Authenticate />} />
                   <Route path="/tours" element={<AllToursPage />} />
-                  <Route path="/tours/:tourId" element={<TourDetailPagePlaceholder />} />
+                  <Route path="/tours/:tourId" element={<TourDetailPage />} />
                   
                   {/* Protected User Routes */}
                   <Route
@@ -87,13 +82,37 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                       </ProtectedRoute>
                     }
                   />
+                  
+                  {/* Placeholder routes */}
+                  <Route
+                    path="/about"
+                    element={
+                      <div className="min-h-screen flex items-center justify-center">
+                        <div className="text-center">
+                          <h2 className="text-2xl font-bold mb-4">Về chúng tôi</h2>
+                          <p className="text-gray-600">Đang phát triển...</p>
+                        </div>
+                      </div>
+                    }
+                  />
+                  <Route
+                    path="/blog"
+                    element={
+                      <div className="min-h-screen flex items-center justify-center">
+                        <div className="text-center">
+                          <h2 className="text-2xl font-bold mb-4">Blog</h2>
+                          <p className="text-gray-600">Đang phát triển...</p>
+                        </div>
+                      </div>
+                    }
+                  />
                 </Routes>
                 <Footer />
               </>
             }
           />
 
-          {/* Admin Routes - NO Header & Footer, use AdminLayout */}
+          {/* Admin Routes - NO Header & Footer */}
           <Route
             path="/admin/*"
             element={
@@ -105,24 +124,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="tours" element={<AdminToursManagement />} />
-            <Route
-              path="tours/create"
-              element={
-                <div className="text-center py-12">
-                  <h2 className="text-2xl font-bold">Trang Thêm Tour</h2>
-                  <p className="text-gray-600 mt-2">Đang phát triển...</p>
-                </div>
-              }
-            />
-            <Route
-              path="tours/edit/:tourId"
-              element={
-                <div className="text-center py-12">
-                  <h2 className="text-2xl font-bold">Trang Sửa Tour</h2>
-                  <p className="text-gray-600 mt-2">Đang phát triển...</p>
-                </div>
-              }
-            />
+            <Route path="tours/create" element={<CreateTourPage />} />
+            <Route path="tours/edit/:tourId" element={<EditTourPage />} />
             <Route
               path="users"
               element={

@@ -1,3 +1,4 @@
+// src/pages/AdminDashboard.tsx - FIXED LAYOUT
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getAllToursAdmin } from "../services/tour.service";
@@ -11,7 +12,6 @@ import {
   Heart,
   Star,
   ArrowUp,
-  ArrowDown,
 } from "lucide-react";
 
 const AdminDashboard: React.FC = () => {
@@ -99,50 +99,50 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-6">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-xl">
-        <h1 className="text-3xl font-bold mb-2">Chào mừng trở lại, Admin! 👋</h1>
-        <p className="text-indigo-100">
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 md:p-8 text-white shadow-xl">
+        <h1 className="text-2xl md:text-3xl font-bold mb-2">Chào mừng trở lại, Admin! 👋</h1>
+        <p className="text-indigo-100 text-sm md:text-base">
           Đây là tổng quan về hệ thống tour du lịch của bạn
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <div
               key={index}
-              className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300"
+              className="bg-white rounded-xl p-4 md:p-6 shadow-md hover:shadow-lg transition-shadow duration-300"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`p-3 ${stat.bgColor} rounded-lg`}>
                   <Icon className={stat.textColor} size={24} />
                 </div>
-                <div className={`flex items-center gap-1 text-sm ${stat.isIncrease ? 'text-green-600' : 'text-red-600'}`}>
-                  {stat.isIncrease ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                <div className="flex items-center gap-1 text-xs md:text-sm text-green-600">
+                  <ArrowUp size={16} />
                   <span className="font-semibold">{stat.change}</span>
                 </div>
               </div>
-              <h3 className="text-gray-600 text-sm font-medium mb-1">{stat.title}</h3>
-              <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+              <h3 className="text-gray-600 text-xs md:text-sm font-medium mb-1">{stat.title}</h3>
+              <p className="text-2xl md:text-3xl font-bold text-gray-900">{stat.value}</p>
             </div>
           );
         })}
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Tour Status Distribution */}
-        <div className="bg-white rounded-xl p-6 shadow-md">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Phân Bố Trạng Thái Tour</h2>
+        <div className="bg-white rounded-xl p-4 md:p-6 shadow-md">
+          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4 md:mb-6">Phân Bố Trạng Thái Tour</h2>
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">Đang mở booking</span>
-                <span className="text-sm font-semibold text-green-600">{stats.openTours}</span>
+                <span className="text-xs md:text-sm font-medium text-gray-700">Đang mở booking</span>
+                <span className="text-xs md:text-sm font-semibold text-green-600">{stats.openTours}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3">
                 <div
@@ -154,8 +154,8 @@ const AdminDashboard: React.FC = () => {
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">Đang thực hiện</span>
-                <span className="text-sm font-semibold text-blue-600">{stats.inProgressTours}</span>
+                <span className="text-xs md:text-sm font-medium text-gray-700">Đang thực hiện</span>
+                <span className="text-xs md:text-sm font-semibold text-blue-600">{stats.inProgressTours}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3">
                 <div
@@ -167,8 +167,8 @@ const AdminDashboard: React.FC = () => {
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">Đã hoàn thành</span>
-                <span className="text-sm font-semibold text-gray-600">{stats.completedTours}</span>
+                <span className="text-xs md:text-sm font-medium text-gray-700">Đã hoàn thành</span>
+                <span className="text-xs md:text-sm font-semibold text-gray-600">{stats.completedTours}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3">
                 <div
@@ -181,67 +181,67 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Quick Stats */}
-        <div className="bg-white rounded-xl p-6 shadow-md">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Thống Kê Nhanh</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-              <div className="flex items-center gap-3">
+        <div className="bg-white rounded-xl p-4 md:p-6 shadow-md">
+          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4 md:mb-6">Thống Kê Nhanh</h2>
+          <div className="space-y-3 md:space-y-4">
+            <div className="flex items-center justify-between p-3 md:p-4 bg-blue-50 rounded-lg">
+              <div className="flex items-center gap-2 md:gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
                   <Eye className="text-blue-600" size={20} />
                 </div>
-                <span className="font-medium text-gray-700">Lượt xem</span>
+                <span className="font-medium text-gray-700 text-sm md:text-base">Lượt xem</span>
               </div>
-              <span className="text-2xl font-bold text-blue-600">
+              <span className="text-xl md:text-2xl font-bold text-blue-600">
                 {(stats.totalBookings * 12).toLocaleString()}
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-pink-50 rounded-lg">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between p-3 md:p-4 bg-pink-50 rounded-lg">
+              <div className="flex items-center gap-2 md:gap-3">
                 <div className="p-2 bg-pink-100 rounded-lg">
                   <Heart className="text-pink-600" size={20} />
                 </div>
-                <span className="font-medium text-gray-700">Yêu thích</span>
+                <span className="font-medium text-gray-700 text-sm md:text-base">Yêu thích</span>
               </div>
-              <span className="text-2xl font-bold text-pink-600">{stats.totalFavorites}</span>
+              <span className="text-xl md:text-2xl font-bold text-pink-600">{stats.totalFavorites}</span>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between p-3 md:p-4 bg-yellow-50 rounded-lg">
+              <div className="flex items-center gap-2 md:gap-3">
                 <div className="p-2 bg-yellow-100 rounded-lg">
                   <Star className="text-yellow-600" size={20} />
                 </div>
-                <span className="font-medium text-gray-700">Đánh giá TB</span>
+                <span className="font-medium text-gray-700 text-sm md:text-base">Đánh giá TB</span>
               </div>
-              <span className="text-2xl font-bold text-yellow-600">4.8</span>
+              <span className="text-xl md:text-2xl font-bold text-yellow-600">4.8</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tables Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Popular Tours */}
-        <div className="bg-white rounded-xl p-6 shadow-md">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Tour Phổ Biến</h2>
+        <div className="bg-white rounded-xl p-4 md:p-6 shadow-md">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <h2 className="text-lg md:text-xl font-bold text-gray-900">Tour Phổ Biến</h2>
             <TrendingUp className="text-orange-500" size={24} />
           </div>
           <div className="space-y-3">
             {popularTours.map((tour, index) => (
               <div
                 key={tour.tourId}
-                className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                className="flex items-center gap-3 md:gap-4 p-2 md:p-3 hover:bg-gray-50 rounded-lg transition-colors"
               >
-                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-orange-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
+                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-orange-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
                   {index + 1}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{tour.title}</p>
-                  <p className="text-sm text-gray-500">{tour.destination}</p>
+                  <p className="font-medium text-gray-900 truncate text-sm md:text-base">{tour.title}</p>
+                  <p className="text-xs md:text-sm text-gray-500">{tour.destination}</p>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-indigo-600">{tour.totalBookings}</p>
+                <div className="text-right flex-shrink-0">
+                  <p className="font-semibold text-indigo-600 text-sm md:text-base">{tour.totalBookings}</p>
                   <p className="text-xs text-gray-500">bookings</p>
                 </div>
               </div>
@@ -250,19 +250,19 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Recent Tours */}
-        <div className="bg-white rounded-xl p-6 shadow-md">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Tour Mới Nhất</h2>
+        <div className="bg-white rounded-xl p-4 md:p-6 shadow-md">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <h2 className="text-lg md:text-xl font-bold text-gray-900">Tour Mới Nhất</h2>
             <Calendar className="text-blue-500" size={24} />
           </div>
           <div className="space-y-3">
             {recentTours.map((tour) => (
               <div
                 key={tour.tourId}
-                className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                className="flex items-center gap-3 md:gap-4 p-2 md:p-3 hover:bg-gray-50 rounded-lg transition-colors"
               >
                 <div className={`
-                  flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold
+                  flex-shrink-0 px-2 md:px-3 py-1 rounded-full text-xs font-semibold
                   ${tour.tourStatus === 'OPEN_BOOKING' ? 'bg-green-100 text-green-700' : 
                     tour.tourStatus === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' : 
                     'bg-gray-100 text-gray-700'}
@@ -271,11 +271,11 @@ const AdminDashboard: React.FC = () => {
                    tour.tourStatus === 'IN_PROGRESS' ? 'Đang chạy' : 'Hoàn thành'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{tour.title}</p>
-                  <p className="text-sm text-gray-500">{tour.destination}</p>
+                  <p className="font-medium text-gray-900 truncate text-sm md:text-base">{tour.title}</p>
+                  <p className="text-xs md:text-sm text-gray-500">{tour.destination}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-900">
+                <div className="text-right flex-shrink-0">
+                  <p className="text-xs md:text-sm font-semibold text-gray-900">
                     {tour.priceAdult.toLocaleString()}₫
                   </p>
                 </div>

@@ -1,3 +1,4 @@
+// src/components/tour/TourCard.tsx - WITH DEBUG LOGS
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { TourResponse } from "../../types/tour";
@@ -14,26 +15,45 @@ interface Props {
 const TourCard: React.FC<Props> = ({ tour }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { authenticated } = useAuthStore();
+  const { authenticated, token } = useAuthStore();
   
   const rating = (tour as any).rating || (tour.favoriteCount > 10 ? 4.5 : 4.0);
   const reviews = (tour as any).reviews || tour.favoriteCount;
 
-  // Mutation để thêm/xóa yêu thích
   const toggleFavoriteMutation = useMutation({
     mutationFn: async () => {
+      console.log("=== FAVORITE MUTATION START ===");
+      console.log("Tour ID:", tour.tourId);
+      console.log("Current isFavorited:", tour.isFavorited);
+      console.log("Token exists:", !!token);
+      console.log("Authenticated:", authenticated);
+      
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          console.log("Token payload:", payload);
+          console.log("Token scope:", payload.scope);
+        } catch (e) {
+          console.error("Error parsing token:", e);
+        }
+      }
+      
       if (tour.isFavorited) {
+        console.log("Calling removeFromFavorites");
         await removeFromFavorites(tour.tourId);
       } else {
+        console.log("Calling addToFavorites");
         await addToFavorites(tour.tourId);
       }
+      console.log("=== FAVORITE MUTATION END ===");
     },
     onSuccess: () => {
-      // Invalidate các query liên quan để refetch data
+      console.log("Favorite mutation success");
       queryClient.invalidateQueries({ queryKey: ["allTours"] });
       queryClient.invalidateQueries({ queryKey: ["tours-home"] });
       queryClient.invalidateQueries({ queryKey: ["favoriteTours"] });
       queryClient.invalidateQueries({ queryKey: ["tour", tour.tourId] });
+      queryClient.invalidateQueries({ queryKey: ["adminTours"] });
       
       toast.success(
         tour.isFavorited 
@@ -42,18 +62,32 @@ const TourCard: React.FC<Props> = ({ tour }) => {
       );
     },
     onError: (error: any) => {
+      console.error("=== FAVORITE MUTATION ERROR ===");
+      console.error("Error:", error);
+      console.error("Error response:", error.response);
+      console.error("Error status:", error.response?.status);
+      console.error("Error data:", error.response?.data);
+      console.error("Error message:", error.message);
+      
       if (error.response?.status === 401) {
         toast.error("Vui lòng đăng nhập để thêm yêu thích");
         navigate("/login");
+      } else if (error.response?.status === 403) {
+        toast.error("Bạn không có quyền thực hiện thao tác này");
+        console.error("403 Forbidden - Check token scope and SecurityConfig");
       } else {
-        toast.error("Có lỗi xảy ra, vui lòng thử lại");
+        toast.error("Có lỗi xảy ra: " + (error.response?.data?.message || error.message));
       }
     }
   });
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
-    e.preventDefault(); // Ngăn navigation khi click vào card
+    e.preventDefault();
     e.stopPropagation();
+    
+    console.log("=== FAVORITE CLICK ===");
+    console.log("Authenticated:", authenticated);
+    console.log("Token:", token ? "exists" : "missing");
     
     if (!authenticated) {
       toast.error("Vui lòng đăng nhập để thêm yêu thích");
@@ -69,7 +103,6 @@ const TourCard: React.FC<Props> = ({ tour }) => {
       to={`/tours/${tour.tourId}`}
       className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col"
     >
-      {/* Image */}
       <div className="relative">
         <img
           src={
@@ -81,12 +114,12 @@ const TourCard: React.FC<Props> = ({ tour }) => {
           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
         />
         
-        {/* Favorite Button - chỉ hiện khi đã đăng nhập */}
         {authenticated && (
           <button
             onClick={handleFavoriteClick}
             disabled={toggleFavoriteMutation.isPending}
             className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-all shadow-md z-10 disabled:opacity-50"
+            aria-label={tour.isFavorited ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
           >
             <Heart
               className={`w-5 h-5 transition-colors ${
@@ -99,7 +132,6 @@ const TourCard: React.FC<Props> = ({ tour }) => {
         )}
       </div>
 
-      {/* Content */}
       <div className="p-6 flex flex-col flex-grow">
         <div className="flex items-center text-sm text-gray-600 mb-2">
           <MapPin className="w-4 h-4 mr-1 text-indigo-600" />
@@ -121,7 +153,6 @@ const TourCard: React.FC<Props> = ({ tour }) => {
           <span>{tour.duration}</span>
         </div>
 
-        {/* Price */}
         <div className="border-t pt-4 mt-auto">
           <div className="flex justify-between items-center">
             <div>

@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useEffect } from "react";
+// src/pages/AllToursPage.tsx - UPDATED VERSION
+import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getTours, getAllToursAdmin, searchTours } from "../services/tour.service";
 import type { TourSearchParams } from "../services/tour.service";
-import { useDebounce } from "../hooks/useDebounce";
 import { useAuthStore } from "../stores/useAuthStore";
 import TourFilters from "../components/tour/TourFilters";
 import TourList from "../components/tour/TourList";
@@ -24,6 +24,7 @@ const TOURS_PER_PAGE = 9;
 
 const AllToursPage: React.FC = () => {
   const [filters, setFilters] = useState<TourSearchParams>(initialFilterState);
+  const [appliedFilters, setAppliedFilters] = useState<TourSearchParams>(initialFilterState);
   const [currentPage, setCurrentPage] = useState(1);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   
@@ -38,55 +39,46 @@ const AllToursPage: React.FC = () => {
     }
   }, [token]);
 
-  const debouncedKeyword = useDebounce(filters.keyword, 500);
-  const debouncedDestination = useDebounce(filters.destination, 500);
-
   const hasActiveFilters = useMemo(() => {
-  return Object.entries(filters).some(([key, value]) => {
-    // User/Guest KHÔNG có tourStatus filter
-    if (key === 'tourStatus') return false;
-    return value !== null && value !== undefined && value !== '';
-  });
-}, [filters]);
+    return Object.entries(appliedFilters).some(([key, value]) => {
+      if (key === 'tourStatus' && !isAdmin) return false;
+      return value !== null && value !== undefined && value !== '';
+    });
+  }, [appliedFilters, isAdmin]);
 
   const queryKey = [
     "allTours",
-    debouncedKeyword,
-    debouncedDestination,
-    filters.minPrice,
-    filters.maxPrice,
-    filters.startDate,
-    filters.durationDays,
-    filters.minQuantity,
-    isAdmin ? filters.tourStatus : null,
+    appliedFilters.keyword,
+    appliedFilters.destination,
+    appliedFilters.minPrice,
+    appliedFilters.maxPrice,
+    appliedFilters.startDate,
+    appliedFilters.durationDays,
+    appliedFilters.minQuantity,
+    isAdmin ? appliedFilters.tourStatus : null,
     isAdmin,
   ];
 
-  const { data: tours = [], isLoading } = useQuery({
+  const { data: tours = [], isLoading, refetch } = useQuery({
     queryKey: queryKey,
     queryFn: async () => {
-      // Nếu có bất kỳ filter nào active, dùng searchTours
+      console.log("Fetching tours with filters:", appliedFilters, "isAdmin:", isAdmin);
+      
       if (hasActiveFilters) {
-        return searchTours({
-          ...filters,
-          keyword: debouncedKeyword,
-          destination: debouncedDestination,
-        });
+        console.log("Using searchTours");
+        return searchTours(appliedFilters);
       }
       
-      // Không có filter: Admin dùng getAllToursAdmin, User dùng getTours
       if (isAdmin) {
+        console.log("Using getAllToursAdmin");
         return getAllToursAdmin();
       }
+      
+      console.log("Using getTours");
       return getTours();
     },
     staleTime: 1000 * 60 * 5,
   });
-
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [queryKey.join("-")]);
 
   const totalPages = useMemo(() => {
     return Math.ceil(tours.length / TOURS_PER_PAGE);
@@ -108,8 +100,17 @@ const AllToursPage: React.FC = () => {
     }));
   };
 
+  const handleApplyFilters = () => {
+    console.log("Applying filters:", filters);
+    setAppliedFilters({ ...filters });
+    setCurrentPage(1);
+    setShowMobileFilters(false);
+  };
+
   const handleResetFilters = () => {
+    console.log("Resetting filters");
     setFilters(initialFilterState);
+    setAppliedFilters(initialFilterState);
     setCurrentPage(1);
   };
 
@@ -173,14 +174,13 @@ const AllToursPage: React.FC = () => {
           
           {/* Sidebar - Filters */}
           <div className={`lg:col-span-1 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
-            <div className="sticky top-24">
-              <TourFilters
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                onReset={handleResetFilters}
-                isAdmin={isAdmin}
-              />
-            </div>
+            <TourFilters
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onReset={handleResetFilters}
+              onApplyFilters={handleApplyFilters}
+              isAdmin={isAdmin}
+            />
           </div>
 
           {/* Main Content - Tour List */}

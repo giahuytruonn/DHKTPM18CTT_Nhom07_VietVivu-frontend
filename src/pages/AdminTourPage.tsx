@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useEffect } from "react";
+// src/pages/AdminTourPage.tsx - UPDATED VERSION
+import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getAllToursAdmin, searchTours } from "../services/tour.service";
 import type { TourSearchParams } from "../services/tour.service";
-import { useDebounce } from "../hooks/useDebounce";
 import TourFilters from "../components/tour/TourFilters";
 import TourList from "../components/tour/TourList";
 import PaginationControls from "../components/tour/PaginationControls";
@@ -23,48 +23,44 @@ const TOURS_PER_PAGE = 9;
 
 const AdminToursPage: React.FC = () => {
   const [filters, setFilters] = useState<TourSearchParams>(initialFilterState);
+  const [appliedFilters, setAppliedFilters] = useState<TourSearchParams>(initialFilterState);
   const [currentPage, setCurrentPage] = useState(1);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  const debouncedKeyword = useDebounce(filters.keyword, 500);
-  const debouncedDestination = useDebounce(filters.destination, 500);
-
   const hasActiveFilters = useMemo(() => {
-    return Object.entries(filters).some(([_, value]) => {
+    return Object.entries(appliedFilters).some(([_, value]) => {
       return value !== null && value !== undefined && value !== '';
     });
-  }, [filters]);
+  }, [appliedFilters]);
 
   const queryKey = [
     "adminTours",
-    debouncedKeyword,
-    debouncedDestination,
-    filters.minPrice,
-    filters.maxPrice,
-    filters.startDate,
-    filters.durationDays,
-    filters.minQuantity,
-    filters.tourStatus,
+    appliedFilters.keyword,
+    appliedFilters.destination,
+    appliedFilters.minPrice,
+    appliedFilters.maxPrice,
+    appliedFilters.startDate,
+    appliedFilters.durationDays,
+    appliedFilters.minQuantity,
+    appliedFilters.tourStatus,
   ];
 
   const { data: tours = [], isLoading } = useQuery({
     queryKey: queryKey,
     queryFn: async () => {
+      console.log("Admin fetching tours with filters:", appliedFilters);
+      
       if (hasActiveFilters) {
-        return searchTours({
-          ...filters,
-          keyword: debouncedKeyword,
-          destination: debouncedDestination,
-        });
+        console.log("Admin using searchTours");
+        return searchTours(appliedFilters);
       }
+      
+      console.log("Admin using getAllToursAdmin");
       return getAllToursAdmin();
     },
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [queryKey.join("-")]);
 
   const totalPages = useMemo(() => {
     return Math.ceil(tours.length / TOURS_PER_PAGE);
@@ -86,8 +82,17 @@ const AdminToursPage: React.FC = () => {
     }));
   };
 
+  const handleApplyFilters = () => {
+    console.log("Admin applying filters:", filters);
+    setAppliedFilters({ ...filters });
+    setCurrentPage(1);
+    setShowMobileFilters(false);
+  };
+
   const handleResetFilters = () => {
+    console.log("Admin resetting filters");
     setFilters(initialFilterState);
+    setAppliedFilters(initialFilterState);
     setCurrentPage(1);
   };
 
@@ -148,6 +153,7 @@ const AdminToursPage: React.FC = () => {
               filters={filters}
               onFilterChange={handleFilterChange}
               onReset={handleResetFilters}
+              onApplyFilters={handleApplyFilters}
               isAdmin={true}
             />
           </div>
