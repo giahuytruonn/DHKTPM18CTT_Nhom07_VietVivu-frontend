@@ -14,8 +14,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getTours } from "../services/tour.service"; 
-import type { TourResponse } from "../types/tour"; 
+import { getTours } from "../services/tour.service";
+import type { TourResponse } from "../types/tour";
 
 const blogPosts = [
   {
@@ -112,7 +112,6 @@ export default function Home() {
     });
 
     const uniqueDests = Array.from(new Set(allDestinations));
-
 
     const usedImageUrls = new Set<string>();
     const destWithImages = uniqueDests

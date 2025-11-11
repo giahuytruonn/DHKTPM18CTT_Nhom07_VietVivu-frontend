@@ -22,30 +22,30 @@ export interface BookingRequest {
  * Dữ liệu trả về khi đặt tour thành công
  */
 export interface BookingResponse {
-  bookingId: number;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  note: string | null;
+  bookingId: string;
   bookingDate: string;
   totalPrice: number;
-  remainingAmount: number;
-  discountAmount: number;
   promotionCode: string;
+  discountAmount: number;
+  remainingAmount: number;
   bookingStatus: string;
   paymentTerm: string;
-  tourId: number;
+  tourId: string;
   tourTitle: string;
   tourDuration: string;
   tourDestination: string;
-  imageUrl?: string;
+  imageUrl: string | null;
   numOfAdults: number;
-  numOfChildren: number;
   priceAdult: number;
-  priceChild: number;
   totalPriceAdults: number;
+  numOfChildren: number;
+  priceChild: number;
   totalPriceChildren: number;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  note?: string;
 }
 
 /**
@@ -60,3 +60,13 @@ export const bookTour = async (
   );
   return response.data.result;
 };
+
+/**
+ * Lấy danh sách booking của user đăng nhập
+ */
+export const getBookings = async (): Promise<BookingResponse[]> => {
+  const response = await api.get<ApiResponse<BookingResponse[]>>("/bookings");
+  return response.data.result;
+};
+
+
