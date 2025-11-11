@@ -1,4 +1,3 @@
-// src/pages/TourDetailPage.tsx
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

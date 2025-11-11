@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAllToursAdmin, searchTours } from "../services/tour.service";
+import { getAllToursAdmin, searchTours, deleteTour } from "../services/tour.service";
 import { Link } from "react-router-dom";
 import {
     Search,
@@ -51,7 +51,10 @@ const AdminToursManagement: React.FC = () => {
         result.sort((a, b) => {
             switch (sortBy) {
                 case "date":
-                    return new Date(b.startDate || 0).getTime() - new Date(a.startDate || 0).getTime();
+                    // Sửa logic sort: Cần parse ngày "dd/MM/yyyy"
+                    const dateA = a.startDate ? a.startDate.split('/').reverse().join('-') : '1970-01-01';
+                    const dateB = b.startDate ? b.startDate.split('/').reverse().join('-') : '1970-01-01';
+                    return new Date(dateB).getTime() - new Date(dateA).getTime();
                 case "bookings":
                     return (b.totalBookings || 0) - (a.totalBookings || 0);
                 case "price":
@@ -64,19 +67,25 @@ const AdminToursManagement: React.FC = () => {
         return result;
     }, [tours, searchKeyword, sortBy]);
 
+    
+    // Cập nhật mutationFn để gọi API deleteTour
     const deleteTourMutation = useMutation({
         mutationFn: async (tourId: string) => {
-            // TODO: Implement delete API
-            console.log("Delete tour:", tourId);
+            // SỬA Ở ĐÂY: Bỏ console.log và gọi API thật
+            await deleteTour(tourId);
         },
         onSuccess: () => {
+            // Khi thành công, làm mới danh sách và báo toast
             queryClient.invalidateQueries({ queryKey: ["adminToursManagement"] });
             toast.success("Xóa tour thành công!");
         },
-        onError: () => {
-            toast.error("Có lỗi xảy ra khi xóa tour");
+        onError: (error: any) => {
+            // Nếu có lỗi từ backend (ví dụ: lỗi 500)
+            toast.error("Có lỗi xảy ra: " + (error.response?.data?.message || error.message));
         },
     });
+    
+
 
     const handleDeleteTour = (tourId: string, tourTitle: string) => {
         if (window.confirm(`Bạn có chắc muốn xóa tour "${tourTitle}"?`)) {
@@ -222,7 +231,9 @@ const AdminToursManagement: React.FC = () => {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2 text-sm text-gray-900">
                                             <Calendar size={16} className="text-gray-400" />
-                                            {new Date(tour.startDate || "").toLocaleDateString("vi-VN")}
+                                            
+                                            {tour.startDate || "N/A"}
+                      
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">

@@ -1,4 +1,3 @@
-// src/pages/EditTourPage.tsx - WITH IMAGE UPLOAD & DELETE
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -9,7 +8,7 @@ import {
 import toast from "react-hot-toast";
 import api from "../services/api";
 import { getTourById } from "../services/tour.service";
-import { uploadMultipleImages } from "../services/cloudinary.service";
+import { uploadImagesToCloudinary, deleteImageFromCloudinary } from "../services/upload.service";
 
 interface TourFormData {
     title: string;
@@ -43,7 +42,6 @@ const EditTourPage: React.FC = () => {
         itinerary: [""],
         imageUrls: [],
     });
-
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
@@ -59,6 +57,24 @@ const EditTourPage: React.FC = () => {
     // Load tour data into form
     useEffect(() => {
         if (tour) {
+            
+            /**
+             * Chuyển đổi ngày từ API (dd/MM/yyyy) sang ngày cho input (YYYY-MM-DD)
+             */
+            const formatApiDateToInputDate = (apiDate: string | null): string => {
+              if (!apiDate) return "";
+              const parts = apiDate.split('/'); // API gửi "dd/MM/yyyy"
+              if (parts.length === 3) {
+                // parts[0] = dd, parts[1] = MM, parts[2] = yyyy
+                return `${parts[2]}-${parts[1]}-${parts[0]}`; // Trả về "YYYY-MM-DD"
+              }
+              // Nếu định dạng đã đúng (ví dụ: YYYY-MM-DD) thì giữ nguyên
+              if (apiDate.includes('-')) {
+                  return apiDate;
+              }
+              return ""; // Trả về chuỗi rỗng nếu không đúng định dạng
+            };
+
             setFormData({
                 title: tour.title || "",
                 description: tour.description || "",
@@ -68,8 +84,9 @@ const EditTourPage: React.FC = () => {
                 priceChild: tour.priceChild || 0,
                 duration: tour.duration || "",
                 destination: tour.destination || "",
-                startDate: tour.startDate || "",
-                endDate: tour.endDate || "",
+                // Áp dụng hàm chuyển đổi cho ngày tháng
+                startDate: formatApiDateToInputDate(tour.startDate),
+                endDate: formatApiDateToInputDate(tour.endDate),
                 itinerary: tour.itinerary && tour.itinerary.length > 0 ? tour.itinerary : [""],
                 imageUrls: tour.imageUrls || [],
             });
@@ -80,7 +97,6 @@ const EditTourPage: React.FC = () => {
     // Handle file selection
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
-        
         const validFiles = files.filter(file => {
             if (!file.type.startsWith('image/')) {
                 toast.error(`${file.name} không phải là file ảnh`);
@@ -108,9 +124,21 @@ const EditTourPage: React.FC = () => {
         setPreviewUrls(prev => prev.filter((_, i) => i !== index));
     };
 
-    // Remove existing image
-    const removeExistingImage = (index: number) => {
-        setExistingImages(prev => prev.filter((_, i) => i !== index));
+    // Remove existing image (gọi API xóa)
+    const removeExistingImage = async (index: number) => {
+        const imageUrl = existingImages[index];
+        
+        try {
+            // Gọi API xóa ảnh khỏi Cloudinary (thông qua backend)
+            await deleteImageFromCloudinary(imageUrl);
+            
+            // Nếu thành công, xóa khỏi state
+            setExistingImages(prev => prev.filter((_, i) => i !== index));
+            toast.success("Đã xóa ảnh");
+        } catch (error) {
+            console.error("Failed to delete image:", error);
+            toast.error("Lỗi khi xóa ảnh");
+        }
     };
 
     const updateTourMutation = useMutation({
@@ -121,7 +149,7 @@ const EditTourPage: React.FC = () => {
             if (selectedFiles.length > 0) {
                 setIsUploading(true);
                 try {
-                    newUploadedUrls = await uploadMultipleImages(selectedFiles);
+                    newUploadedUrls = await uploadImagesToCloudinary(selectedFiles);
                     toast.success(`Đã upload ${newUploadedUrls.length} ảnh mới`);
                 } catch (error) {
                     toast.error("Lỗi khi upload ảnh");
@@ -138,6 +166,8 @@ const EditTourPage: React.FC = () => {
                 ...data,
                 itinerary: data.itinerary.filter(item => item.trim() !== ""),
                 imageUrls: allImageUrls,
+                // Khi gửi đi, input type="date" đã tự động trả về định dạng YYYY-MM-DD
+                // Backend Spring Boot mặc định có thể đọc được định dạng này
                 startDate: data.startDate || null,
                 endDate: data.endDate || null,
             };
@@ -159,7 +189,6 @@ const EditTourPage: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
         if (existingImages.length === 0 && selectedFiles.length === 0) {
             toast.error("Vui lòng giữ ít nhất 1 ảnh");
             return;

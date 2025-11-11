@@ -1,4 +1,3 @@
-// src/pages/CreateTourPage.tsx - WITH IMAGE UPLOAD
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
@@ -8,7 +7,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../services/api";
-import { uploadMultipleImages } from "../services/cloudinary.service";
+import { uploadImagesToCloudinary } from "../services/upload.service";
 
 interface TourFormData {
   title: string;
@@ -39,7 +38,6 @@ const CreateTourPage: React.FC = () => {
     itinerary: [""],
     imageUrls: [],
   });
-
   const [errors, setErrors] = useState<Partial<Record<keyof TourFormData, string>>>({});
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -48,7 +46,6 @@ const CreateTourPage: React.FC = () => {
   // Handle file selection
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    
     // Validate file types
     const validFiles = files.filter(file => {
       if (!file.type.startsWith('image/')) {
@@ -66,7 +63,6 @@ const CreateTourPage: React.FC = () => {
 
     // Create preview URLs
     const newPreviewUrls = validFiles.map(file => URL.createObjectURL(file));
-    
     setSelectedFiles(prev => [...prev, ...validFiles]);
     setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
   };
@@ -74,7 +70,6 @@ const CreateTourPage: React.FC = () => {
   // Remove image from selection
   const removeImage = (index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    
     // Revoke old preview URL to prevent memory leak
     URL.revokeObjectURL(previewUrls[index]);
     setPreviewUrls(prev => prev.filter((_, i) => i !== index));
@@ -88,7 +83,8 @@ const CreateTourPage: React.FC = () => {
       if (selectedFiles.length > 0) {
         setIsUploading(true);
         try {
-          uploadedUrls = await uploadMultipleImages(selectedFiles);
+      
+          uploadedUrls = await uploadImagesToCloudinary(selectedFiles);
           toast.success(`Đã upload ${uploadedUrls.length} ảnh thành công`);
         } catch (error) {
           toast.error("Lỗi khi upload ảnh");
@@ -123,10 +119,8 @@ const CreateTourPage: React.FC = () => {
       console.error("Create tour error:", error);
     },
   });
-
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof TourFormData, string>> = {};
-
     if (!formData.title.trim()) newErrors.title = "Tiêu đề không được để trống";
     if (!formData.description.trim()) newErrors.description = "Mô tả không được để trống";
     if (formData.initialQuantity <= 0) newErrors.initialQuantity = "Số lượng phải lớn hơn 0";
@@ -139,10 +133,8 @@ const CreateTourPage: React.FC = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (selectedFiles.length === 0) {
       toast.error("Vui lòng chọn ít nhất 1 ảnh");
       return;
@@ -152,20 +144,17 @@ const CreateTourPage: React.FC = () => {
       createTourMutation.mutate(formData);
     }
   };
-
   const handleChange = (field: keyof TourFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
-
   const handleArrayChange = (field: 'itinerary', index: number, value: string) => {
     const newArray = [...formData[field]];
     newArray[index] = value;
     setFormData(prev => ({ ...prev, [field]: newArray }));
   };
-
   const addArrayItem = (field: 'itinerary') => {
     setFormData(prev => ({
       ...prev,
@@ -181,7 +170,6 @@ const CreateTourPage: React.FC = () => {
   };
 
   const isPending = createTourMutation.isPending || isUploading;
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-8">

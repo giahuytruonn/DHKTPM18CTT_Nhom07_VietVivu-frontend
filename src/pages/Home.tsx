@@ -1,4 +1,3 @@
-// src/pages/Home.tsx
 import { Link } from "react-router-dom";
 import React, { useEffect, useState, useMemo } from "react";
 import SearchBar from "../components/layout/SearchBar";
@@ -101,7 +100,6 @@ export default function Home() {
       return { destinations: [], featuredTours: [] };
     }
 
-    // === 1. TÁCH ĐIỂM ĐẾN (LOGIC CẬP NHẬT) ===
     const allDestinations: string[] = [];
     tours.forEach((t: TourResponse) => {
       if (t.destination) {
@@ -153,7 +151,6 @@ export default function Home() {
       .slice(0, 12); // Lấy 12 mục ĐÃ CÓ ẢNH
     // --- KẾT THÚC THAY ĐỔI ---
 
-    // === 2. TOUR NỔI BẬT (Giữ nguyên logic) ===
     const withImages = tours
       .filter((t: TourResponse) => Array.isArray(t.imageUrls) && t.imageUrls.length > 0)
       .slice(0, 3)

@@ -1,4 +1,3 @@
-// src/pages/AllToursPage.tsx - UPDATED VERSION
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getTours, getAllToursAdmin, searchTours } from "../services/tour.service";

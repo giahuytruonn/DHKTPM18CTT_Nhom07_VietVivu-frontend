@@ -1,4 +1,3 @@
-// src/pages/AdminDashboard.tsx - FIXED LAYOUT
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getAllToursAdmin } from "../services/tour.service";
