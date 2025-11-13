@@ -1,5 +1,3 @@
-// 🏠 Pages
-// src/routes/AppRoutes.tsx
 import {
   BrowserRouter as Router,
   Route,
@@ -12,6 +10,8 @@ import Authenticate from "../components/auth/Authenticate";
 import { useAuthStore } from "../stores/useAuthStore";
 import BookingPage from "../pages/BookingPage";
 import RequestBookingPage from "../pages/RequestBookingPage";
+import ExplorePage from "../pages/ExplorePage";
+import VideoFeedPage from "../pages/VideoFeedPage"; // Đã đổi tên
 
 // 💳 Payment Flow
 import Payment from "../pages/Payment";
@@ -52,6 +52,19 @@ const AppRoutes = () => {
           path="/"
           element={authenticated ? <Home /> : <Navigate to="/login" replace />}
         />
+        
+        {/* 🗺️ Trang Video Feed - Công khai */}
+        <Route
+          path="/feed"
+          element={<VideoFeedPage />} // Đã đổi component
+        />
+
+        {/* 🗺️ Trang Khám phá Video - Công khai */}
+        <Route
+          path="/explore"
+          element={<ExplorePage />}
+        />
+        
         <Route
           path="/bookings"
           element={

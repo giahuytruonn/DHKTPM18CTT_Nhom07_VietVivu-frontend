@@ -82,6 +82,14 @@ const Home: React.FC = () => {
 
       <ChatBox />
 
+      {/* 🎬 Nút chuyển đến trang Video Feed */}
+      <button
+        onClick={() => navigate("/feed")}
+        className="bg-red-600 text-white px-6 py-2 rounded-lg cursor-pointer hover:bg-red-700 transition mb-6"
+      >
+        🎬 Lướt Video (Dạng Feed)
+      </button>
+
       {/* ✅ Nút chuyển sang Stepper booking */}
       <button
         onClick={() => navigate("/book-tour")}
@@ -89,6 +97,15 @@ const Home: React.FC = () => {
       >
         🧳 Đặt tour ngay
       </button>
+      
+      {/* 🎥 Nút chuyển đến trang Explore Video */}
+      <button
+        onClick={() => navigate("/explore")}
+        className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 cursor-pointer transition mb-6"
+      >
+        🎥 Video Khám phá (Grid)
+      </button>
+
       <button
         onClick={() => navigate("/bookings")}
         className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 cursor-pointer transition mb-6"
