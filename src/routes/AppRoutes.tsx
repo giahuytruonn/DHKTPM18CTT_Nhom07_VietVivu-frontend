@@ -6,13 +6,6 @@ import {
   Routes,
   Navigate,
 } from "react-router-dom";
-<<<<<<< HEAD
-import { useAuthStore } from "../stores/useAuthStore";
-
-import Home from "../pages/Home";
-import Login from "../pages/LoginPage";
-import Authenticate from "../components/auth/Authenticate";
-=======
 import Home from "../pages/Home";
 import Login from "../pages/LoginPage";
 import Authenticate from "../components/auth/Authenticate";
@@ -21,17 +14,13 @@ import BookingPage from "../pages/BookingPage";
 import RequestBookingPage from "../pages/RequestBookingPage";
 
 // 💳 Payment Flow
->>>>>>> d7cc034576ccbc9b3717413130d6f31c790aeea7
 import Payment from "../pages/Payment";
 import PaymentSuccess from "../pages/PaymentSuccess";
 import PaymentCancel from "../pages/PaymentCancel";
 import BookingStepper from "../components/ui/BookingStepper";
-<<<<<<< HEAD
 import AdminDashboard from "../pages/AdminDashboard";
-=======
 import BookingRequestPage from "../pages/BookingRequestPage";
 import BookingRequestDetailPage from "../pages/BookingRequestDetailPage";
->>>>>>> d7cc034576ccbc9b3717413130d6f31c790aeea7
 
 const AppRoutes = () => {
   const { authenticated, isAdmin } = useAuthStore();
