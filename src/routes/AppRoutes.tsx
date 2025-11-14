@@ -6,47 +6,77 @@ import {
 } from "react-router-dom";
 import { useAuthStore } from "../stores/useAuthStore";
 
-// 🏠 Pages
 import Home from "../pages/Home";
 import Login from "../pages/LoginPage";
 import Authenticate from "../components/auth/Authenticate";
-
-// 💳 Payment Flow
 import Payment from "../pages/Payment";
 import PaymentSuccess from "../pages/PaymentSuccess";
 import PaymentCancel from "../pages/PaymentCancel";
-
-// 🧭 Booking Flow (Stepper UI)
 import BookingStepper from "../components/ui/BookingStepper";
+import AdminDashboard from "../pages/AdminDashboard";
 
 const AppRoutes = () => {
-  const authenticated = useAuthStore((s) => s.authenticated);
+  const { authenticated, isAdmin } = useAuthStore();
 
   return (
     <Router>
       <Routes>
-        {/* 🧑‍💻 Đăng nhập / xác thực */}
+        {/* Đăng nhập */}
         <Route
           path="/login"
-          element={authenticated ? <Navigate to="/" replace /> : <Login />}
+          element={
+            authenticated ? (
+              isAdmin() ? (
+                <Navigate to="/admin" replace />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            ) : (
+              <Login />
+            )
+          }
         />
+
+        {/* Auth callback */}
         <Route path="/authenticate" element={<Authenticate />} />
 
-        {/* 🧭 Quy trình đặt tour (3 bước: booking → payment → invoice) */}
+        {/* Admin Dashboard */}
+        <Route
+          path="/admin"
+          element={
+            authenticated && isAdmin() ? (
+              <AdminDashboard />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+
+        {/* Quy trình đặt tour */}
         <Route path="/book-tour" element={<BookingStepper />} />
 
-        {/* 💳 Thanh toán */}
+        {/* Thanh toán */}
         <Route path="/payment" element={<Payment />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/payment-cancel" element={<PaymentCancel />} />
 
-        {/* 🏠 Trang chủ */}
+        {/* Trang chủ */}
         <Route
           path="/"
-          element={authenticated ? <Home /> : <Navigate to="/login" replace />}
+          element={
+            authenticated ? (
+              isAdmin() ? (
+                <Navigate to="/admin" replace />
+              ) : (
+                <Home />
+              )
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
         />
 
-        {/* ❓ Fallback route */}
+        {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
