@@ -21,6 +21,7 @@ import BookingStepper from "../components/ui/BookingStepper";
 import AdminDashboard from "../pages/AdminDashboard";
 import BookingRequestPage from "../pages/BookingRequestPage";
 import BookingRequestDetailPage from "../pages/BookingRequestDetailPage";
+import AdminLayout from "../components/layout/AdminLayout";
 
 const AppRoutes = () => {
   const { authenticated, isAdmin } = useAuthStore();
@@ -47,17 +48,25 @@ const AppRoutes = () => {
         {/* Auth callback */}
         <Route path="/authenticate" element={<Authenticate />} />
 
-        {/* Admin Dashboard */}
+        {/* Admin Routes with Layout */}
         <Route
           path="/admin"
           element={
             authenticated && isAdmin() ? (
-              <AdminDashboard />
+              <AdminLayout />
             ) : (
               <Navigate to="/login" replace />
             )
           }
-        />
+        >
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="bookings-request" element={<BookingRequestPage />} />
+          <Route
+            path="bookings-request/:requestId"
+            element={<BookingRequestDetailPage />}
+          />
+        </Route>
 
         {/* Quy trình đặt tour */}
         <Route path="/book-tour" element={<BookingStepper />} />
@@ -86,16 +95,6 @@ const AppRoutes = () => {
           path="/bookings"
           element={
             authenticated ? <BookingPage /> : <Navigate to="/login" replace />
-          }
-        />
-        <Route
-          path="/bookings-request"
-          element={
-            authenticated ? (
-              <BookingRequestPage />
-            ) : (
-              <Navigate to="/login" replace />
-            )
           }
         />
         <Route
