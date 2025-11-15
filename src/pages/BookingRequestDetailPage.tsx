@@ -14,6 +14,10 @@ import {
   CardContent,
   Grid,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import {
   ArrowLeft,
@@ -41,6 +45,7 @@ const BookingRequestDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
   const fetchData = async () => {
     if (!requestId) {
@@ -101,12 +106,14 @@ const BookingRequestDetailPage = () => {
     }
   };
 
-  const handleDeny = async () => {
+  const handleDenyClick = () => {
+    setConfirmDialogOpen(true);
+  };
+
+  const handleDenyConfirm = async () => {
     if (!requestId || !request) return;
 
-    if (!window.confirm("Bạn có chắc chắn muốn từ chối yêu cầu này không?")) {
-      return;
-    }
+    setConfirmDialogOpen(false);
 
     try {
       setActionLoading(true);
@@ -743,7 +750,7 @@ const BookingRequestDetailPage = () => {
                         <XCircle size={20} />
                       )
                     }
-                    onClick={handleDeny}
+                    onClick={handleDenyClick}
                     disabled={actionLoading}
                     sx={{
                       background:
@@ -806,6 +813,157 @@ const BookingRequestDetailPage = () => {
           </Grid>
         )}
       </Grid>
+          
+      {/* Custom Confirmation Dialog */}
+      <Dialog
+        open={confirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "24px",
+            background: "rgba(255, 255, 255, 0.98)",
+            backdropFilter: "blur(10px)",
+            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+            border: "1px solid rgba(255, 255, 255, 0.3)",
+          },
+        }}
+      >
+        <Box
+          sx={{
+            background: "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)",
+            p: 3,
+            borderRadius: "24px 24px 0 0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            mb: 2,
+          }}
+        >
+          <Box
+            sx={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              background: "rgba(255, 255, 255, 0.2)",
+              backdropFilter: "blur(10px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "2px solid rgba(255, 255, 255, 0.3)",
+            }}
+          >
+            <XCircle size={32} color="white" />
+          </Box>
+        </Box>
+
+        <DialogTitle
+          sx={{
+            textAlign: "center",
+            pb: 1,
+            pt: 0,
+          }}
+        >
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 800,
+              background: "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Xác nhận từ chối
+          </Typography>
+        </DialogTitle>
+
+        <DialogContent sx={{ textAlign: "center", px: 4, pb: 2 }}>
+          <Typography
+            variant="body1"
+            sx={{
+              color: "text.secondary",
+              fontSize: "1.1rem",
+              lineHeight: 1.6,
+              mb: 2,
+            }}
+          >
+            Bạn có chắc chắn muốn từ chối yêu cầu này không?
+          </Typography>
+          <Alert
+            severity="warning"
+            icon={<AlertCircle size={20} />}
+            sx={{
+              borderRadius: "12px",
+              background: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
+              border: "1px solid #F59E0B",
+              "& .MuiAlert-icon": {
+                color: "#F59E0B",
+              },
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{ color: "#92400E", fontWeight: 600 }}
+            >
+              Hành động này không thể hoàn tác
+            </Typography>
+          </Alert>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            px: 4,
+            pb: 3,
+            gap: 2,
+            justifyContent: "center",
+          }}
+        >
+          <Button
+            onClick={() => setConfirmDialogOpen(false)}
+            variant="outlined"
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              px: 4,
+              py: 1.5,
+              borderWidth: 2,
+              borderColor: "#3B82F6",
+              color: "#3B82F6",
+              fontWeight: 600,
+              "&:hover": {
+                borderWidth: 2,
+                borderColor: "#2563EB",
+                background: "rgba(59, 130, 246, 0.1)",
+              },
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleDenyConfirm}
+            variant="contained"
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              px: 4,
+              py: 1.5,
+              background: "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)",
+              fontWeight: 600,
+              boxShadow: "0 4px 16px rgba(239, 68, 68, 0.3)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)",
+                transform: "scale(1.02)",
+                boxShadow: "0 6px 20px rgba(239, 68, 68, 0.4)",
+              },
+            }}
+            startIcon={<XCircle size={20} />}
+          >
+            Xác nhận từ chối
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

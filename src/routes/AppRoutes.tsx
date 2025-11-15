@@ -90,33 +90,6 @@ const AppRoutes = () => {
               <Navigate to="/login" replace />
             )
           }
-        />
-        <Route
-          path="/bookings"
-          element={
-            authenticated ? <BookingPage /> : <Navigate to="/login" replace />
-          }
-        />
-        <Route
-          path="/bookings-request/:requestId"
-          element={
-            authenticated ? (
-              <BookingRequestDetailPage />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        <Route
-          path="/bookings-request-cancel"
-          element={
-            authenticated ? (
-              <RequestBookingPage />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

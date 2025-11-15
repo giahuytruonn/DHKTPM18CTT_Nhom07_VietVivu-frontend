@@ -27,6 +27,8 @@ import Footer from "./components/layout/Footer";
 import { useAuthStore } from "./stores/useAuthStore";
 import BookingRequestPage from "./pages/BookingRequestPage";
 import BookingRequestDetailPage from "./pages/BookingRequestDetailPage";
+import BookingPage from "./pages/BookingPage";
+import RequestBookingPage from "./pages/RequestBookingPage";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +84,22 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                     element={
                       <ProtectedRoute>
                         <FavoriteToursPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/bookings"
+                    element={
+                      <ProtectedRoute>
+                        <BookingPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/request-booking"
+                    element={
+                      <ProtectedRoute>
+                        <RequestBookingPage />
                       </ProtectedRoute>
                     }
                   />
