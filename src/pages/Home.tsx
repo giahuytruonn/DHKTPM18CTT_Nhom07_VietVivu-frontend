@@ -284,7 +284,7 @@ export default function Home() {
               destinations.map((dest) => (
                 <Link
                   key={dest.id}
-                  to="#"
+                  to={`/tours?destination=${encodeURIComponent(dest.name)}`}
                   className="group relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                 >
                   <img
