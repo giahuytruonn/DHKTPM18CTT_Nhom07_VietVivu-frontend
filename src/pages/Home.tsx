@@ -513,6 +513,54 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="py-16 bg-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+                Tại sao chọn <span className="text-indigo-600">VietVivu</span>?
+              </h2>
+              <p className="text-lg text-gray-600 mb-8">
+                Chúng tôi không chỉ là nền tảng đặt tour – chúng tôi là người bạn đồng hành
+                trong mỗi chuyến đi, mang đến trải nghiệm cá nhân hóa và đáng nhớ.
+              </p>
+              <div className="space-y-4">
+                <Link
+                  to="/about"
+                  className="block w-full text-center bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-all"
+                >
+                  Tìm hiểu về chúng tôi
+                </Link>
+                <Link
+                  to="/blog"
+                  className="block w-full text-center border-2 border-indigo-600 text-indigo-600 py-3 rounded-lg font-semibold hover:bg-indigo-50 transition-all"
+                >
+                  Đọc blog du lịch
+                </Link>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-6 text-center">
+              <div className="bg-white p-6 rounded-xl shadow-md">
+                <div className="text-3xl font-bold text-indigo-600">500+</div>
+                <p className="text-gray-600 mt-2">Tour đã tổ chức</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-md">
+                <div className="text-3xl font-bold text-indigo-600">4.9★</div>
+                <p className="text-gray-600 mt-2">Đánh giá trung bình</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-md">
+                <div className="text-3xl font-bold text-indigo-600">10k+</div>
+                <p className="text-gray-600 mt-2">Du khách hài lòng</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-md">
+                <div className="text-3xl font-bold text-indigo-600">24/7</div>
+                <p className="text-gray-600 mt-2">Hỗ trợ khách hàng</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ===== BLOG ===== */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

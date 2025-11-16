@@ -26,6 +26,8 @@ import "./index.css";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import { useAuthStore } from "./stores/useAuthStore";
+import BlogPage from "./pages/BlogPage";
+import AboutPage from "./pages/AboutPage";
 
 const queryClient = new QueryClient();
 
@@ -38,7 +40,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 // Admin Route Component
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { authenticated, token } = useAuthStore();
-  
+
   const isAdmin = token ? (() => {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
@@ -50,7 +52,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!authenticated) return <Navigate to="/login" replace />;
   if (!isAdmin) return <Navigate to="/" replace />;
-  
+
   return <>{children}</>;
 };
 
@@ -72,41 +74,15 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="/authenticate" element={<Authenticate />} />
                   <Route path="/tours" element={<AllToursPage />} />
                   <Route path="/tours/:tourId" element={<TourDetailPage />} />
-                  
-                  {/* Protected User Routes */}
-                  <Route
-                    path="/favorite-tours"
-                    element={
-                      <ProtectedRoute>
-                        <FavoriteToursPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  
-                  {/* Placeholder routes */}
-                  <Route
-                    path="/about"
-                    element={
-                      <div className="min-h-screen flex items-center justify-center">
-                        <div className="text-center">
-                          <h2 className="text-2xl font-bold mb-4">Về chúng tôi</h2>
-                          <p className="text-gray-600">Đang phát triển...</p>
-                        </div>
-                      </div>
-                    }
-                  />
-                  <Route
-                    path="/blog"
-                    element={
-                      <div className="min-h-screen flex items-center justify-center">
-                        <div className="text-center">
-                          <h2 className="text-2xl font-bold mb-4">Blog</h2>
-                          <p className="text-gray-600">Đang phát triển...</p>
-                        </div>
-                      </div>
-                    }
-                  />
+
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/blog" element={<BlogPage />} />
+
+
+
                 </Routes>
+
+                
                 <Footer />
               </>
             }
@@ -154,6 +130,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               }
             />
           </Route>
+
+
         </Routes>
       </BrowserRouter>
       <Toaster position="top-center" />
