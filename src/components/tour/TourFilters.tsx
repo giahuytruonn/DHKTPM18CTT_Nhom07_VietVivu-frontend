@@ -1,5 +1,5 @@
-// src/components/tour/TourFilters.tsx - OPTIMIZED UI VERSION
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+// SỬA ĐƯỜNG DẪN: Dùng ../../ để đi ra khỏi 'components/tour'
 import type { TourSearchParams } from "../../services/tour.service";
 import {
     RotateCcw,
@@ -30,18 +30,34 @@ const TourFilters: React.FC<Props> = ({
     onApplyFilters,
     isAdmin = false,
 }) => {
+    // State nội bộ của component này
     const [localFilters, setLocalFilters] = useState<TourSearchParams>(filters);
     const [priceRange, setPriceRange] = useState({
         min: filters.minPrice || 0,
         max: filters.maxPrice || 50000000,
     });
 
+    // EFFECT ĐỒNG BỘ PROP:
+    // Khi prop 'filters' (từ AllToursPage) thay đổi, cập nhật state nội bộ
+    useEffect(() => {
+        // Gán 'filters' (chứa 'destination' từ URL) vào 'localFilters'
+        setLocalFilters(filters);
+        
+        // Cập nhật thanh giá tiền
+        setPriceRange({
+            min: filters.minPrice || 0,
+            max: filters.maxPrice || 50000000,
+        });
+    }, [filters]); // Chạy lại khi 'filters' thay đổi
+
     const MAX_PRICE = 50000000;
 
+    // Khi người dùng gõ vào ô input
     const handleLocalChange = <K extends keyof TourSearchParams>(
         key: K,
         value: TourSearchParams[K]
     ) => {
+        // Cập nhật state nội bộ
         setLocalFilters(prev => ({ ...prev, [key]: value }));
     };
 
@@ -56,10 +72,13 @@ const TourFilters: React.FC<Props> = ({
         handleLocalChange(type === 'min' ? 'minPrice' : 'maxPrice', value);
     };
 
+    // Khi nhấn nút "Áp dụng"
     const handleApply = () => {
+        // Gửi state nội bộ (localFilters) lên cho cha (AllToursPage)
         Object.entries(localFilters).forEach(([key, value]) => {
             onFilterChange(key as keyof TourSearchParams, value);
         });
+        // Báo cho cha biết để gọi API
         onApplyFilters();
     };
 
@@ -76,7 +95,7 @@ const TourFilters: React.FC<Props> = ({
         };
         setLocalFilters(resetFilters);
         setPriceRange({ min: 0, max: MAX_PRICE });
-        onReset();
+        onReset(); // Gọi hàm onReset của cha
     };
 
     const activeFiltersCount = Object.values(localFilters).filter(
@@ -120,6 +139,7 @@ const TourFilters: React.FC<Props> = ({
                     <input
                         type="text"
                         placeholder="Hà Nội, Đà Nẵng..."
+                        // HIỂN THỊ: Giá trị của ô input được đọc từ state nội bộ
                         value={localFilters.destination || ""}
                         onChange={(e) => handleLocalChange("destination", e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"

@@ -250,12 +250,14 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       {/* ===== HERO ===== */}
       <section
-        className="relative h-[70vh] bg-cover bg-center bg-no-repeat flex items-center justify-center text-white overflow-hidden"
+        className="relative h-[70vh] bg-cover bg-center bg-no-repeat flex items-center justify-center text-white"
+        // CẬP NHẬT: Xóa 'overflow-hidden' để cho phép dropdown hiển thị
         style={{
           backgroundImage: `url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')`,
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-r from-gray-900/60 to-indigo-900/30"></div>
+        {/* CẬP NHẬT: Đảm bảo z-index của content là 10 */}
         <div className="relative z-10 text-center px-4 max-w-4xl animate-fade-in">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight drop-shadow-lg">
             Đi theo cách thân thiện hơn
@@ -264,6 +266,7 @@ export default function Home() {
             Thật sự hiểu một vùng đất qua những người biết rõ nhất — hướng dẫn
             viên địa phương.
           </p>
+          {/* SearchBar sẽ có z-40, nằm trong z-10 này, nhưng vẫn hoạt động vì cha của nó (section) không còn overflow-hidden */}
           <SearchBar className="max-w-2xl mx-auto shadow-lg" />
         </div>
       </section>

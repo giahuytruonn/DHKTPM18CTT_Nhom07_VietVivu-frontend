@@ -1,6 +1,8 @@
 // src/pages/AllToursPage.tsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+// SỬA ĐƯỜNG DẪN: Dùng ../ để đi ra khỏi 'pages'
 import {
   getTours,
   getAllToursAdmin,
@@ -27,13 +29,36 @@ const initialFilterState: TourSearchParams = {
 const TOURS_PER_PAGE = 9;
 
 const AllToursPage: React.FC = () => {
-  const [filters, setFilters] = useState<TourSearchParams>(initialFilterState);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialDestination = searchParams.get("destination");
+
+  const [filters, setFilters] = useState<TourSearchParams>({
+    ...initialFilterState,
+    destination: initialDestination || null, // GÁN VÀO ĐIỂM ĐẾN
+  });
   const [appliedFilters, setAppliedFilters] =
-    useState<TourSearchParams>(initialFilterState);
+    useState<TourSearchParams>({
+      ...initialFilterState,
+      destination: initialDestination || null, // GÁN VÀO ĐIỂM ĐẾN
+    });
+
   const [currentPage, setCurrentPage] = useState(1);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const { token } = useAuthStore();
+
+  useEffect(() => {
+    const destination = searchParams.get("destination");
+    const keyword = searchParams.get("keyword");
+    const newFilters = {
+      ...initialFilterState,
+      destination: destination || null, // GÁN VÀO ĐIỂM ĐẾN
+      keyword: keyword || null,
+    };
+    setFilters(newFilters);
+    setAppliedFilters(newFilters);
+    setCurrentPage(1);
+  }, [searchParams]);
 
   const isAdmin = useMemo(() => {
     if (!token) return false;
@@ -55,7 +80,7 @@ const AllToursPage: React.FC = () => {
   const queryKey = [
     "allTours",
     appliedFilters.keyword,
-    appliedFilters.destination,
+    appliedFilters.destination, // Dùng 'destination' để gọi API
     appliedFilters.minPrice,
     appliedFilters.maxPrice,
     appliedFilters.startDate,
@@ -95,12 +120,19 @@ const AllToursPage: React.FC = () => {
     setAppliedFilters({ ...filters });
     setCurrentPage(1);
     setShowMobileFilters(false);
+    const newParams = new URLSearchParams();
+    if (filters.destination) newParams.set("destination", filters.destination);
+    if (filters.keyword) newParams.set("keyword", filters.keyword);
+    if (!filters.destination) newParams.delete("destination");
+    if (!filters.keyword) newParams.delete("keyword");
+    setSearchParams(newParams);
   };
 
   const handleResetFilters = () => {
     setFilters(initialFilterState);
     setAppliedFilters(initialFilterState);
     setCurrentPage(1);
+    setSearchParams({});
   };
 
   const handlePageChange = (page: number) => {
@@ -111,14 +143,11 @@ const AllToursPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* GRID: left = filters (desktop), right = header + list */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* LEFT COLUMN: FILTER (desktop) */}
           <div className="hidden lg:block">
-            {/* sticky để filter cố định khi cuộn; top-8/20 tùy bạn muốn cách mép trên bao nhiêu */}
-            <div className="sticky top-0">
+            <div className="sticky top-24">
               <TourFilters
-                filters={filters}
+                filters={filters} // Truyền state 'filters' (đã có destination) xuống
                 onFilterChange={handleFilterChange}
                 onReset={handleResetFilters}
                 onApplyFilters={handleApplyFilters}
@@ -126,25 +155,18 @@ const AllToursPage: React.FC = () => {
               />
             </div>
           </div>
-
-          {/* RIGHT COLUMNS: header + list (chiếm 3 cột trên desktop) */}
           <div className="lg:col-span-3">
-            {/* HEADER */}
             <div className="text-center mb-6">
-
               <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold mb-3">
                 <Sparkles className="w-4 h-4" />
                 Khám phá điểm đến mơ ước
               </div>
-
               <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent mb-2">
                 Khám Phá Tất Cả Tour
               </h1>
-
               <p className="text-sm text-gray-600 max-w-xl mx-auto">
                 Tìm kiếm hành trình hoàn hảo của bạn từ hàng trăm tour chất lượng
               </p>
-
               <div className="flex items-center justify-center gap-6 mt-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-indigo-600">{tours.length}</div>
@@ -155,10 +177,7 @@ const AllToursPage: React.FC = () => {
                   <div className="text-xs text-gray-500">Trang</div>
                 </div>
               </div>
-
             </div>
-
-            {/* MOBILE: filter toggle + collapsible filters */}
             <div className="lg:hidden mb-4">
               <button
                 onClick={() => setShowMobileFilters(!showMobileFilters)}
@@ -168,8 +187,6 @@ const AllToursPage: React.FC = () => {
                 {showMobileFilters ? "Ẩn bộ lọc" : "Hiển thị bộ lọc"}
               </button>
             </div>
-
-            {/** Mobile filters collapsible */}
             {showMobileFilters && (
               <div className="lg:hidden mb-6">
                 <TourFilters
@@ -181,11 +198,8 @@ const AllToursPage: React.FC = () => {
                 />
               </div>
             )}
-
-            {/* TOUR LIST */}
             <div>
               <TourList tours={paginatedTours} isLoading={isLoading} />
-
               {!isLoading && tours.length > 0 && (
                 <div className="mt-6">
                   <PaginationControls
@@ -195,7 +209,6 @@ const AllToursPage: React.FC = () => {
                   />
                 </div>
               )}
-
               {!isLoading && tours.length === 0 && (
                 <div className="bg-white rounded-2xl shadow-lg p-10 text-center">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
