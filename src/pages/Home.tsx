@@ -206,6 +206,7 @@ export default function Home() {
       const promises = uniqueDestinations.map(async (dest) => {
         if (imageCache.has(dest)) {
           return { dest, ...imageCache.get(dest)! };
+
         }
         const result = await fetchDestinationImage(dest);
         imageCache.set(dest, result);
