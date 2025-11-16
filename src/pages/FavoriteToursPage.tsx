@@ -54,7 +54,10 @@ const FavoriteToursPage: React.FC = () => {
 
         {/* Tour List */}
         {favoriteTours.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          // THAY ĐỔI Ở ĐÂY:
+          // Đã đổi từ "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          // sang "flex flex-col gap-8" để mỗi tour là một hàng
+          <div className="flex flex-col gap-8">
             {favoriteTours.map((tour) => (
               <TourCard key={tour.tourId} tour={tour} />
             ))}

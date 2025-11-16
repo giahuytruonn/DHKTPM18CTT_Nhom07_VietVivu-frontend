@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import SearchBar from "../components/layout/SearchBar";
 import {
   Users,
@@ -14,9 +14,56 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getTours } from "../services/tour.service"; 
-import type { TourResponse } from "../types/tour"; 
+import { getTours } from "../services/tour.service";
+import type { TourResponse } from "../types/tour";
 
+const PEXELS_API_KEY = import.meta.env.VITE_PEXELS_API_KEY;
+
+if (!PEXELS_API_KEY) {
+  console.error("REACT_APP_PEXELS_API_KEY is missing in .env file!");
+}
+
+// === LẤY ẢNH ĐỊA ĐIỂM TỪ PEXELS (CHÍNH XÁC + KHÔNG TRÙNG) ===
+const fetchDestinationImage = async (query: string): Promise<{ url: string; id: string }> => {
+  const searchQuery = `${query} Vietnam travel landmark`;
+
+  try {
+    const res = await fetch(
+      `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchQuery)}&per_page=1&orientation=landscape`,
+      {
+        headers: {
+          Authorization: PEXELS_API_KEY!,
+        },
+      }
+    );
+
+    if (!res.ok) throw new Error(`Pexels API error: ${res.status}`);
+
+    const data = await res.json();
+    const photo = data.photos?.[0];
+
+    if (photo) {
+      return {
+        url: photo.src.large || photo.src.medium || photo.src.small,
+        id: photo.id.toString(),
+      };
+    }
+  } catch (error) {
+    console.warn(`[Pexels] Không tìm thấy ảnh cho: ${query}`, error);
+  }
+
+  // === FALLBACK: Dùng Picsum với seed theo tên địa điểm (không trùng) ===
+  const fallbackUrl = `https://picsum.photos/seed/${encodeURIComponent(query)}/800/600`;
+  return {
+    url: fallbackUrl,
+    id: `fallback-${query}`,
+  };
+};
+
+// === CACHE ẢNH ĐỂ TỐI ƯU ===
+const imageCache = new Map<string, { url: string; id: string }>();
+
+// === DỮ LIỆU TĨNH ===
 const blogPosts = [
   {
     date: "Oct 28 2025",
@@ -35,6 +82,7 @@ const blogPosts = [
       "https://luxtraveldmc.com/blog/wp-content/uploads/2019/04/Benefits-of-Private-tour-to-Vietnam-and-Cambodia-2-e1555400956433.jpg",
   },
 ];
+
 const localGuides = [
   {
     id: 1,
@@ -88,70 +136,106 @@ const localGuides = [
   },
 ];
 
+// === SKELETON COMPONENTS ===
+const SkeletonDestination = () => (
+  <div className="group relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-pulse">
+    <div className="w-full h-56 bg-gray-300"></div>
+    <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/70 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300"></div>
+    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+      <div className="h-5 bg-gray-400 rounded w-3/4"></div>
+    </div>
+  </div>
+);
+
+const SkeletonTour = () => (
+  <div className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-pulse flex flex-col">
+    <div className="relative">
+      <div className="w-full h-48 bg-gray-300"></div>
+    </div>
+    <div className="p-6 flex flex-col flex-grow">
+      <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
+      <div className="h-5 bg-gray-400 rounded w-3/4 mb-2"></div>
+      <div className="flex items-center mb-3">
+        <div className="h-4 bg-gray-300 rounded w-20"></div>
+      </div>
+      <div className="flex items-center text-sm text-gray-600 mb-4">
+        <div className="h-4 bg-gray-300 rounded w-24"></div>
+      </div>
+      <div className="border-t pt-4 mt-auto">
+        <div className="flex justify-between items-center">
+          <div className="h-6 bg-gray-400 rounded w-1/3"></div>
+          <div className="h-5 w-5 bg-gray-300 rounded-full"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 export default function Home() {
-  const { data: tours = [], isLoading } = useQuery({
+  const { data: rawTours = [], isLoading } = useQuery({
     queryKey: ["tours-home"],
-    queryFn: getTours, // Sử dụng hàm từ service
+    queryFn: getTours,
     staleTime: 1000 * 60 * 5,
   });
 
-  const { destinations, featuredTours } = useMemo(() => {
-    if (!tours.length) {
-      return { destinations: [], featuredTours: [] };
-    }
+  // === CHỈ LẤY 15 TOUR ĐẦU ===
+  const tours = useMemo(() => rawTours.slice(0, 15), [rawTours]);
 
-    const allDestinations: string[] = [];
+  // === TÁCH ĐỊA ĐIỂM DUY NHẤT (tối đa 12) ===
+  const uniqueDestinations = useMemo(() => {
+    const set = new Set<string>();
     tours.forEach((t: TourResponse) => {
       if (t.destination) {
         const parts = t.destination
           .split(/–|-/)
-          .map((s: string) => s.trim())
-          .filter((s: string) => s.length > 0);
-        allDestinations.push(...parts);
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+        parts.forEach((p) => set.add(p));
       }
     });
+    return Array.from(set).slice(0, 12);
+  }, [tours]);
 
-    const uniqueDests = Array.from(new Set(allDestinations));
+  // === LOAD ẢNH TỪ PEXELS (DYNAMIC + CACHE + KHÔNG TRÙNG) ===
+  const [destinationImages, setDestinationImages] = useState<Record<string, { url: string; id: string }>>({});
 
+  useEffect(() => {
+    if (!uniqueDestinations.length || !PEXELS_API_KEY) return;
 
-    const usedImageUrls = new Set<string>();
-    const destWithImages = uniqueDests
-      .map((dest) => {
-        // 1. Tìm tour có ảnh CHƯA SỬ DỤNG
-        const tourWithUnusedImage = tours.find(
-          (t: TourResponse) =>
-            t.destination?.includes(dest) &&
-            Array.isArray(t.imageUrls) &&
-            t.imageUrls.length > 0 &&
-            !usedImageUrls.has(t.imageUrls[0]) // Kiểm tra ảnh chưa dùng
-        );
-
-        if (tourWithUnusedImage) {
-          const imageUrl = tourWithUnusedImage.imageUrls[0];
-          usedImageUrls.add(imageUrl); // Đánh dấu là đã dùng
-          return { name: dest, image: imageUrl };
+    const loadImages = async () => {
+      const promises = uniqueDestinations.map(async (dest) => {
+        if (imageCache.has(dest)) {
+          return { dest, ...imageCache.get(dest)! };
         }
+        const result = await fetchDestinationImage(dest);
+        imageCache.set(dest, result);
+        return { dest, ...result };
+      });
 
-        // 2. Fallback: Tìm BẤT KỲ tour nào có ảnh (kể cả đã dùng)
-        const tourWithAnyImage = tours.find(
-          (t: TourResponse) =>
-            t.destination?.includes(dest) &&
-            Array.isArray(t.imageUrls) &&
-            t.imageUrls.length > 0
-        );
+      const results = await Promise.all(promises);
+      const map: Record<string, { url: string; id: string }> = {};
+      results.forEach((r) => {
+        map[r.dest] = { url: r.url, id: r.id };
+      });
+      setDestinationImages(map);
+    };
 
-        if (tourWithAnyImage) {
-          return { name: dest, image: tourWithAnyImage.imageUrls[0] };
-        }
+    loadImages();
+  }, [uniqueDestinations]);
 
-        // 3. Nếu không có ảnh, trả về null để lọc bỏ sau
-        return null;
-      })
-      .filter((dest): dest is { name: string; image: string } => dest !== null) // Lọc bỏ các mục null
-      .slice(0, 12); // Lấy 12 mục ĐÃ CÓ ẢNH
-    // --- KẾT THÚC THAY ĐỔI ---
+  // === CHUẨN BỊ DATA CHO RENDER ===
+  const destinations = uniqueDestinations.map((dest) => {
+    const img = destinationImages[dest];
+    return {
+      name: dest,
+      image: img?.url || `https://picsum.photos/seed/loading-${encodeURIComponent(dest)}/800/600`,
+      id: img?.id || `loading-${dest}`,
+    };
+  });
 
-    const withImages = tours
+  // === TOUR NỔI BẬT (3 tour đầu có ảnh) ===
+  const featuredTours = useMemo(() => {
+    return tours
       .filter((t: TourResponse) => Array.isArray(t.imageUrls) && t.imageUrls.length > 0)
       .slice(0, 3)
       .map((t: TourResponse) => ({
@@ -160,17 +244,7 @@ export default function Home() {
         rating: t.favoriteCount > 50 ? 4.9 : t.favoriteCount > 20 ? 4.7 : 4.5,
         reviews: Math.floor(Math.random() * 300) + 50,
       }));
-
-    return { destinations: destWithImages, featuredTours: withImages };
   }, [tours]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-xl text-gray-600">Đang tải tour...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -194,30 +268,35 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== ĐIỂM ĐẾN NỔI BẬT ===== */}
+      {/* ===== ĐIỂM ĐẾN NỔI BẬT (12) ===== */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-center mb-16 text-indigo-800 animate-fade-in-up">
             Điểm đến nổi bật
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-            {destinations.map((dest, index) => (
-              <Link
-                key={index}
-                to="#"
-                className="group relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-              >
-                <img
-                  src={dest.image}
-                  alt={dest.name}
-                  className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/70 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300"></div>
-                <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                  <p className="font-bold text-lg drop-shadow-md">{dest.name}</p>
-                </div>
-              </Link>
-            ))}
+            {isLoading || Object.keys(destinationImages).length === 0 ? (
+              Array(12).fill(0).map((_, i) => <SkeletonDestination key={i} />)
+            ) : (
+              destinations.map((dest) => (
+                <Link
+                  key={dest.id}
+                  to="#"
+                  className="group relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                >
+                  <img
+                    src={dest.image}
+                    alt={dest.name}
+                    className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/70 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300"></div>
+                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                    <p className="font-bold text-lg drop-shadow-md">{dest.name}</p>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -244,6 +323,7 @@ export default function Home() {
                     src={guide.avatar}
                     alt={guide.name}
                     className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
                   />
                   <button className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-all shadow-md">
                     <Heart className="w-5 h-5 text-indigo-600" />
@@ -316,71 +396,72 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Cập nhật bố cục cho bằng nhau (đã làm ở lần trước) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:grid-rows-1">
-            {featuredTours.map((tour, index) => (
-              <Link
-                key={tour.tourId}
-                to={`/tours/${tour.tourId}`}
-                // Thêm `flex flex-col`
-                className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in-up flex flex-col"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="relative">
-                  <img
-                    src={tour.imageUrls[0]}
-                    alt={tour.title}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <button className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-all shadow-md z-10">
-                    <Heart className="w-5 h-5 text-indigo-600" />
-                  </button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {isLoading ? (
+              Array(3).fill(0).map((_, i) => <SkeletonTour key={i} />)
+            ) : (
+              featuredTours.map((tour, i) => (
+                <Link
+                  key={tour.tourId}
+                  to={`/tours/${tour.tourId}`}
+                  className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in-up flex flex-col"
+                  style={{ animationDelay: `${i * 100}ms` }}
+                >
+                  <div className="relative">
+                    <img
+                      src={tour.imageUrls[0]}
+                      alt={tour.title}
+                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <button className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-all shadow-md z-10">
+                      <Heart className="w-5 h-5 text-indigo-600" />
+                    </button>
 
-                  {tour.rating === 4.9 && (
-                    <div className="absolute top-4 left-4 bg-cyan-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
-                      Best Seller
+                    {tour.rating === 4.9 && (
+                      <div className="absolute top-4 left-4 bg-cyan-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
+                        Best Seller
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-6 flex flex-col flex-grow">
+                    <div className="flex items-center text-sm text-gray-600 mb-2">
+                      <MapPin className="w-4 h-4 mr-1 text-indigo-600" />
+                      <span>{tour.destination}</span>
                     </div>
-                  )}
-                </div>
 
-                {/* Thêm `flex flex-col flex-grow` */}
-                <div className="p-6 flex flex-col flex-grow">
-                  <div className="flex items-center text-sm text-gray-600 mb-2">
-                    <MapPin className="w-4 h-4 mr-1 text-indigo-600" />
-                    <span>{tour.destination}</span>
-                  </div>
+                    <h3 className="text-lg font-bold text-indigo-900 mb-2 group-hover:text-indigo-700 transition line-clamp-2">
+                      {tour.title}
+                    </h3>
 
-                  <h3 className="text-lg font-bold text-indigo-900 mb-2 group-hover:text-indigo-700 transition line-clamp-2">
-                    {tour.title}
-                  </h3>
-
-                  <div className="flex items-center mb-3">
-                    <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                    <span className="ml-1 text-sm font-medium">
-                      {tour.rating || 4.8}
-                    </span>
-                    <span className="ml-1 text-sm text-gray-600">
-                      ({tour.reviews || 0})
-                    </span>
-                  </div>
-
-                  <div className="flex items-center text-sm text-gray-600 mb-4">
-                    <Clock className="w-4 h-4 mr-1 text-indigo-600" />
-                    <span>{tour.duration}</span>
-                  </div>
-
-                  {/* Thêm `mt-auto` */}
-                  <div className="border-t pt-4 mt-auto">
-                    <div className="flex justify-between items-center">
-                      <span className="text-2xl font-bold text-indigo-600">
-                        {Number(tour.priceAdult).toLocaleString("vi-VN")}₫
+                    <div className="flex items-center mb-3">
+                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                      <span className="ml-1 text-sm font-medium">
+                        {tour.rating}
                       </span>
-                      <ArrowRight className="w-5 h-5 text-indigo-600 group-hover:translate-x-1 transition-all" />
+                      <span className="ml-1 text-sm text-gray-600">
+                        ({tour.reviews})
+                      </span>
+                    </div>
+
+                    <div className="flex items-center text-sm text-gray-600 mb-4">
+                      <Clock className="w-4 h-4 mr-1 text-indigo-600" />
+                      <span>{tour.duration}</span>
+                    </div>
+
+                    <div className="border-t pt-4 mt-auto">
+                      <div className="flex justify-between items-center">
+                        <span className="text-2xl font-bold text-indigo-600">
+                          {Number(tour.priceAdult).toLocaleString("vi-VN")}₫
+                        </span>
+                        <ArrowRight className="w-5 h-5 text-indigo-600 group-hover:translate-x-1 transition-all" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -453,6 +534,7 @@ export default function Home() {
                   src={p.image}
                   alt={p.title}
                   className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
                 />
                 <div className="p-6">
                   <p className="text-sm text-gray-500 mb-2">{p.date}</p>

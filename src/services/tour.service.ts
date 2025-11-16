@@ -54,3 +54,45 @@ export const searchTours = async (
 export const deleteTour = async (tourId: string): Promise<void> => {
   await api.delete(`/tours/${tourId}`);
 };
+
+// Paginated versions
+export const getToursPaginated = async (
+  page: number,
+  size: number
+): Promise<{ tours: TourResponse[]; total: number }> => {
+  const res = await api.get<ApiResponse<{ content: TourResponse[]; totalElements: number }>>("/tours", {
+    params: { page, size },
+  });
+  const result = res.data.result;
+  return { tours: result.content, total: result.totalElements };
+};
+
+export const getAllToursAdminPaginated = async (
+  page: number,
+  size: number
+): Promise<{ tours: TourResponse[]; total: number }> => {
+  const res = await api.get<ApiResponse<{ content: TourResponse[]; totalElements: number }>>("/tours/admin/all", {
+    params: { page, size },
+  });
+  const result = res.data.result;
+  return { tours: result.content, total: result.totalElements };
+};
+
+export const searchToursPaginated = async (
+  params: TourSearchParams,
+  page: number,
+  size: number
+): Promise<{ tours: TourResponse[]; total: number }> => {
+  const cleanParams = Object.fromEntries(
+    Object.entries(params).filter(
+      ([_, v]) => v !== null && v !== undefined && v !== ""
+    )
+  );
+  cleanParams.page = page;
+  cleanParams.size = size;
+  const res = await api.get<ApiResponse<{ content: TourResponse[]; totalElements: number }>>("/tours/search", {
+    params: cleanParams,
+  });
+  const result = res.data.result;
+  return { tours: result.content, total: result.totalElements };
+};
