@@ -25,6 +25,10 @@ const TourDetailPage: React.FC = () => {
     enabled: !!tourId,
   });
 
+  // CẬP NHẬT: Thêm logic tính toán giống TourCard
+  const rating = tour ? (tour.favoriteCount > 50 ? 4.9 : tour.favoriteCount > 20 ? 4.7 : 4.5) : 4.5;
+  const reviews = tour ? tour.totalBookings || 0 : 0;
+
   const toggleFavoriteMutation = useMutation({
     mutationFn: async () => {
       if (!tourId) return;
@@ -35,9 +39,10 @@ const TourDetailPage: React.FC = () => {
       }
     },
     onSuccess: () => {
+      // CẬP NHẬT: Đồng bộ query keys với TourCard
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      queryClient.invalidateQueries({ queryKey: ['allTours'] });
-      queryClient.invalidateQueries({ queryKey: ['favoriteTours'] });
+      queryClient.invalidateQueries({ queryKey: ['tours'] }); // Đổi từ 'allTours'
+      queryClient.invalidateQueries({ queryKey: ['favoriteTours'] }); // THÊM DÒNG NÀY
       toast.success(tour?.isFavorited ? 'Đã xóa khỏi yêu thích' : 'Đã thêm vào yêu thích');
     },
     onError: (error: any) => {
@@ -180,11 +185,16 @@ const TourDetailPage: React.FC = () => {
                 </span>
               </div>
 
+              {/* CẬP NHẬT: Thay đổi khối hiển thị rating */}
               <div className="flex items-center gap-6 text-gray-600 mb-6">
                 <div className="flex items-center gap-2">
                   <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                  <span className="font-medium">4.8</span>
-                  <span>({tour.favoriteCount} yêu thích)</span>
+                  <span className="font-medium">{rating.toFixed(1)}</span>
+                  <span>({reviews} đánh giá)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-red-500 fill-red-500" />
+                  <span>{tour.favoriteCount} yêu thích</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-indigo-600" />
@@ -192,7 +202,8 @@ const TourDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* CẬP NHẬT: Thêm 'sm:grid-cols-2' và 'initialQuantity' */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex items-center gap-3 p-4 bg-indigo-50 rounded-xl">
                   <MapPin className="w-6 h-6 text-indigo-600" />
                   <div>
@@ -223,6 +234,14 @@ const TourDetailPage: React.FC = () => {
                   <div>
                     <p className="text-xs text-gray-500">Số chỗ còn lại</p>
                     <p className="font-semibold text-gray-900">{tour.quantity} chỗ</p>
+                  </div>
+                </div>
+                {/* THÊM MỚI: Thêm số khách tối đa */}
+                <div className="flex items-center gap-3 p-4 bg-yellow-50 rounded-xl">
+                  <Users className="w-6 h-6 text-yellow-600" />
+                  <div>
+                    <p className="text-xs text-gray-500">Số khách tối đa</p>
+                    <p className="font-semibold text-gray-900">{tour.initialQuantity} khách</p>
                   </div>
                 </div>
               </div>
