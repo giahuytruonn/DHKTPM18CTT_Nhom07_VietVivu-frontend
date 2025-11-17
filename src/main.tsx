@@ -74,7 +74,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="/authenticate" element={<Authenticate />} />
                   <Route path="/tours" element={<AllToursPage />} />
                   <Route path="/tours/:tourId" element={<TourDetailPage />} />
-
+                  <Route path="/favorite-tours" element={<FavoriteToursPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/blog" element={<BlogPage />} />
 
