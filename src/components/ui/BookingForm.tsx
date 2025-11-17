@@ -95,7 +95,7 @@ export default function BookingForm({
           />
         </>
       )}
-
+      <p>Số người lớn</p>
       <input
         type="number"
         min={1}
@@ -104,7 +104,7 @@ export default function BookingForm({
         onChange={(e) => handleChange("numOfAdults", Number(e.target.value))}
         className="border p-2 rounded"
       />
-
+      <p>Số trẻ em</p>
       <input
         type="number"
         min={0}
@@ -113,7 +113,7 @@ export default function BookingForm({
         onChange={(e) => handleChange("numOfChildren", Number(e.target.value))}
         className="border p-2 rounded"
       />
-
+      <p>Địa chỉ</p>
       <input
         type="text"
         placeholder="Địa chỉ"

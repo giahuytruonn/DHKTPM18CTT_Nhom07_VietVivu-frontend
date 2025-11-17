@@ -1,5 +1,7 @@
+import { useNavigate } from "react-router-dom";
 
 export default function InvoiceStep({ invoice }: any) {
+  const navigate = useNavigate();
   return (
     <div className="text-center">
       <h2 className="text-2xl font-bold text-green-600 mb-4">
@@ -10,14 +12,12 @@ export default function InvoiceStep({ invoice }: any) {
       <p>Ngày phát hành: {invoice.invoiceDate}</p>
       <p>Mã giao dịch: {invoice.transactionId}</p>
 
-      <a
-        href={`/api/invoices/${invoice.invoiceId}/pdf`}
-        target="_blank"
-        rel="noreferrer"
-        className="mt-4 inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+      <button
+        className="bg-blue-500 p-2 m-2 text-white border rounded cursor-pointer hover:bg-blue-600"
+        onClick={() => navigate("/")}
       >
-        📄 Tải hóa đơn PDF
-      </a>
+        Về trang chủ
+      </button>
     </div>
   );
 }
