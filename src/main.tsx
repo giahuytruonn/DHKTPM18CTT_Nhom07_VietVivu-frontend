@@ -29,6 +29,8 @@ import BookingRequestPage from "./pages/BookingRequestPage";
 import BookingRequestDetailPage from "./pages/BookingRequestDetailPage";
 import BookingPage from "./pages/BookingPage";
 import RequestBookingPage from "./pages/RequestBookingPage";
+import BookingForm from "./components/ui/BookingForm";
+import BookingStepper from "./components/ui/BookingStepper";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +79,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="/authenticate" element={<Authenticate />} />
                   <Route path="/tours" element={<AllToursPage />} />
                   <Route path="/tours/:tourId" element={<TourDetailPage />} />
+                  <Route path="/booking/:tourId" element={<BookingStepper />} />
 
                   {/* Protected User Routes */}
                   <Route
