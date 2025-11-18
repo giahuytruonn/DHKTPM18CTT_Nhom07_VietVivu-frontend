@@ -9,7 +9,10 @@ import {
   LucideUploadCloud,
   LucideX,
 } from "lucide-react";
-import type { IExploreVideo, IExploreVideoRequest } from "../types/IExploreVideo";
+import type {
+  IExploreVideo,
+  IExploreVideoRequest,
+} from "../types/IExploreVideo";
 import {
   getApprovedVideos,
   getPendingVideos,
@@ -19,7 +22,10 @@ import {
   approveVideo,
 } from "../services/exploreVideoApi";
 import { uploadVideoToCloudinary } from "../utiils/cloudinaryUploader";
-import { optimizeCloudinaryUrl, getCloudinaryPosterUrl } from "../utiils/cloudinaryOptimizer";
+import {
+  optimizeCloudinaryUrl,
+  getCloudinaryPosterUrl,
+} from "../utiils/cloudinaryOptimizer";
 
 interface CrudModalProps {
   isOpen: boolean;
@@ -54,17 +60,18 @@ const CrudModal: React.FC<CrudModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!title.trim()) {
       toast.error("Vui lòng nhập tiêu đề");
       return;
     }
 
     let videoUrl = videoToEdit?.videoUrl || "";
-    
+
     if (file) {
       setIsUploading(true);
       try {
+        // TRUYỀN HÀM CẬP NHẬT TIẾN TRÌNH VÀO
         videoUrl = await uploadVideoToCloudinary(file, (progress) => {
           setUploadProgress(progress);
         });
@@ -144,7 +151,9 @@ const CrudModal: React.FC<CrudModalProps> = ({
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 hover:bg-gray-100 transition-colors">
             <label className="flex items-center justify-center text-sm font-semibold text-gray-700 mb-3 cursor-pointer">
               <LucideUploadCloud className="w-6 h-6 mr-2 text-blue-600" />
-              {isEditMode ? "Chọn video mới (nếu muốn thay đổi)" : "Chọn File Video"}
+              {isEditMode
+                ? "Chọn video mới (nếu muốn thay đổi)"
+                : "Chọn File Video"}
             </label>
             <input
               type="file"
@@ -284,7 +293,9 @@ const VideoCard: React.FC<{
 const ExplorePage: React.FC = () => {
   const [videos, setVideos] = useState<IExploreVideo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"approved" | "pending">("approved");
+  const [activeTab, setActiveTab] = useState<"approved" | "pending">(
+    "approved"
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [videoToEdit, setVideoToEdit] = useState<IExploreVideo | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -292,9 +303,10 @@ const ExplorePage: React.FC = () => {
   const fetchVideos = useCallback(async () => {
     setLoading(true);
     try {
-      const data = activeTab === "approved" 
-        ? await getApprovedVideos() 
-        : await getPendingVideos();
+      const data =
+        activeTab === "approved"
+          ? await getApprovedVideos()
+          : await getPendingVideos();
       setVideos(data);
     } catch (error) {
       console.error("Fetch error:", error);
@@ -340,7 +352,7 @@ const ExplorePage: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa video này?")) return;
-    
+
     try {
       await deleteVideo(id);
       toast.success("Xóa video thành công!");
@@ -407,7 +419,9 @@ const ExplorePage: React.FC = () => {
         </div>
       ) : videos.length === 0 ? (
         <div className="flex flex-col justify-center items-center h-96 bg-white rounded-2xl shadow-md">
-          <p className="text-lg text-gray-500 font-medium">Không có video nào</p>
+          <p className="text-lg text-gray-500 font-medium">
+            Không có video nào
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

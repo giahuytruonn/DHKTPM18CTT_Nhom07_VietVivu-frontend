@@ -25,12 +25,15 @@ import BookingRequestDetailPage from "../pages/BookingRequestDetailPage";
 import FavoriteToursPage from "../pages/FavoriteToursPage";
 import MyReviewsPage from "../pages/MyReviewsPage";
 import ToursPage from "../pages/ToursPage";
+import Header from "../components/layout/Header"; 
+import Footer from "../components/layout/Footer";
 
 const AppRoutes = () => {
   const authenticated = useAuthStore((s) => s.authenticated);
 
   return (
     <Router>
+      <Header />
       <Routes>
         {/* 🧑‍💻 Đăng nhập / xác thực */}
         <Route
@@ -135,6 +138,7 @@ const AppRoutes = () => {
         {/* ❓ Fallback route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <Footer />
     </Router>
   );
 };

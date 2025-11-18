@@ -57,7 +57,7 @@ const VideoPost: React.FC<{
   }, [isMuted]);
 
   return (
-    <div className="flex w-full snap-start h-screen relative">
+    <div className="flex w-full snap-start h-screen relative p-5">
       <div className="flex-grow relative flex items-center justify-center">
         {video.videoUrl ? (
           <video
@@ -167,26 +167,26 @@ const VideoFeedPage: React.FC = () => {
   }, []);
 
   if (loading) return (
-    <div className="flex items-center justify-center h-screen text-white" style={{ background: 'oklch(0.35 0.15 280)' }}>
+    <div className="flex items-center justify-center h-screen text-white" style={{ background: 'white' }}>
       <LucideRotateCw className="w-8 h-8 animate-spin mr-2" />
       Loading videos...
     </div>
   );
 
   if (error) return (
-    <div className="flex items-center justify-center h-screen text-red-400" style={{ background: 'oklch(0.35 0.15 280)' }}>
+    <div className="flex items-center justify-center h-screen text-red-400" style={{ background: 'white' }}>
       {error}
     </div>
   );
 
   if (videos.length === 0) return (
-    <div className="flex items-center justify-center h-screen text-gray-300" style={{ background: 'oklch(0.35 0.15 280)' }}>
+    <div className="flex items-center justify-center h-screen text-gray-300" style={{ background: 'white' }}>
       No approved videos to display yet.
     </div>
   );
 
   return (
-    <div className="h-screen w-full flex items-center justify-center font-['Inter']" style={{ background: 'oklch(0.35 0.15 280)' }}>
+    <div className="h-screen w-full flex items-center justify-center font-['Inter']" style={{ background: 'white' }}>
       <div
         ref={containerRef}
         className="w-full max-w-md h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth hide-scrollbar bg-black shadow-2xl"
