@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { LucideRotateCw, LucideUser, LucideVolume2, LucideVolumeX } from "lucide-react";
 import { getApprovedVideos } from "../services/exploreVideoApi";
 import type { IExploreVideo } from "../types/IExploreVideo";
-import { optimizeCloudinaryUrl, getCloudinaryPosterUrl } from "../utiils/cloudinaryOptimizer";
+import { optimizeCloudinaryUrl, getCloudinaryPosterUrl } from "../utils/cloudinaryOptimizer";
 
 
 

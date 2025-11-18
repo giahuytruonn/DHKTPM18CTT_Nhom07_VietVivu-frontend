@@ -33,6 +33,8 @@ import BookingForm from "./components/ui/BookingForm";
 import BookingStepper from "./components/ui/BookingStepper";
 import BlogPage from "./pages/BlogPage";
 import AboutPage from "./pages/AboutPage";
+import ExplorePage from "./pages/ExplorePage"
+import VideoFeedPage from "./pages/VideoFeedPage"
 
 const queryClient = new QueryClient();
 
@@ -82,6 +84,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="/tours" element={<AllToursPage />} />
                   <Route path="/tours/:tourId" element={<TourDetailPage />} />
                   <Route path="/booking/:tourId" element={<BookingStepper />} />
+                  <Route path="/feed" element={<VideoFeedPage />} />
+                  <Route path="/upload" element={<ExplorePage />} />
 
                   {/* Protected User Routes */}
                   <Route

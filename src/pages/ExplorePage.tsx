@@ -21,11 +21,11 @@ import {
   deleteVideo,
   approveVideo,
 } from "../services/exploreVideoApi";
-import { uploadVideoToCloudinary } from "../utiils/cloudinaryUploader";
+import { uploadVideoToCloudinary } from "../utils/cloudinaryUploader";
 import {
   optimizeCloudinaryUrl,
   getCloudinaryPosterUrl,
-} from "../utiils/cloudinaryOptimizer";
+} from "../utils/cloudinaryOptimizer";
 
 interface CrudModalProps {
   isOpen: boolean;
