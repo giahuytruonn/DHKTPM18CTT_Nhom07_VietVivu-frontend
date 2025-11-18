@@ -6,7 +6,7 @@ import type { ApiResponse } from "../types/apiresponse";
  */
 export interface BookingRequest {
   tourId: string;
-  userId?: number | null; // có thể null nếu là khách
+  userId?: string | null; // có thể null nếu là khách
   name?: string;
   email?: string;
   phone?: string;
@@ -68,5 +68,3 @@ export const getBookings = async (): Promise<BookingResponse[]> => {
   const response = await api.get<ApiResponse<BookingResponse[]>>("/bookings");
   return response.data.result;
 };
-
-
