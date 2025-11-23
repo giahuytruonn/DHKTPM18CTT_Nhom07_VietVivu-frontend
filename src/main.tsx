@@ -20,6 +20,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminToursManagement from "./pages/AdminToursManagement";
 import CreateTourPage from "./pages/CreateTourPage";
 import EditTourPage from "./pages/EditTourPage";
+import AdminStatisticsPage from "./pages/AdminStatisticsPage";
 
 import "./index.css";
 import Header from "./components/layout/Header";
@@ -111,38 +112,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
                   {/* Placeholder routes */}
                   <Route
-                    path="/about"
-                    element={
-                      <div className="min-h-screen flex items-center justify-center">
-                        <div className="text-center">
-                          <h2 className="text-2xl font-bold mb-4">
-                            Về chúng tôi
-                          </h2>
-                          <p className="text-gray-600">Đang phát triển...</p>
-                        </div>
-                      </div>
-                    }
+                    path="/favorite-tours"
+                    element={<FavoriteToursPage />}
                   />
-                  <Route
-                    path="/blog"
-                    element={
-                      <div className="min-h-screen flex items-center justify-center">
-                        <div className="text-center">
-                          <h2 className="text-2xl font-bold mb-4">Blog</h2>
-                          <p className="text-gray-600">Đang phát triển...</p>
-                        </div>
-                      </div>
-                    }
-                  />
-                  <Route path="/favorite-tours" element={<FavoriteToursPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/blog" element={<BlogPage />} />
-
-
-
                 </Routes>
 
-                
                 <Footer />
               </>
             }
@@ -180,23 +156,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 </div>
               }
             />
-            <Route
-              path="reports"
-              element={
-                <div className="text-center py-12">
-                  <h2 className="text-2xl font-bold">Báo Cáo</h2>
-                  <p className="text-gray-600 mt-2">Đang phát triển...</p>
-                </div>
-              }
-            />
+            <Route path="reports" element={<AdminStatisticsPage />} />
             <Route path="bookings-request" element={<BookingRequestPage />} />
             <Route
               path="bookings-request/:requestId"
               element={<BookingRequestDetailPage />}
             />
           </Route>
-
-
         </Routes>
       </BrowserRouter>
       <Toaster position="top-center" />
