@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { usePayOS, type PayOSConfig } from "@payos/payos-checkout"; 
+import { usePayOS, type PayOSConfig } from "@payos/payos-checkout";
 import { createPaymentLink } from "../services/payments.services";
 import { useNavigate } from "react-router-dom";
 
