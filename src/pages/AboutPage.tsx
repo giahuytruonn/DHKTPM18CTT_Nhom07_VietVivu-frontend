@@ -1,4 +1,4 @@
-// src/pages/AboutPage.tsx
+
 import React from "react";
 import { Globe, Users, Heart, Shield, MapPin, Award, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";

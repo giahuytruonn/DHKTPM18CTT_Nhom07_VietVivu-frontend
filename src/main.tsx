@@ -28,6 +28,11 @@ import Footer from "./components/layout/Footer";
 import { useAuthStore } from "./stores/useAuthStore";
 import BlogPage from "./pages/BlogPage";
 import AboutPage from "./pages/AboutPage";
+import UserProfilePage from "./pages/UserProfilePage";
+import AdminUsersPage from "./pages/AdminUserPage";
+
+
+
 
 const queryClient = new QueryClient();
 
@@ -77,13 +82,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="/favorite-tours" element={<FavoriteToursPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/blog" element={<BlogPage />} />
-
+                  <Route path="/profile" element={<UserProfilePage />} />
 
 
                 </Routes>
 
-                
+
                 <Footer />
+                
               </>
             }
           />
@@ -104,13 +110,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="tours/edit/:tourId" element={<EditTourPage />} />
             <Route
               path="users"
-              element={
-                <div className="text-center py-12">
-                  <h2 className="text-2xl font-bold">Quản Lý Người Dùng</h2>
-                  <p className="text-gray-600 mt-2">Đang phát triển...</p>
-                </div>
-              }
+              element={<AdminUsersPage />}
             />
+
             <Route
               path="reviews"
               element={

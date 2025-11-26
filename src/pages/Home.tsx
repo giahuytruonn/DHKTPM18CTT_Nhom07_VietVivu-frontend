@@ -225,12 +225,12 @@ export default function Home() {
   }, [uniqueDestinations]);
 
   // === CHUẨN BỊ DATA CHO RENDER ===
-  const destinations = uniqueDestinations.map((dest) => {
+  const destinations = uniqueDestinations.map((dest, index) => {
     const img = destinationImages[dest];
     return {
       name: dest,
       image: img?.url || `https://picsum.photos/seed/loading-${encodeURIComponent(dest)}/800/600`,
-      id: img?.id || `loading-${dest}`,
+      id: `destination-${encodeURIComponent(dest)}-${index}`,
     };
   });
 

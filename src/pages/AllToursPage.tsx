@@ -1,8 +1,7 @@
-// src/pages/AllToursPage.tsx
+
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-// SỬA ĐƯỜNG DẪN: Dùng ../ để đi ra khỏi 'pages'
 import {
   getTours,
   getAllToursAdmin,

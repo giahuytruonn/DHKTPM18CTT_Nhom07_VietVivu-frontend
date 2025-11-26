@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userDropdown, setUserDropdown] = useState(false);
-  
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { token, authenticated, logout: authLogout } = useAuthStore();
@@ -81,7 +81,7 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
-            
+
             {/* Admin link - chỉ hiện khi là admin */}
             {authenticated && isAdmin && (
               <Link
@@ -145,15 +145,6 @@ export default function Header() {
                   >
                     <Heart size={18} />
                     <span className="font-medium">Tour yêu thích</span>
-                  </Link>
-
-                  <Link
-                    to="/settings"
-                    className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-t border-gray-100"
-                    onClick={() => setUserDropdown(false)}
-                  >
-                    <Settings size={18} />
-                    <span className="font-medium">Cài đặt</span>
                   </Link>
 
                   <button
@@ -245,7 +236,7 @@ export default function Header() {
                     <p className="text-sm font-semibold text-gray-900">{user.name || user.username}</p>
                     <p className="text-xs text-gray-600">{user.email}</p>
                   </div>
-                  
+
                   <Link
                     to="/profile"
                     onClick={() => setMobileOpen(false)}
@@ -254,7 +245,7 @@ export default function Header() {
                     <User size={18} />
                     Thông tin cá nhân
                   </Link>
-                  
+
                   <Link
                     to="/favorite-tours"
                     onClick={() => setMobileOpen(false)}
@@ -263,7 +254,7 @@ export default function Header() {
                     <Heart size={18} />
                     Tour yêu thích
                   </Link>
-                  
+
                   <button
                     onClick={handleLogout}
                     className="flex items-center gap-2 w-full py-2 text-red-600 font-medium"

@@ -1,4 +1,3 @@
-// src/components/layout/AdminLayout.tsx - FIXED SIDEBAR
 import React, { useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -14,6 +13,7 @@ import {
     Heart,
     BarChart3,
     Globe,
+    MessageCircle,
 } from "lucide-react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useUser } from "../../hooks/useUser";
@@ -32,6 +32,11 @@ const AdminLayout: React.FC = () => {
     const { user } = useUser();
 
     const menuItems = [
+        {
+            title: "Tin nhắn",
+            icon: MessageCircle,
+            path: "/admin/messages",
+        },
         {
             title: "Tổng quan",
             icon: LayoutDashboard,
@@ -221,7 +226,7 @@ const AdminLayout: React.FC = () => {
                                     className="fixed inset-0 z-40"
                                     onClick={() => setUserDropdown(false)}
                                 />
-                                
+
                                 {/* Dropdown Menu */}
                                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                                     <div className="px-4 py-3 border-b border-gray-100">

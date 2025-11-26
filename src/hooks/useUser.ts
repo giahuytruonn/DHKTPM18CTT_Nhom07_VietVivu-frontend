@@ -1,6 +1,6 @@
 // src/hooks/useUser.ts
 import { useQuery } from "@tanstack/react-query";
-import { getUserProfile } from "../services/user.servie";
+import { getUserProfile } from "../services/user.service";
 import type { UserResponse } from "../types/user";
 import { QUERY_KEYS } from "../utils/queryKeys";
 import { useAuthStore } from "../stores/useAuthStore";

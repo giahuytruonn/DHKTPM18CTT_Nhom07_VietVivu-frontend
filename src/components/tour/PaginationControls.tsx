@@ -1,4 +1,3 @@
-// src/components/tours/PaginationControls.tsx
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
