@@ -85,6 +85,8 @@ export default function Header() {
               { to: "/tours", label: "Tất cả tour" },
               { to: "/about", label: "Về chúng tôi" },
               { to: "/blog", label: "Blog" },
+              { to: "/feed", label: "Khám phá" },
+              { to: "/upload", label: "Đăng tải" },
             ].map((item, idx) => (
               <Link
                 key={idx}
