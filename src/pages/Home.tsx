@@ -1,3 +1,13 @@
+
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../stores/useAuthStore";
+import { logout as logoutApi } from "../services/auth.service";
+import { createPassword } from "../services/user.servie";
+import type { PasswordCreationRequest } from "../types/user";
+import { useUser } from "../hooks/useUser";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import ChatBox from "../components/ChatBox";
 import { Link } from "react-router-dom";
 import React, { useMemo, useState, useEffect } from "react";
 import SearchBar from "../components/layout/SearchBar";
@@ -121,7 +131,7 @@ const localGuides = [
     rating: 4.9,
     reviews: 87,
     languages: ["Tiếng Việt", "English", "Chinese"],
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400",
+    avatar: "https://raw.githubusercontent.com/giahuytruonn/giahuytruonn/refs/heads/main/assets/giahuytruonn.jpg",
     tours: 10,
   },
   {
@@ -249,6 +259,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ChatBox />
       {/* ===== HERO ===== */}
       <section
         className="relative h-[70vh] bg-cover bg-center bg-no-repeat flex items-center justify-center text-white"

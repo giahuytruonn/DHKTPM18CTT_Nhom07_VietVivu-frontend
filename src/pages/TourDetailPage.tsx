@@ -1,25 +1,40 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  MapPin, Clock, Users, Calendar, Heart, Star, 
-  ChevronLeft, ChevronRight, ArrowLeft, Check 
-} from 'lucide-react';
-import { getTourById } from '../services/tour.service';
-import { addToFavorites, removeFromFavorites } from '../services/favorite.service';
-import { useAuthStore } from '../stores/useAuthStore';
-import toast from 'react-hot-toast';
+import React, { useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  MapPin,
+  Clock,
+  Users,
+  Calendar,
+  Heart,
+  Star,
+  ChevronLeft,
+  ChevronRight,
+  ArrowLeft,
+  Check,
+} from "lucide-react";
+import { getTourById } from "../services/tour.service";
+import {
+  addToFavorites,
+  removeFromFavorites,
+} from "../services/favorite.service";
+import { useAuthStore } from "../stores/useAuthStore";
+import toast from "react-hot-toast";
 
 const TourDetailPage: React.FC = () => {
   const { tourId } = useParams<{ tourId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { authenticated } = useAuthStore();
-  
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const { data: tour, isLoading, isError } = useQuery({
-    queryKey: ['tour', tourId],
+  const {
+    data: tour,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["tour", tourId],
     queryFn: () => getTourById(tourId!),
     staleTime: 1000 * 60 * 5,
     enabled: !!tourId,
@@ -39,26 +54,27 @@ const TourDetailPage: React.FC = () => {
       }
     },
     onSuccess: () => {
-      // CẬP NHẬT: Đồng bộ query keys với TourCard
-      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      queryClient.invalidateQueries({ queryKey: ['tours'] }); // Đổi từ 'allTours'
-      queryClient.invalidateQueries({ queryKey: ['favoriteTours'] }); // THÊM DÒNG NÀY
-      toast.success(tour?.isFavorited ? 'Đã xóa khỏi yêu thích' : 'Đã thêm vào yêu thích');
+      queryClient.invalidateQueries({ queryKey: ["tour", tourId] });
+      queryClient.invalidateQueries({ queryKey: ["allTours"] });
+      queryClient.invalidateQueries({ queryKey: ["favoriteTours"] });
+      toast.success(
+        tour?.isFavorited ? "Đã xóa khỏi yêu thích" : "Đã thêm vào yêu thích"
+      );
     },
     onError: (error: any) => {
       if (error.response?.status === 401) {
-        toast.error('Vui lòng đăng nhập để thêm yêu thích');
-        navigate('/login');
+        toast.error("Vui lòng đăng nhập để thêm yêu thích");
+        navigate("/login");
       } else {
-        toast.error('Có lỗi xảy ra');
+        toast.error("Có lỗi xảy ra");
       }
-    }
+    },
   });
 
   const handleFavoriteClick = () => {
     if (!authenticated) {
-      toast.error('Vui lòng đăng nhập để thêm yêu thích');
-      navigate('/login');
+      toast.error("Vui lòng đăng nhập để thêm yêu thích");
+      navigate("/login");
       return;
     }
     toggleFavoriteMutation.mutate();
@@ -66,7 +82,7 @@ const TourDetailPage: React.FC = () => {
 
   const nextImage = () => {
     if (tour?.imageUrls && tour.imageUrls.length > 0) {
-      setCurrentImageIndex((prev) => 
+      setCurrentImageIndex((prev) =>
         prev === tour.imageUrls.length - 1 ? 0 : prev + 1
       );
     }
@@ -74,10 +90,14 @@ const TourDetailPage: React.FC = () => {
 
   const prevImage = () => {
     if (tour?.imageUrls && tour.imageUrls.length > 0) {
-      setCurrentImageIndex((prev) => 
+      setCurrentImageIndex((prev) =>
         prev === 0 ? tour.imageUrls.length - 1 : prev - 1
       );
     }
+  };
+
+  const handleBookNow = () => {
+    navigate(`/booking/${tourId}`);
   };
 
   if (isLoading) {
@@ -95,7 +115,9 @@ const TourDetailPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Không tìm thấy tour</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Không tìm thấy tour
+          </h2>
           <Link to="/tours" className="text-indigo-600 hover:text-indigo-800">
             Quay lại danh sách tour
           </Link>
@@ -105,7 +127,9 @@ const TourDetailPage: React.FC = () => {
   }
 
   const hasImages = tour.imageUrls && tour.imageUrls.length > 0;
-  const currentImage = hasImages ? tour.imageUrls[currentImageIndex] : 'https://picsum.photos/1200/600';
+  const currentImage = hasImages
+    ? tour.imageUrls[currentImageIndex]
+    : "https://picsum.photos/1200/600";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -124,7 +148,7 @@ const TourDetailPage: React.FC = () => {
             alt={tour.title}
             className="w-full h-96 object-cover"
           />
-          
+
           {hasImages && tour.imageUrls.length > 1 && (
             <>
               <button
@@ -145,7 +169,7 @@ const TourDetailPage: React.FC = () => {
                     key={idx}
                     onClick={() => setCurrentImageIndex(idx)}
                     className={`w-2 h-2 rounded-full transition-all ${
-                      idx === currentImageIndex ? 'bg-white w-8' : 'bg-white/50'
+                      idx === currentImageIndex ? "bg-white w-8" : "bg-white/50"
                     }`}
                   />
                 ))}
@@ -161,7 +185,9 @@ const TourDetailPage: React.FC = () => {
             >
               <Heart
                 className={`w-6 h-6 transition-colors ${
-                  tour.isFavorited ? 'text-red-500 fill-red-500' : 'text-indigo-600'
+                  tour.isFavorited
+                    ? "text-red-500 fill-red-500"
+                    : "text-indigo-600"
                 }`}
               />
             </button>
@@ -172,16 +198,23 @@ const TourDetailPage: React.FC = () => {
           <div className="lg:col-span-2 space-y-8">
             <div className="bg-white rounded-2xl p-8 shadow-md">
               <div className="flex items-start justify-between mb-4">
-                <h1 className="text-3xl font-bold text-gray-900">{tour.title}</h1>
-                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                  tour.tourStatus === 'OPEN_BOOKING' 
-                    ? 'bg-green-100 text-green-700'
-                    : tour.tourStatus === 'IN_PROGRESS'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-100 text-gray-700'
-                }`}>
-                  {tour.tourStatus === 'OPEN_BOOKING' ? 'Đang mở booking' :
-                   tour.tourStatus === 'IN_PROGRESS' ? 'Đang thực hiện' : 'Đã hoàn thành'}
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {tour.title}
+                </h1>
+                <span
+                  className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                    tour.tourStatus === "OPEN_BOOKING"
+                      ? "bg-green-100 text-green-700"
+                      : tour.tourStatus === "IN_PROGRESS"
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {tour.tourStatus === "OPEN_BOOKING"
+                    ? "Đang mở booking"
+                    : tour.tourStatus === "IN_PROGRESS"
+                    ? "Đang thực hiện"
+                    : "Đã hoàn thành"}
                 </span>
               </div>
 
@@ -208,14 +241,18 @@ const TourDetailPage: React.FC = () => {
                   <MapPin className="w-6 h-6 text-indigo-600" />
                   <div>
                     <p className="text-xs text-gray-500">Điểm đến</p>
-                    <p className="font-semibold text-gray-900">{tour.destination}</p>
+                    <p className="font-semibold text-gray-900">
+                      {tour.destination}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-xl">
                   <Clock className="w-6 h-6 text-blue-600" />
                   <div>
                     <p className="text-xs text-gray-500">Thời gian</p>
-                    <p className="font-semibold text-gray-900">{tour.duration}</p>
+                    <p className="font-semibold text-gray-900">
+                      {tour.duration}
+                    </p>
                   </div>
                 </div>
                 {tour.startDate && (
@@ -224,7 +261,7 @@ const TourDetailPage: React.FC = () => {
                     <div>
                       <p className="text-xs text-gray-500">Ngày khởi hành</p>
                       <p className="font-semibold text-gray-900">
-                        {new Date(tour.startDate).toLocaleDateString('vi-VN')}
+                        {new Date(tour.startDate).toLocaleDateString("vi-VN")}
                       </p>
                     </div>
                   </div>
@@ -233,7 +270,9 @@ const TourDetailPage: React.FC = () => {
                   <Users className="w-6 h-6 text-purple-600" />
                   <div>
                     <p className="text-xs text-gray-500">Số chỗ còn lại</p>
-                    <p className="font-semibold text-gray-900">{tour.quantity} chỗ</p>
+                    <p className="font-semibold text-gray-900">
+                      {tour.quantity} chỗ
+                    </p>
                   </div>
                 </div>
                 {/* THÊM MỚI: Thêm số khách tối đa */}
@@ -249,12 +288,16 @@ const TourDetailPage: React.FC = () => {
 
             <div className="bg-white rounded-2xl p-8 shadow-md">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Mô tả</h2>
-              <p className="text-gray-600 leading-relaxed">{tour.description}</p>
+              <p className="text-gray-600 leading-relaxed">
+                {tour.description}
+              </p>
             </div>
 
             {tour.itinerary && tour.itinerary.length > 0 && (
               <div className="bg-white rounded-2xl p-8 shadow-md">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Lịch trình</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  Lịch trình
+                </h2>
                 <div className="space-y-4">
                   {tour.itinerary.map((item, index) => (
                     <div key={index} className="flex gap-4">
@@ -277,13 +320,13 @@ const TourDetailPage: React.FC = () => {
                 <p className="text-gray-500 text-sm mb-2">Giá từ</p>
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-bold text-indigo-600">
-                    {tour.priceAdult.toLocaleString('vi-VN')}₫
+                    {tour.priceAdult.toLocaleString("vi-VN")}₫
                   </span>
                   <span className="text-gray-500">/người lớn</span>
                 </div>
                 {tour.priceChild > 0 && (
                   <p className="text-gray-600 mt-2">
-                    Trẻ em: {tour.priceChild.toLocaleString('vi-VN')}₫
+                    Trẻ em: {tour.priceChild.toLocaleString("vi-VN")}₫
                   </p>
                 )}
               </div>
@@ -303,7 +346,7 @@ const TourDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              {tour.availability && tour.tourStatus === 'OPEN_BOOKING' ? (
+              {tour.availability && tour.tourStatus === "OPEN_BOOKING" ? (
                 <button
                   onClick={() => navigate(`/booking/${tourId}`)}
                   className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
@@ -312,10 +355,10 @@ const TourDetailPage: React.FC = () => {
                 </button>
               ) : (
                 <button
-                  disabled
-                  className="w-full bg-gray-300 text-gray-500 py-4 rounded-xl font-bold text-lg cursor-not-allowed"
+                  onClick={() => handleBookNow()}
+                  className="w-full bg-blue-500 text-white py-4 rounded-xl font-bold text-lg cursor-pointer"
                 >
-                  Không khả dụng
+                  Đặt tour
                 </button>
               )}
 

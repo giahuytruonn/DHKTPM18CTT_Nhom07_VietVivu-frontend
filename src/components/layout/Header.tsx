@@ -1,5 +1,16 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Globe, Menu, X, ChevronDown, User, Heart, LogOut, Settings, Shield } from "lucide-react";
+import {
+  Globe,
+  Menu,
+  X,
+  ChevronDown,
+  User,
+  Heart,
+  LogOut,
+  Settings,
+  Shield,
+  TicketCheck,
+} from "lucide-react";
 import { useState } from "react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useUser } from "../../hooks/useUser";
@@ -17,14 +28,16 @@ export default function Header() {
   const { user, isLoading: userLoading } = useUser();
 
   // Kiểm tra role admin
-  const isAdmin = token ? (() => {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.scope?.includes('ROLE_ADMIN') || false;
-    } catch {
-      return false;
-    }
-  })() : false;
+  const isAdmin = token
+    ? (() => {
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          return payload.scope?.includes("ROLE_ADMIN") || false;
+        } catch {
+          return false;
+        }
+      })()
+    : false;
 
   // Logout mutation
   const logoutMutation = useMutation({
@@ -43,7 +56,7 @@ export default function Header() {
       authLogout();
       queryClient.clear();
       navigate("/");
-    }
+    },
   });
 
   const handleLogout = () => {
@@ -72,6 +85,8 @@ export default function Header() {
               { to: "/tours", label: "Tất cả tour" },
               { to: "/about", label: "Về chúng tôi" },
               { to: "/blog", label: "Blog" },
+              { to: "/feed", label: "Khám phá" },
+              { to: "/upload", label: "Đăng tải" },
             ].map((item, idx) => (
               <Link
                 key={idx}
@@ -105,12 +120,18 @@ export default function Header() {
               >
                 <button className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
-                    {user.name?.charAt(0).toUpperCase() || user.username?.charAt(0).toUpperCase() || "U"}
+                    {user.name?.charAt(0).toUpperCase() ||
+                      user.username?.charAt(0).toUpperCase() ||
+                      "U"}
                   </div>
-                  <span className="font-medium text-gray-700">{user.name || user.username}</span>
+                  <span className="font-medium text-gray-700">
+                    {user.name || user.username}
+                  </span>
                   <ChevronDown
                     size={16}
-                    className={`transition-transform duration-300 ${userDropdown ? "rotate-180" : ""}`}
+                    className={`transition-transform duration-300 ${
+                      userDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
 
@@ -119,12 +140,18 @@ export default function Header() {
                   className={`
                     absolute right-0 top-full mt-0 w-56 bg-white rounded-lg shadow-lg border border-gray-100
                     overflow-hidden z-50 transition-all duration-200 ease-out origin-top-right
-                    ${userDropdown ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}
+                    ${
+                      userDropdown
+                        ? "opacity-100 scale-100"
+                        : "opacity-0 scale-95 pointer-events-none"
+                    }
                   `}
                 >
                   {/* User info */}
                   <div className="px-4 py-3 bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-gray-100">
-                    <p className="text-sm font-semibold text-gray-900">{user.name || user.username}</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {user.name || user.username}
+                    </p>
                     <p className="text-xs text-gray-600">{user.email}</p>
                   </div>
 
@@ -136,6 +163,14 @@ export default function Header() {
                   >
                     <User size={18} />
                     <span className="font-medium">Thông tin cá nhân</span>
+                  </Link>
+                  <Link
+                    to="/bookings"
+                    className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                    onClick={() => setUserDropdown(false)}
+                  >
+                    <TicketCheck size={18} />
+                    <span className="font-medium">Booking của tôi</span>
                   </Link>
 
                   <Link
@@ -233,7 +268,9 @@ export default function Header() {
               {authenticated && user ? (
                 <>
                   <div className="px-3 py-2 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg">
-                    <p className="text-sm font-semibold text-gray-900">{user.name || user.username}</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {user.name || user.username}
+                    </p>
                     <p className="text-xs text-gray-600">{user.email}</p>
                   </div>
 
@@ -245,7 +282,14 @@ export default function Header() {
                     <User size={18} />
                     Thông tin cá nhân
                   </Link>
-
+                  <Link
+                    to="/bookings"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 py-2 text-gray-700 font-medium"
+                  >
+                    <TicketCheck size={18} />
+                    Booking của tôi
+                  </Link>
                   <Link
                     to="/favorite-tours"
                     onClick={() => setMobileOpen(false)}

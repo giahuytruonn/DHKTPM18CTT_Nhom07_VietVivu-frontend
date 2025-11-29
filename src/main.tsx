@@ -12,27 +12,33 @@ import RegisterPage from "./pages/RegisterPage";
 import AllToursPage from "./pages/AllToursPage";
 import TourDetailPage from "./pages/TourDetailPage";
 import FavoriteToursPage from "./pages/FavoriteToursPage";
+import ChangeTourPage from "./pages/ChangeTourPage";
 import Authenticate from "./components/auth/Authenticate";
 
 // Admin Components
 import AdminLayout from "./components/layout/AdminLayout";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminToursManagement from "./pages/AdminToursManagement";
-import AdminToursPage from "./pages/AdminTourPage";
 import CreateTourPage from "./pages/CreateTourPage";
 import EditTourPage from "./pages/EditTourPage";
+import AdminStatisticsPage from "./pages/AdminStatisticsPage";
 
 import "./index.css";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import { useAuthStore } from "./stores/useAuthStore";
+import BookingRequestPage from "./pages/BookingRequestPage";
+import BookingRequestDetailPage from "./pages/BookingRequestDetailPage";
+import BookingPage from "./pages/BookingPage";
+import RequestBookingPage from "./pages/RequestBookingPage";
+import BookingForm from "./components/ui/BookingForm";
+import BookingStepper from "./components/ui/BookingStepper";
 import BlogPage from "./pages/BlogPage";
 import AboutPage from "./pages/AboutPage";
 import UserProfilePage from "./pages/UserProfilePage";
 import AdminUsersPage from "./pages/AdminUserPage";
-
-
-
+import ExplorePage from "./pages/ExplorePage"
+import VideoFeedPage from "./pages/VideoFeedPage"
 
 const queryClient = new QueryClient();
 
@@ -46,14 +52,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { authenticated, token } = useAuthStore();
 
-  const isAdmin = token ? (() => {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.scope?.includes('ROLE_ADMIN') || false;
-    } catch {
-      return false;
-    }
-  })() : false;
+  const isAdmin = token
+    ? (() => {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        return payload.scope?.includes("ROLE_ADMIN") || false;
+      } catch {
+        return false;
+      }
+    })()
+    : false;
 
   if (!authenticated) return <Navigate to="/login" replace />;
   if (!isAdmin) return <Navigate to="/" replace />;
@@ -79,15 +87,48 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="/authenticate" element={<Authenticate />} />
                   <Route path="/tours" element={<AllToursPage />} />
                   <Route path="/tours/:tourId" element={<TourDetailPage />} />
-                  <Route path="/favorite-tours" element={<FavoriteToursPage />} />
+                  <Route path="/change-tour" element={<ChangeTourPage />} />
+                  <Route path="/booking/:tourId" element={<BookingStepper />} />
+                  <Route path="/feed" element={<VideoFeedPage />} />
+                  <Route path="/upload" element={<ExplorePage />} />
+
+                  {/* Protected User Routes */}
+                  <Route
+                    path="/favorite-tours"
+                    element={
+                      <ProtectedRoute>
+                        <FavoriteToursPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/bookings"
+                    element={
+                      <ProtectedRoute>
+                        <BookingPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/request-booking"
+                    element={
+                      <ProtectedRoute>
+                        <RequestBookingPage />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Placeholder routes */}
+                  <Route
+                    path="/favorite-tours"
+                    element={<FavoriteToursPage />}
+                  />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/blog" element={<BlogPage />} />
                   <Route path="/profile" element={<UserProfilePage />} />
 
 
                 </Routes>
-
-
                 <Footer />
                 
               </>
@@ -122,18 +163,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 </div>
               }
             />
+            <Route path="reports" element={<AdminStatisticsPage />} />
+            <Route path="bookings-request" element={<BookingRequestPage />} />
             <Route
-              path="reports"
-              element={
-                <div className="text-center py-12">
-                  <h2 className="text-2xl font-bold">Báo Cáo</h2>
-                  <p className="text-gray-600 mt-2">Đang phát triển...</p>
-                </div>
-              }
+              path="bookings-request/:requestId"
+              element={<BookingRequestDetailPage />}
             />
           </Route>
-
-
         </Routes>
       </BrowserRouter>
       <Toaster position="top-center" />
