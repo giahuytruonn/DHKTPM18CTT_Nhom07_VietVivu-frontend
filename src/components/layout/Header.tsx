@@ -182,15 +182,6 @@ export default function Header() {
                     <span className="font-medium">Tour yêu thích</span>
                   </Link>
 
-                  <Link
-                    to="/settings"
-                    className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-t border-gray-100"
-                    onClick={() => setUserDropdown(false)}
-                  >
-                    <Settings size={18} />
-                    <span className="font-medium">Cài đặt</span>
-                  </Link>
-
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100"
@@ -291,7 +282,6 @@ export default function Header() {
                     <User size={18} />
                     Thông tin cá nhân
                   </Link>
-
                   <Link
                     to="/bookings"
                     onClick={() => setMobileOpen(false)}
@@ -300,7 +290,6 @@ export default function Header() {
                     <TicketCheck size={18} />
                     Booking của tôi
                   </Link>
-
                   <Link
                     to="/favorite-tours"
                     onClick={() => setMobileOpen(false)}

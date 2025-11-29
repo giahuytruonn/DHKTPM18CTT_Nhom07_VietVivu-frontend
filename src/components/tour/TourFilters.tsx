@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-// SỬA ĐƯỜNG DẪN: Dùng ../../ để đi ra khỏi 'components/tour'
 import type { TourSearchParams } from "../../services/tour.service";
 import {
     RotateCcw,

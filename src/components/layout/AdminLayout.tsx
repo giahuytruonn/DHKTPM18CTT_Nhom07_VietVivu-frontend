@@ -1,4 +1,3 @@
-// src/components/layout/AdminLayout.tsx - FIXED SIDEBAR
 import React, { useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -186,22 +185,42 @@ const AdminLayout: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Bar */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-40 flex-shrink-0">
-          <div className="flex items-center gap-4 min-w-0">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-            >
-              <Menu size={20} />
-            </button>
-            <h1 className="text-xl font-semibold text-gray-800 truncate">
-              {menuItems.find((item) => item.path === location.pathname)
-                ?.title || "Dashboard"}
-            </h1>
-          </div>
+                        {userDropdown && (
+                            <>
+                                {/* Overlay */}
+                                <div
+                                    className="fixed inset-0 z-40"
+                                    onClick={() => setUserDropdown(false)}
+                                />
+
+                                {/* Dropdown Menu */}
+                                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                                    <div className="px-4 py-3 border-b border-gray-100">
+                                        <p className="text-sm font-semibold text-gray-900 truncate">
+                                            {user?.name || "Admin"}
+                                        </p>
+                                        <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                                    </div>
+                                    <Link
+                                        to="/admin/profile"
+                                        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                                        onClick={() => setUserDropdown(false)}
+                                    >
+                                        <Users size={16} />
+                                        <span className="text-sm">Thông tin cá nhân</span>
+                                    </Link>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full flex items-center gap-3 px-4 py-2 hover:bg-red-50 text-red-600 transition-colors"
+                                    >
+                                        <LogOut size={16} />
+                                        <span className="text-sm">Đăng xuất</span>
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </header>
 
           {/* User Menu */}
           <div className="relative flex-shrink-0">
