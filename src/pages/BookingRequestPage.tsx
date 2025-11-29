@@ -50,7 +50,7 @@ const BookingRequestPage = () => {
         err instanceof Error
           ? err.message
           : (err as { response?: { data?: { message?: string } } })?.response
-              ?.data?.message || "Không thể tải danh sách booking requests";
+            ?.data?.message || "Không thể tải danh sách booking requests";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -90,17 +90,17 @@ const BookingRequestPage = () => {
   const getRequestTypeConfig = (type: string) => {
     return type === "CANCEL"
       ? {
-          label: "Hủy tour",
-          color: "error" as const,
-          bgColor: "#F8D7DA",
-          textColor: "#721C24",
-        }
+        label: "Hủy tour",
+        color: "error" as const,
+        bgColor: "#F8D7DA",
+        textColor: "#721C24",
+      }
       : {
-          label: "Đổi tour",
-          color: "primary" as const,
-          bgColor: "#D1ECF1",
-          textColor: "#0C5460",
-        };
+        label: "Đổi tour",
+        color: "primary" as const,
+        bgColor: "#D1ECF1",
+        textColor: "#0C5460",
+      };
   };
 
   const formatDate = (dateString: string | null) => {

@@ -12,6 +12,7 @@ import RegisterPage from "./pages/RegisterPage";
 import AllToursPage from "./pages/AllToursPage";
 import TourDetailPage from "./pages/TourDetailPage";
 import FavoriteToursPage from "./pages/FavoriteToursPage";
+import ChangeTourPage from "./pages/ChangeTourPage";
 import Authenticate from "./components/auth/Authenticate";
 
 // Admin Components
@@ -51,13 +52,13 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
   const isAdmin = token
     ? (() => {
-        try {
-          const payload = JSON.parse(atob(token.split(".")[1]));
-          return payload.scope?.includes("ROLE_ADMIN") || false;
-        } catch {
-          return false;
-        }
-      })()
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        return payload.scope?.includes("ROLE_ADMIN") || false;
+      } catch {
+        return false;
+      }
+    })()
     : false;
 
   if (!authenticated) return <Navigate to="/login" replace />;
@@ -84,6 +85,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="/authenticate" element={<Authenticate />} />
                   <Route path="/tours" element={<AllToursPage />} />
                   <Route path="/tours/:tourId" element={<TourDetailPage />} />
+                  <Route path="/change-tour" element={<ChangeTourPage />} />
                   <Route path="/booking/:tourId" element={<BookingStepper />} />
                   <Route path="/feed" element={<VideoFeedPage />} />
                   <Route path="/upload" element={<ExplorePage />} />

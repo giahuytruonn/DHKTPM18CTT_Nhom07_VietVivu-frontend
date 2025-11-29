@@ -28,13 +28,19 @@ import {
 import { getBookings } from "../services/booking.services";
 import type { BookingResponse } from "../services/booking.services";
 
+import ConfirmationModal from "../components/ui/ConfirmationModal";
+
 const BookingPage = () => {
   const navigate = useNavigate();
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<BookingResponse | null>(null);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
+      maximumFractionDigits: 0,
     }).format(value);
   };
 
@@ -144,7 +150,7 @@ const BookingPage = () => {
         err instanceof Error
           ? err.message
           : (err as { response?: { data?: { message?: string } } })?.response
-              ?.data?.message || "Không thể tải danh sách booking";
+            ?.data?.message || "Không thể tải danh sách booking";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -210,6 +216,25 @@ const BookingPage = () => {
         px: { xs: 2, md: 3 },
       }}
     >
+      <ConfirmationModal
+        open={confirmModalOpen}
+        onClose={() => setConfirmModalOpen(false)}
+        onConfirm={() => {
+          setConfirmModalOpen(false);
+          const bookingToPass = selectedBooking || bookings.find(b => b.bookingId === selectedBookingId);
+          if (bookingToPass) {
+            navigate("/change-tour", { state: { booking: bookingToPass } });
+          } else {
+            console.error("Không tìm thấy thông tin booking");
+          }
+        }}
+        title="Xác nhận đổi tour"
+        content="Bạn có chắc chắn muốn đổi sang tour khác không? Hành động này sẽ chuyển bạn đến trang danh sách tour để chọn tour mới."
+        confirmLabel="Đồng ý"
+        cancelLabel="Hủy"
+        variant="info"
+      />
+
       <Box
         sx={{
           maxWidth: "1400px",
@@ -632,13 +657,9 @@ const BookingPage = () => {
                               fullWidth
                               variant="contained"
                               onClick={() => {
-                                navigate("/request-booking", {
-                                  state: {
-                                    bookingId: booking.bookingId,
-                                    action: "change",
-                                    booking: booking,
-                                  },
-                                });
+                                setConfirmModalOpen(true);
+                                setSelectedBookingId(booking.bookingId);
+                                setSelectedBooking(booking);
                               }}
                               sx={{
                                 borderRadius: "12px",

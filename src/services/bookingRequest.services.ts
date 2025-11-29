@@ -74,3 +74,17 @@ export const updateBookingRequestStatus = async (
   );
   return response.data.result;
 };
+/**
+ * Gửi yêu cầu đổi tour
+ */
+export const requestChangeTour = async (
+  bookingId: string,
+  newTourId: string,
+  reason: string
+): Promise<BookingRequestResponse> => {
+  const response = await api.put<ApiResponse<BookingRequestResponse>>(
+    `/bookings-request/${bookingId}/change-booking`,
+    { newTourId, reason }
+  );
+  return response.data.result;
+};
