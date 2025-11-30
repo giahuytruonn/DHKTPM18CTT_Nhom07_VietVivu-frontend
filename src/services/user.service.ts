@@ -26,10 +26,48 @@ export const createPassword = async (req: PasswordCreationRequest): Promise<void
 
 // ============ ADMIN ONLY ============
 
-// Get all users (Admin)
+// Pagination Response Type
+interface PaginationResponse<T> {
+  items: T[];
+  currentPage: number;
+  pageSizes: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+// Get all users (Admin) - Fetch ALL users across all pages
 export const getAllUsers = async (): Promise<UserResponse[]> => {
-  const res = await api.get<ApiResponse<UserResponse[]>>("/users");
-  return res.data.result;
+  // First, get the first page to know total pages
+  const firstPage = await api.get<ApiResponse<PaginationResponse<UserResponse>>>("/users", {
+    params: { page: 0, size: 100 }
+  });
+  
+  const { items, totalPages } = firstPage.data.result;
+  
+  // If only 1 page, return immediately
+  if (totalPages <= 1) {
+    return items;
+  }
+  
+  // Fetch remaining pages in parallel
+  const remainingPagesPromises = [];
+  for (let page = 1; page < totalPages; page++) {
+    remainingPagesPromises.push(
+      api.get<ApiResponse<PaginationResponse<UserResponse>>>("/users", {
+        params: { page, size: 100 }
+      })
+    );
+  }
+  
+  const remainingPages = await Promise.all(remainingPagesPromises);
+  
+  // Combine all users from all pages
+  const allUsers = [
+    ...items,
+    ...remainingPages.flatMap(res => res.data.result.items)
+  ];
+  
+  return allUsers;
 };
 
 // Search users (Admin)

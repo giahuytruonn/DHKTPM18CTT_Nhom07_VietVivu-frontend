@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/useAuthStore";
 import { logout as logoutApi } from "../services/auth.service";
-import { createPassword } from "../services/user.servie";
+import { createPassword } from "../services/user.service";
 import type { PasswordCreationRequest } from "../types/user";
 import { useUser } from "../hooks/useUser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
