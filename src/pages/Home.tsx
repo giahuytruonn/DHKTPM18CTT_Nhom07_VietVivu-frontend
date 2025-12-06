@@ -1,4 +1,5 @@
 
+
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/useAuthStore";
 import { logout as logoutApi } from "../services/auth.service";
@@ -182,14 +183,17 @@ const SkeletonTour = () => (
 );
 
 export default function Home() {
-  const { data: rawTours = [], isLoading } = useQuery({
-    queryKey: ["tours-home"],
-    queryFn: getTours,
+  // === CẬP NHẬT: Gọi API với page=0, size=15 để lấy 15 tour đầu tiên ===
+  const { data: toursResponse, isLoading } = useQuery({
+    queryKey: ["tours-home", 0, 15], // Thêm page và size vào queryKey
+    queryFn: () => getTours(0, 15), // Lấy trang đầu tiên, 15 items
     staleTime: 1000 * 60 * 5,
   });
 
-  // === CHỈ LẤY 15 TOUR ĐẦU ===
-  const tours = useMemo(() => rawTours.slice(0, 15), [rawTours]);
+  // === Lấy mảng tours từ response (vì getTours giờ trả về PaginatedToursResponse) ===
+  const tours = useMemo(() => {
+    return toursResponse?.items || [];
+  }, [toursResponse]);
 
   // === TÁCH ĐỊA ĐIỂM DUY NHẤT (tối đa 12) ===
   const uniqueDestinations = useMemo(() => {
@@ -197,7 +201,7 @@ export default function Home() {
     tours.forEach((t: TourResponse) => {
       if (t.destination) {
         const parts = t.destination
-          .split(/–|-/)
+          .split(/—|-/)
           .map((s) => s.trim())
           .filter((s) => s.length > 0);
         parts.forEach((p) => set.add(p));
@@ -216,7 +220,6 @@ export default function Home() {
       const promises = uniqueDestinations.map(async (dest) => {
         if (imageCache.has(dest)) {
           return { dest, ...imageCache.get(dest)! };
-
         }
         const result = await fetchDestinationImage(dest);
         imageCache.set(dest, result);
@@ -263,13 +266,11 @@ export default function Home() {
       {/* ===== HERO ===== */}
       <section
         className="relative h-[70vh] bg-cover bg-center bg-no-repeat flex items-center justify-center text-white"
-        // CẬP NHẬT: Xóa 'overflow-hidden' để cho phép dropdown hiển thị
         style={{
           backgroundImage: `url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')`,
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-r from-gray-900/60 to-indigo-900/30"></div>
-        {/* CẬP NHẬT: Đảm bảo z-index của content là 10 */}
         <div className="relative z-10 text-center px-4 max-w-4xl animate-fade-in">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight drop-shadow-lg">
             Đi theo cách thân thiện hơn
@@ -278,7 +279,6 @@ export default function Home() {
             Thật sự hiểu một vùng đất qua những người biết rõ nhất — hướng dẫn
             viên địa phương.
           </p>
-          {/* SearchBar sẽ có z-40, nằm trong z-10 này, nhưng vẫn hoạt động vì cha của nó (section) không còn overflow-hidden */}
           <SearchBar className="max-w-2xl mx-auto shadow-lg" />
         </div>
       </section>

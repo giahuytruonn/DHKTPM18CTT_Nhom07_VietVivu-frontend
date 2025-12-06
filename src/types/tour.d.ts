@@ -13,12 +13,12 @@ export interface TourResponse {
     duration: string;
     destination: string;
     availability: boolean;
-    startDate: string | null; 
-    endDate: string | null;   
+    startDate: string | null;
+    endDate: string | null;
     tourStatus: TourStatus;
     itinerary: string[];
     imageUrls: string[];
     totalBookings: number;
     favoriteCount: number;
     isFavorited: boolean;
-}
+};

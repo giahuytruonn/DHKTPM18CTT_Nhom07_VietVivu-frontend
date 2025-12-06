@@ -7,7 +7,6 @@ import {
   User,
   Heart,
   LogOut,
-  Settings,
   Shield,
   TicketCheck,
 } from "lucide-react";

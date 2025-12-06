@@ -26,7 +26,20 @@ const Authenticate: React.FC = () => {
           if (res && res.authenticated && res.token) {
             setAuth(res.token, true);
             queryClient.clear();
-            navigate("/", { replace: true });
+
+            // CẬP NHẬT: Check role và redirect
+            try {
+              const payload = JSON.parse(atob(res.token.split('.')[1]));
+              const isAdmin = payload.scope?.includes('ROLE_ADMIN');
+
+              if (isAdmin) {
+                navigate("/admin/dashboard", { replace: true });
+              } else {
+                navigate("/", { replace: true });
+              }
+            } catch {
+              navigate("/", { replace: true });
+            }
           } else {
             navigate("/login", { replace: true });
           }
