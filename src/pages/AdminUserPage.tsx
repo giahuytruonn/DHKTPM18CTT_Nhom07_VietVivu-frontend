@@ -34,12 +34,21 @@ const AdminUsersPage: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
 
-  // Fetch users
-  const { data: users = [], isLoading } = useQuery({
+  // Fetch users with proper default value
+  const { data: usersData, isLoading, isError, error } = useQuery({
     queryKey: ["adminUsers"],
     queryFn: getAllUsers,
     staleTime: 1000 * 60 * 5,
   });
+
+  // Ensure users is always an array
+  const users = useMemo(() => {
+    if (!usersData) return [];
+    if (Array.isArray(usersData)) return usersData;
+    // Handle case where data might be wrapped in an object
+    if (usersData.data && Array.isArray(usersData.data)) return usersData.data;
+    return [];
+  }, [usersData]);
 
   // Filter users
   const filteredUsers = useMemo(() => {
@@ -102,6 +111,30 @@ const AdminUsersPage: React.FC = () => {
     );
   };
 
+  // Error state
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <X className="w-8 h-8 text-red-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Có lỗi xảy ra</h3>
+          <p className="text-gray-600 mb-4">
+            {error instanceof Error ? error.message : "Không thể tải danh sách người dùng"}
+          </p>
+          <button
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["adminUsers"] })}
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">

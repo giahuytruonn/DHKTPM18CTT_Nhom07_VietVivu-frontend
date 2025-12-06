@@ -185,42 +185,25 @@ const AdminLayout: React.FC = () => {
         </div>
       </aside>
 
-                        {userDropdown && (
-                            <>
-                                {/* Overlay */}
-                                <div
-                                    className="fixed inset-0 z-40"
-                                    onClick={() => setUserDropdown(false)}
-                                />
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-h-screen">
+        {/* Header */}
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0">
+          {/* Mobile Menu Toggle */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="lg:hidden text-gray-600 hover:text-gray-900 p-2 hover:bg-gray-100 rounded-lg"
+          >
+            <Menu size={24} />
+          </button>
 
-                                {/* Dropdown Menu */}
-                                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                                    <div className="px-4 py-3 border-b border-gray-100">
-                                        <p className="text-sm font-semibold text-gray-900 truncate">
-                                            {user?.name || "Admin"}
-                                        </p>
-                                        <p className="text-xs text-gray-500 truncate">{user?.email}</p>
-                                    </div>
-                                    <Link
-                                        to="/admin/profile"
-                                        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
-                                        onClick={() => setUserDropdown(false)}
-                                    >
-                                        <Users size={16} />
-                                        <span className="text-sm">Thông tin cá nhân</span>
-                                    </Link>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="w-full flex items-center gap-3 px-4 py-2 hover:bg-red-50 text-red-600 transition-colors"
-                                    >
-                                        <LogOut size={16} />
-                                        <span className="text-sm">Đăng xuất</span>
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </header>
+          {/* Page Title / Breadcrumb (optional) */}
+          <div className="flex-1 lg:block hidden">
+            <h1 className="text-xl font-semibold text-gray-900">
+              {menuItems.find((item) => item.path === location.pathname)
+                ?.title || "Admin Panel"}
+            </h1>
+          </div>
 
           {/* User Menu */}
           <div className="relative flex-shrink-0">
