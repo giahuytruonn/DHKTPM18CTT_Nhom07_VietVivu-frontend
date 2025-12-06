@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -33,15 +32,14 @@ const AllToursPage: React.FC = () => {
 
   const [filters, setFilters] = useState<TourSearchParams>({
     ...initialFilterState,
-    destination: initialDestination || null, // GÁN VÀO ĐIỂM ĐẾN
+    destination: initialDestination || null,
   });
-  const [appliedFilters, setAppliedFilters] =
-    useState<TourSearchParams>({
-      ...initialFilterState,
-      destination: initialDestination || null, // GÁN VÀO ĐIỂM ĐẾN
-    });
+  const [appliedFilters, setAppliedFilters] = useState<TourSearchParams>({
+    ...initialFilterState,
+    destination: initialDestination || null,
+  });
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0); // Backend dùng page từ 0
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const { token } = useAuthStore();
@@ -51,12 +49,12 @@ const AllToursPage: React.FC = () => {
     const keyword = searchParams.get("keyword");
     const newFilters = {
       ...initialFilterState,
-      destination: destination || null, // GÁN VÀO ĐIỂM ĐẾN
+      destination: destination || null,
       keyword: keyword || null,
     };
     setFilters(newFilters);
     setAppliedFilters(newFilters);
-    setCurrentPage(1);
+    setCurrentPage(0);
   }, [searchParams]);
 
   const isAdmin = useMemo(() => {
@@ -79,7 +77,7 @@ const AllToursPage: React.FC = () => {
   const queryKey = [
     "allTours",
     appliedFilters.keyword,
-    appliedFilters.destination, // Dùng 'destination' để gọi API
+    appliedFilters.destination,
     appliedFilters.minPrice,
     appliedFilters.maxPrice,
     appliedFilters.startDate,
@@ -87,29 +85,28 @@ const AllToursPage: React.FC = () => {
     appliedFilters.minQuantity,
     isAdmin ? appliedFilters.tourStatus : null,
     isAdmin,
+    currentPage,
+    TOURS_PER_PAGE,
   ];
 
-  const {
-    data: tours = [],
-    isLoading,
-  } = useQuery({
+  const { data, isLoading, isFetching } = useQuery({
     queryKey,
     queryFn: async () => {
-      if (hasActiveFilters) return searchTours(appliedFilters);
-      if (isAdmin) return getAllToursAdmin();
-      return getTours();
+      if (hasActiveFilters) {
+        return searchTours(appliedFilters, currentPage, TOURS_PER_PAGE);
+      }
+      if (isAdmin) {
+        return getAllToursAdmin(currentPage, TOURS_PER_PAGE);
+      }
+      return getTours(currentPage, TOURS_PER_PAGE);
     },
     staleTime: 1000 * 60 * 5,
+    keepPreviousData: true, // Giữ data cũ khi đang fetch trang mới
   });
 
-  const totalPages = useMemo(() => {
-    return Math.ceil(tours.length / TOURS_PER_PAGE);
-  }, [tours]);
-
-  const paginatedTours = useMemo(() => {
-    const startIndex = (currentPage - 1) * TOURS_PER_PAGE;
-    return tours.slice(startIndex, startIndex + TOURS_PER_PAGE);
-  }, [tours, currentPage]);
+  const tours = data?.items || [];
+  const totalPages = data?.totalPages || 0;
+  const totalItems = data?.totalItems || 0;
 
   const handleFilterChange = (key: keyof TourSearchParams, value: any) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -117,7 +114,7 @@ const AllToursPage: React.FC = () => {
 
   const handleApplyFilters = () => {
     setAppliedFilters({ ...filters });
-    setCurrentPage(1);
+    setCurrentPage(0); // Reset về trang đầu
     setShowMobileFilters(false);
     const newParams = new URLSearchParams();
     if (filters.destination) newParams.set("destination", filters.destination);
@@ -130,12 +127,12 @@ const AllToursPage: React.FC = () => {
   const handleResetFilters = () => {
     setFilters(initialFilterState);
     setAppliedFilters(initialFilterState);
-    setCurrentPage(1);
+    setCurrentPage(0);
     setSearchParams({});
   };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    setCurrentPage(page - 1); // PaginationControls dùng page từ 1, backend từ 0
     window.scrollTo({ top: 200, behavior: "smooth" });
   };
 
@@ -146,7 +143,7 @@ const AllToursPage: React.FC = () => {
           <div className="hidden lg:block">
             <div className="sticky top-24">
               <TourFilters
-                filters={filters} // Truyền state 'filters' (đã có destination) xuống
+                filters={filters}
                 onFilterChange={handleFilterChange}
                 onReset={handleResetFilters}
                 onApplyFilters={handleApplyFilters}
@@ -168,7 +165,7 @@ const AllToursPage: React.FC = () => {
               </p>
               <div className="flex items-center justify-center gap-6 mt-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-indigo-600">{tours.length}</div>
+                  <div className="text-2xl font-bold text-indigo-600">{totalItems}</div>
                   <div className="text-xs text-gray-500">Tours</div>
                 </div>
                 <div className="text-center">
@@ -198,11 +195,11 @@ const AllToursPage: React.FC = () => {
               </div>
             )}
             <div>
-              <TourList tours={paginatedTours} isLoading={isLoading} />
+              <TourList tours={tours} isLoading={isLoading} isFetching={isFetching} />
               {!isLoading && tours.length > 0 && (
                 <div className="mt-6">
                   <PaginationControls
-                    currentPage={currentPage}
+                    currentPage={currentPage + 1} // Hiển thị từ 1
                     totalPages={totalPages}
                     onPageChange={handlePageChange}
                   />

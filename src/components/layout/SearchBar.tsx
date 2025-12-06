@@ -1,10 +1,10 @@
-import { Search, MapPin, Loader2 } from "lucide-react"; // Thêm Loader2
+import { Search, MapPin, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom"; // Thêm useNavigate
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { searchTours } from "../../services/tour.service"; // Giữ lại đường dẫn gốc
+import { searchTours } from "../../services/tour.service";
 import type { TourResponse } from "../../types/tour";
-import { useDebounce } from "../../hooks/useDebounce"; // Giữ lại đường dẫn gốc // Import hook debounce
+import { useDebounce } from "../../hooks/useDebounce";
 
 interface Props {
   className?: string;
@@ -12,28 +12,34 @@ interface Props {
 
 export default function SearchBar({ className }: Props) {
   const [keyword, setKeyword] = useState("");
-  const [isFocused, setIsFocused] = useState(false); // Thêm state để theo dõi focus
-  const navigate = useNavigate(); // Khởi tạo navigate
+  const [isFocused, setIsFocused] = useState(false);
+  const navigate = useNavigate();
 
   // Dùng debounce cho keyword
   const debouncedKeyword = useDebounce(keyword, 300);
 
-  const { data: results = [], isFetching } = useQuery({
+  // === CẬP NHẬT: Gọi API với phân trang, lấy 5 kết quả đầu tiên ===
+  const { data: searchResponse, isFetching } = useQuery({
     queryKey: ["search", debouncedKeyword],
-    // Tìm kiếm ở cả tiêu đề và địa điểm
-    queryFn: () => searchTours({ keyword: debouncedKeyword, destination: debouncedKeyword }),
-    enabled: debouncedKeyword.length > 2, // Chỉ fetch khi keyword debounce > 2 ký tự
+    queryFn: () => searchTours(
+      { 
+        keyword: debouncedKeyword, 
+        destination: debouncedKeyword 
+      },
+      0,  // page = 0 (trang đầu tiên)
+      5   // size = 5 (chỉ lấy 5 kết quả)
+    ),
+    enabled: debouncedKeyword.length > 2,
     staleTime: 60_000,
   });
 
-  // Giới hạn số lượng kết quả hiển thị (ví dụ: 5)
-  const displayedResults = results.slice(0, 5);
+  // === Lấy mảng tours từ response (vì searchTours giờ trả về PaginatedToursResponse) ===
+  const displayedResults = searchResponse?.items || [];
 
   // Xử lý khi nhấn nút tìm kiếm (hoặc Enter)
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsFocused(false); // Ẩn gợi ý
-    // Chuyển qua trang /tours với keyword
+    setIsFocused(false);
     if (keyword.trim()) {
       navigate(`/tours?keyword=${encodeURIComponent(keyword)}`);
     }
@@ -41,21 +47,16 @@ export default function SearchBar({ className }: Props) {
 
   // Xử lý khi chọn 1 gợi ý
   const handleSuggestionClick = () => {
-    setIsFocused(false); // Ẩn gợi ý
-    setKeyword(""); // Xóa keyword sau khi chọn
+    setIsFocused(false);
+    setKeyword("");
   };
 
   return (
     <div className={`relative ${className}`}>
-      {/* Sử dụng form để có thể submit bằng Enter 
-        và thêm onFocus/onBlur để quản lý hiển thị dropdown
-      */}
       <form
         onSubmit={handleSearchSubmit}
         className="bg-white rounded-full shadow-lg p-2 flex items-center"
-        // Khi click vào input, mở gợi ý
         onFocus={() => setIsFocused(true)}
-        // Khi click ra ngoài, đợi 150ms rồi mới đóng (để kịp click vào link)
         onBlur={() => setTimeout(() => setIsFocused(false), 150)} 
       >
         <div className="flex-1 flex items-center px-4">
@@ -63,7 +64,7 @@ export default function SearchBar({ className }: Props) {
           <input
             type="text"
             placeholder="Tìm tour, địa điểm, hoạt động..."
-            className="w-full text-lg outline-none text-gray-700" // Tăng cỡ chữ input
+            className="w-full text-lg outline-none text-gray-700"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
           />
@@ -76,10 +77,7 @@ export default function SearchBar({ className }: Props) {
         </button>
       </form>
 
-      {/* Hiển thị dropdown khi:
-        - Đang focus
-        - Có keyword
-      */}
+      {/* Dropdown kết quả tìm kiếm */}
       {isFocused && keyword && (
         <div className="absolute top-full mt-2 w-full bg-white rounded-2xl shadow-lg max-h-96 overflow-y-auto z-10 animate-in fade-in duration-200">
           {isFetching ? (
@@ -93,7 +91,7 @@ export default function SearchBar({ className }: Props) {
                 <li key={t.tourId}>
                   <Link
                     to={`/tours/${t.tourId}`}
-                    onClick={handleSuggestionClick} // Thêm onClick
+                    onClick={handleSuggestionClick}
                     className="flex items-center p-4 hover:bg-indigo-50 transition-colors"
                   >
                     {/* Ảnh tour */}
@@ -117,11 +115,11 @@ export default function SearchBar({ className }: Props) {
                   </Link>
                 </li>
               ))}
-              {/* Nút xem tất cả / tìm kiếm */}
+              {/* Nút xem tất cả */}
               <li className="p-4 bg-gray-50 rounded-b-2xl">
                  <button
                    type="button"
-                   onClick={handleSearchSubmit} // Dùng lại
+                   onClick={handleSearchSubmit}
                    className="w-full text-center text-indigo-600 font-semibold hover:text-indigo-800"
                  >
                    Xem tất cả kết quả cho "{keyword}"
