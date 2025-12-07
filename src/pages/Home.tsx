@@ -1,15 +1,4 @@
-
-
-import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../stores/useAuthStore";
-import { logout as logoutApi } from "../services/auth.service";
-import { createPassword } from "../services/user.service";
-import type { PasswordCreationRequest } from "../types/user";
-import { useUser } from "../hooks/useUser";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import ChatBox from "../components/ChatBox";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import React, { useMemo, useState, useEffect } from "react";
 import SearchBar from "../components/layout/SearchBar";
 import {
@@ -21,8 +10,10 @@ import {
   Heart,
   MapPin,
   Globe,
-  MessageCircle,
   ArrowRight,
+  Mail,
+  Phone,
+  Calendar,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getTours } from "../services/tour.service";
@@ -30,70 +21,7 @@ import type { TourResponse } from "../types/tour";
 
 const PEXELS_API_KEY = import.meta.env.VITE_PEXELS_API_KEY;
 
-if (!PEXELS_API_KEY) {
-  console.error("REACT_APP_PEXELS_API_KEY is missing in .env file!");
-}
-
-// === LẤY ẢNH ĐỊA ĐIỂM TỪ PEXELS (CHÍNH XÁC + KHÔNG TRÙNG) ===
-const fetchDestinationImage = async (query: string): Promise<{ url: string; id: string }> => {
-  const searchQuery = `${query} Vietnam travel landmark`;
-
-  try {
-    const res = await fetch(
-      `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchQuery)}&per_page=1&orientation=landscape`,
-      {
-        headers: {
-          Authorization: PEXELS_API_KEY!,
-        },
-      }
-    );
-
-    if (!res.ok) throw new Error(`Pexels API error: ${res.status}`);
-
-    const data = await res.json();
-    const photo = data.photos?.[0];
-
-    if (photo) {
-      return {
-        url: photo.src.large || photo.src.medium || photo.src.small,
-        id: photo.id.toString(),
-      };
-    }
-  } catch (error) {
-    console.warn(`[Pexels] Không tìm thấy ảnh cho: ${query}`, error);
-  }
-
-  // === FALLBACK: Dùng Picsum với seed theo tên địa điểm (không trùng) ===
-  const fallbackUrl = `https://picsum.photos/seed/${encodeURIComponent(query)}/800/600`;
-  return {
-    url: fallbackUrl,
-    id: `fallback-${query}`,
-  };
-};
-
-// === CACHE ẢNH ĐỂ TỐI ƯU ===
-const imageCache = new Map<string, { url: string; id: string }>();
-
-// === DỮ LIỆU TĨNH ===
-const blogPosts = [
-  {
-    date: "Oct 28 2025",
-    title: "5 điểm đến ít người biết ở Hà Nội",
-    excerpt: "Hà Nội không chỉ có Hồ Gươm...",
-    link: "#",
-    image:
-      "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/23/98/95/a0/hidden-gem-cafe-the-best.jpg?w=900&h=500&s=1",
-  },
-  {
-    date: "Oct 14 2025",
-    title: "Tại sao nên đi tour riêng?",
-    excerpt: "Trải nghiệm chân thực, linh hoạt...",
-    link: "#",
-    image:
-      "https://luxtraveldmc.com/blog/wp-content/uploads/2019/04/Benefits-of-Private-tour-to-Vietnam-and-Cambodia-2-e1555400956433.jpg",
-  },
-];
-
+// === DỮ LIỆU HƯỚNG DẪN VIÊN ===
 const localGuides = [
   {
     id: 1,
@@ -104,6 +32,10 @@ const localGuides = [
     languages: ["Tiếng Việt", "English", "Français"],
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
     tours: 15,
+    email: "chuc.nguyen@vietvivu.com",
+    phone: "+84 905 123 456",
+    specialties: ["Lịch sử văn hóa", "Ẩm thực", "Nhiếp ảnh"],
+    experience: "10 năm",
   },
   {
     id: 2,
@@ -114,6 +46,10 @@ const localGuides = [
     languages: ["Tiếng Việt", "English", "Japanese"],
     avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400",
     tours: 12,
+    email: "duy.tran@vietvivu.com",
+    phone: "+84 912 345 678",
+    specialties: ["Sinh thái", "Văn hóa miền Tây", "Chợ nổi"],
+    experience: "8 năm",
   },
   {
     id: 3,
@@ -124,6 +60,10 @@ const localGuides = [
     languages: ["Tiếng Việt", "English", "Korean"],
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400",
     tours: 18,
+    email: "thaiduy@vietvivu.com",
+    phone: "+84 908 765 432",
+    specialties: ["Trekking", "Cắm trại", "Thác nước"],
+    experience: "6 năm",
   },
   {
     id: 4,
@@ -134,6 +74,10 @@ const localGuides = [
     languages: ["Tiếng Việt", "English", "Chinese"],
     avatar: "https://raw.githubusercontent.com/giahuytruonn/giahuytruonn/refs/heads/main/assets/giahuytruonn.jpg",
     tours: 10,
+    email: "giahuy@vietvivu.com",
+    phone: "+84 903 456 789",
+    specialties: ["Ẩm thực", "Đường phố", "Café Sài Gòn"],
+    experience: "7 năm",
   },
   {
     id: 5,
@@ -144,14 +88,76 @@ const localGuides = [
     languages: ["Tiếng Việt", "English", "Français"],
     avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400",
     tours: 15,
+    email: "thanhhuy@vietvivu.com",
+    phone: "+84 907 888 999",
+    specialties: ["Văn hóa dân tộc", "Cao nguyên", "Lễ hội"],
+    experience: "12 năm",
   },
 ];
 
-// === SKELETON COMPONENTS ===
+// === DỮ LIỆU BLOG ===
+const blogPosts = [
+  {
+    id: 1,
+    date: "28/10/2025",
+    title: "5 điểm đến ít người biết ở Hà Nội",
+    excerpt: "Hà Nội không chỉ có Hồ Gươm, Văn Miếu... Hãy cùng khám phá những địa điểm ẩn mình đầy thú vị!",
+    image: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/23/98/95/a0/hidden-gem-cafe-the-best.jpg?w=900&h=500&s=1",
+    author: "Nguyễn Văn A",
+    category: "Khám phá",
+    readTime: "5 phút",
+  },
+  {
+    id: 2,
+    date: "14/10/2025",
+    title: "Tại sao nên đi tour riêng?",
+    excerpt: "Trải nghiệm chân thực, linh hoạt và cá nhân hóa - đó là lý do bạn nên chọn tour riêng!",
+    image: "https://luxtraveldmc.com/blog/wp-content/uploads/2019/04/Benefits-of-Private-tour-to-Vietnam-and-Cambodia-2-e1555400956433.jpg",
+    author: "Trần Thị B",
+    category: "Tips & Tricks",
+    readTime: "7 phút",
+  },
+  {
+    id: 3,
+    date: "01/10/2025",
+    title: "Khám phá ẩm thực Huế - Cố đô ngàn năm",
+    excerpt: "Từ bún bò Huế đến cơm hến, bánh bèo... Huế là thiên đường của những tín đồ ẩm thực!",
+    image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800",
+    author: "Lê Văn C",
+    category: "Ẩm thực",
+    readTime: "8 phút",
+  },
+];
+
+// === FETCH ẢNH TỪ PEXELS ===
+const fetchDestinationImage = async (query: string): Promise<{ url: string; id: string }> => {
+  const searchQuery = `${query} Vietnam travel landmark`;
+  try {
+    const res = await fetch(
+      `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchQuery)}&per_page=1&orientation=landscape`,
+      {
+        headers: { Authorization: PEXELS_API_KEY! },
+      }
+    );
+    if (!res.ok) throw new Error(`Pexels API error: ${res.status}`);
+    const data = await res.json();
+    const photo = data.photos?.[0];
+    if (photo) {
+      return { url: photo.src.large || photo.src.medium || photo.src.small, id: photo.id.toString() };
+    }
+  } catch (error) {
+    console.warn(`[Pexels] Không tìm thấy ảnh cho: ${query}`, error);
+  }
+  const fallbackUrl = `https://picsum.photos/seed/${encodeURIComponent(query)}/800/600`;
+  return { url: fallbackUrl, id: `fallback-${query}` };
+};
+
+const imageCache = new Map<string, { url: string; id: string }>();
+
 const SkeletonDestination = () => (
   <div className="group relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-pulse">
     <div className="w-full h-56 bg-gray-300"></div>
-    <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/70 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300"></div>
+    <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/70 to-transparent opacity-70"></div>
     <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
       <div className="h-5 bg-gray-400 rounded w-3/4"></div>
     </div>
@@ -159,19 +165,15 @@ const SkeletonDestination = () => (
 );
 
 const SkeletonTour = () => (
-  <div className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-pulse flex flex-col">
-    <div className="relative">
-      <div className="w-full h-48 bg-gray-300"></div>
-    </div>
+  <div className="group bg-white rounded-xl shadow-md overflow-hidden animate-pulse flex flex-col">
+    <div className="w-full h-48 bg-gray-300"></div>
     <div className="p-6 flex flex-col flex-grow">
       <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
       <div className="h-5 bg-gray-400 rounded w-3/4 mb-2"></div>
       <div className="flex items-center mb-3">
         <div className="h-4 bg-gray-300 rounded w-20"></div>
       </div>
-      <div className="flex items-center text-sm text-gray-600 mb-4">
-        <div className="h-4 bg-gray-300 rounded w-24"></div>
-      </div>
+      <div className="h-4 bg-gray-300 rounded w-24 mb-4"></div>
       <div className="border-t pt-4 mt-auto">
         <div className="flex justify-between items-center">
           <div className="h-6 bg-gray-400 rounded w-1/3"></div>
@@ -183,39 +185,33 @@ const SkeletonTour = () => (
 );
 
 export default function Home() {
-  // === CẬP NHẬT: Gọi API với page=0, size=15 để lấy 15 tour đầu tiên ===
+  const navigate = useNavigate();
+
   const { data: toursResponse, isLoading } = useQuery({
-    queryKey: ["tours-home", 0, 15], // Thêm page và size vào queryKey
-    queryFn: () => getTours(0, 15), // Lấy trang đầu tiên, 15 items
+    queryKey: ["tours-home", 0, 15],
+    queryFn: () => getTours(0, 15),
     staleTime: 1000 * 60 * 5,
   });
 
-  // === Lấy mảng tours từ response (vì getTours giờ trả về PaginatedToursResponse) ===
   const tours = useMemo(() => {
     return toursResponse?.items || [];
   }, [toursResponse]);
 
-  // === TÁCH ĐỊA ĐIỂM DUY NHẤT (tối đa 12) ===
   const uniqueDestinations = useMemo(() => {
     const set = new Set<string>();
     tours.forEach((t: TourResponse) => {
       if (t.destination) {
-        const parts = t.destination
-          .split(/—|-/)
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0);
+        const parts = t.destination.split(/—|-/).map((s) => s.trim()).filter((s) => s.length > 0);
         parts.forEach((p) => set.add(p));
       }
     });
     return Array.from(set).slice(0, 12);
   }, [tours]);
 
-  // === LOAD ẢNH TỪ PEXELS (DYNAMIC + CACHE + KHÔNG TRÙNG) ===
   const [destinationImages, setDestinationImages] = useState<Record<string, { url: string; id: string }>>({});
 
   useEffect(() => {
     if (!uniqueDestinations.length || !PEXELS_API_KEY) return;
-
     const loadImages = async () => {
       const promises = uniqueDestinations.map(async (dest) => {
         if (imageCache.has(dest)) {
@@ -225,7 +221,6 @@ export default function Home() {
         imageCache.set(dest, result);
         return { dest, ...result };
       });
-
       const results = await Promise.all(promises);
       const map: Record<string, { url: string; id: string }> = {};
       results.forEach((r) => {
@@ -233,11 +228,9 @@ export default function Home() {
       });
       setDestinationImages(map);
     };
-
     loadImages();
   }, [uniqueDestinations]);
 
-  // === CHUẨN BỊ DATA CHO RENDER ===
   const destinations = uniqueDestinations.map((dest, index) => {
     const img = destinationImages[dest];
     return {
@@ -247,7 +240,6 @@ export default function Home() {
     };
   });
 
-  // === TOUR NỔI BẬT (3 tour đầu có ảnh) ===
   const featuredTours = useMemo(() => {
     return tours
       .filter((t: TourResponse) => Array.isArray(t.imageUrls) && t.imageUrls.length > 0)
@@ -262,8 +254,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ChatBox />
-      {/* ===== HERO ===== */}
+      {/* HERO */}
       <section
         className="relative h-[70vh] bg-cover bg-center bg-no-repeat flex items-center justify-center text-white"
         style={{
@@ -276,14 +267,13 @@ export default function Home() {
             Đi theo cách thân thiện hơn
           </h1>
           <p className="text-xl mb-10 max-w-3xl mx-auto text-gray-100 drop-shadow-md">
-            Thật sự hiểu một vùng đất qua những người biết rõ nhất — hướng dẫn
-            viên địa phương.
+            Thật sự hiểu một vùng đất qua những người biết rõ nhất — hướng dẫn viên địa phương.
           </p>
           <SearchBar className="max-w-2xl mx-auto shadow-lg" />
         </div>
       </section>
 
-      {/* ===== ĐIỂM ĐẾN NỔI BẬT (12) ===== */}
+      {/* ĐIỂM ĐẾN NỔI BẬT */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-center mb-16 text-indigo-800 animate-fade-in-up">
@@ -316,7 +306,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== HƯỚNG DẪN VIÊN ===== */}
+      {/* HƯỚNG DẪN VIÊN */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 animate-fade-in">
@@ -352,35 +342,41 @@ export default function Home() {
 
                   <div className="flex items-center text-sm text-gray-600 mb-3">
                     <MapPin className="w-4 h-4 mr-1 text-indigo-600" />
-                    <span>{guide.location}</span>
+                    <span className="truncate">{guide.location}</span>
                   </div>
 
                   <div className="flex items-center mb-3">
-                    <span className="text-lg font-bold text-indigo-900 mr-1">
-                      {guide.rating}
-                    </span>
+                    <span className="text-lg font-bold text-indigo-900 mr-1">{guide.rating}</span>
                     {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className="w-4 h-4 text-yellow-400 fill-current"
-                      />
+                      <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
                     ))}
-                    <span className="ml-2 text-sm text-gray-600">
-                      ({guide.reviews})
-                    </span>
+                    <span className="ml-2 text-sm text-gray-600">({guide.reviews})</span>
                   </div>
 
-                  <div className="flex items-center text-sm text-gray-600 mb-4">
+                  <div className="flex items-center text-sm text-gray-600 mb-2">
                     <Globe className="w-4 h-4 mr-2 text-indigo-600" />
-                    <span className="line-clamp-1">
-                      {guide.languages.join(", ")}
-                    </span>
+                    <span className="line-clamp-1">{guide.languages.join(", ")}</span>
                   </div>
 
-                  <button className="w-full bg-indigo-600 text-white py-2 rounded-full hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5 mt-auto">
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Nhắn tin
-                  </button>
+                  {/* Thông tin liên hệ */}
+                  <div className="space-y-1 mb-4 text-xs text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <Mail className="w-3 h-3 text-indigo-600" />
+                      <span className="truncate">{guide.email}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Phone className="w-3 h-3 text-indigo-600" />
+                      <span>{guide.phone}</span>
+                    </div>
+                  </div>
+
+                  <Link
+                    to={`/guides/${guide.id}`}
+                    className="w-full bg-indigo-600 text-white py-2 rounded-full hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5 mt-auto"
+                  >
+                    Xem hồ sơ
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Link>
                 </div>
               </div>
             ))}
@@ -398,7 +394,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== TOUR NỔI BẬT ===== */}
+      {/* TOUR NỔI BẬT */}
       <section id="tours" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
@@ -443,34 +439,36 @@ export default function Home() {
                   <div className="p-6 flex flex-col flex-grow">
                     <div className="flex items-center text-sm text-gray-600 mb-2">
                       <MapPin className="w-4 h-4 mr-1 text-indigo-600" />
-                      <span>{tour.destination}</span>
+                      <span className="truncate">{tour.destination}</span>
                     </div>
 
-                    <h3 className="text-lg font-bold text-indigo-900 mb-2 group-hover:text-indigo-700 transition line-clamp-2">
+                    <h3 className="text-lg font-bold text-indigo-900 mb-2 group-hover:text-indigo-700 transition-colors line-clamp-2">
                       {tour.title}
                     </h3>
 
-                    <div className="flex items-center mb-3">
-                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                      <span className="ml-1 text-sm font-medium">
-                        {tour.rating}
-                      </span>
-                      <span className="ml-1 text-sm text-gray-600">
-                        ({tour.reviews})
-                      </span>
+                    <div className="flex items-center gap-4 mb-3">
+                      <div className="flex items-center">
+                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                        <span className="ml-1 text-sm font-bold">{tour.rating}</span>
+                        <span className="ml-1 text-sm text-gray-600">({tour.reviews})</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Clock className="w-4 h-4 mr-1 text-indigo-600" />
+                        {tour.duration}
+                      </div>
                     </div>
 
-                    <div className="flex items-center text-sm text-gray-600 mb-4">
-                      <Clock className="w-4 h-4 mr-1 text-indigo-600" />
-                      <span>{tour.duration}</span>
-                    </div>
-
-                    <div className="border-t pt-4 mt-auto">
+                    <div className="border-t border-gray-100 pt-4 mt-auto">
                       <div className="flex justify-between items-center">
-                        <span className="text-2xl font-bold text-indigo-600">
-                          {Number(tour.priceAdult).toLocaleString("vi-VN")}₫
+                        <div>
+                          <span className="text-xs text-gray-500 block">Giá từ</span>
+                          <span className="text-2xl font-bold text-indigo-600">
+                            {tour.priceAdult.toLocaleString("vi-VN")}₫
+                          </span>
+                        </div>
+                        <span className="text-indigo-600 font-semibold group-hover:translate-x-1 transition-transform">
+                          →
                         </span>
-                        <ArrowRight className="w-5 h-5 text-indigo-600 group-hover:translate-x-1 transition-all" />
                       </div>
                     </div>
                   </div>
@@ -481,7 +479,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== FEATURES ===== */}
+      {/* FEATURES */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
@@ -525,6 +523,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* WHY CHOOSE US */}
       <section className="py-16 bg-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -573,50 +572,69 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== BLOG ===== */}
+      {/* BLOG */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-indigo-900">Từ blog</h2>
+          <div className="flex justify-between items-center mb-12">
+            <h2 className="text-3xl font-bold text-indigo-900">
+              Blog du lịch
+            </h2>
             <Link
               to="/blog"
-              className="text-indigo-600 hover:text-indigo-800 flex items-center transition-colors"
+              className="text-indigo-600 hover:text-indigo-800 flex items-center font-medium transition-colors"
             >
-              Xem thêm <ChevronRight size={20} />
+              Xem tất cả <ChevronRight size={20} />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {blogPosts.map((p, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {blogPosts.map((post, index) => (
               <article
-                key={i}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group animate-fade-in-up"
-                style={{ animationDelay: `${i * 100}ms` }}
+                key={post.id}
+                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-2xl transition-all duration-300 group animate-fade-in-up"
+                style={{ animationDelay: `${index * 100}ms` }}
               >
-                <img
-                  src={p.image}
-                  alt={p.title}
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                  loading="lazy"
-                />
+                <div className="relative overflow-hidden">
+                  <img
+                    src={post.image}
+                    alt={post.title}
+                    className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                  <span className="absolute top-4 left-4 bg-indigo-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    {post.category}
+                  </span>
+                </div>
+
                 <div className="p-6">
-                  <p className="text-sm text-gray-500 mb-2">{p.date}</p>
-                  <h3 className="text-xl font-semibold text-indigo-900 mb-3 group-hover:text-indigo-700 transition-colors">
-                    <Link to={p.link}>{p.title}</Link>
+                  <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      <span>{post.date}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      <span>{post.readTime}</span>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors line-clamp-2">
+                    {post.title}
                   </h3>
+                  
                   <p className="text-gray-600 mb-4 line-clamp-3">
-                    {p.excerpt}
+                    {post.excerpt}
                   </p>
-                  <Link
-                    to={p.link}
-                    className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
-                  >
-                    Đọc thêm{" "}
-                    <ChevronRight
-                      size={16}
-                      className="ml-1 group-hover:translate-x-1 transition-transform"
-                    />
-                  </Link>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <span className="text-sm text-gray-500">{post.author}</span>
+                    <Link
+                      to={`/blog/${post.id}`}
+                      className="text-indigo-600 font-semibold hover:text-indigo-800 flex items-center transition-colors"
+                    >
+                      Đọc thêm <ChevronRight size={16} className="ml-1" />
+                    </Link>
+                  </div>
                 </div>
               </article>
             ))}
@@ -624,19 +642,18 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== CTA ===== */}
+      {/* CTA */}
       <section className="py-16 bg-gradient-to-r from-indigo-700 to-cyan-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-bold mb-6 drop-shadow-md">
-            Trở thành thành viên của Việt Vi Vu
+            Trở thành thành viên của VietVivu
           </h2>
           <p className="text-xl mb-8 max-w-3xl mx-auto drop-shadow-md">
             Bạn yêu du lịch, am hiểu địa phương?
-            Hãy chia sẻ trải nghiệm độc
-            đáo với du khách toàn cầu.
+            Hãy chia sẻ trải nghiệm độc đáo với du khách toàn cầu.
           </p>
           <Link
-            to="/become-guide"
+            to="/register"
             className="inline-block bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 hover:shadow-lg transition-all duration-300 transform hover:scale-105"
           >
             Tham gia ngay

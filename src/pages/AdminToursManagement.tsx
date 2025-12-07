@@ -101,7 +101,7 @@ const AdminToursManagement: React.FC = () => {
         };
         const labels = {
             OPEN_BOOKING: "Đang mở",
-            IN_PROGRESS: "Đang chạy",
+            IN_PROGRESS: "Đang thực hiện",
             COMPLETED: "Hoàn thành",
         };
         return (
@@ -337,8 +337,8 @@ const AdminToursManagement: React.FC = () => {
                                     key={page}
                                     onClick={() => handlePageChange(page)}
                                     className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${page === currentPage
-                                            ? "bg-indigo-600 text-white"
-                                            : "text-gray-700 hover:bg-gray-100"
+                                        ? "bg-indigo-600 text-white"
+                                        : "text-gray-700 hover:bg-gray-100"
                                         }`}
                                 >
                                     {page + 1}
