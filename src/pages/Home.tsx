@@ -1,5 +1,3 @@
-
-
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/useAuthStore";
 import { logout as logoutApi } from "../services/auth.service";
@@ -8,7 +6,7 @@ import type { PasswordCreationRequest } from "../types/user";
 import { useUser } from "../hooks/useUser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import ChatBox from "../components/ChatBox";
+import ChatBox from "./ChatBox";
 import { Link } from "react-router-dom";
 import React, { useMemo, useState, useEffect } from "react";
 import SearchBar from "../components/layout/SearchBar";
@@ -35,12 +33,16 @@ if (!PEXELS_API_KEY) {
 }
 
 // === LẤY ẢNH ĐỊA ĐIỂM TỪ PEXELS (CHÍNH XÁC + KHÔNG TRÙNG) ===
-const fetchDestinationImage = async (query: string): Promise<{ url: string; id: string }> => {
+const fetchDestinationImage = async (
+  query: string
+): Promise<{ url: string; id: string }> => {
   const searchQuery = `${query} Vietnam travel landmark`;
 
   try {
     const res = await fetch(
-      `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchQuery)}&per_page=1&orientation=landscape`,
+      `https://api.pexels.com/v1/search?query=${encodeURIComponent(
+        searchQuery
+      )}&per_page=1&orientation=landscape`,
       {
         headers: {
           Authorization: PEXELS_API_KEY!,
@@ -64,7 +66,9 @@ const fetchDestinationImage = async (query: string): Promise<{ url: string; id: 
   }
 
   // === FALLBACK: Dùng Picsum với seed theo tên địa điểm (không trùng) ===
-  const fallbackUrl = `https://picsum.photos/seed/${encodeURIComponent(query)}/800/600`;
+  const fallbackUrl = `https://picsum.photos/seed/${encodeURIComponent(
+    query
+  )}/800/600`;
   return {
     url: fallbackUrl,
     id: `fallback-${query}`,
@@ -102,7 +106,8 @@ const localGuides = [
     rating: 5,
     reviews: 124,
     languages: ["Tiếng Việt", "English", "Français"],
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
+    avatar:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
     tours: 15,
   },
   {
@@ -112,7 +117,8 @@ const localGuides = [
     rating: 5,
     reviews: 98,
     languages: ["Tiếng Việt", "English", "Japanese"],
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400",
+    avatar:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400",
     tours: 12,
   },
   {
@@ -122,7 +128,8 @@ const localGuides = [
     rating: 5,
     reviews: 156,
     languages: ["Tiếng Việt", "English", "Korean"],
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400",
+    avatar:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400",
     tours: 18,
   },
   {
@@ -132,7 +139,8 @@ const localGuides = [
     rating: 4.9,
     reviews: 87,
     languages: ["Tiếng Việt", "English", "Chinese"],
-    avatar: "https://raw.githubusercontent.com/giahuytruonn/giahuytruonn/refs/heads/main/assets/giahuytruonn.jpg",
+    avatar:
+      "https://raw.githubusercontent.com/giahuytruonn/giahuytruonn/refs/heads/main/assets/giahuytruonn.jpg",
     tours: 10,
   },
   {
@@ -142,7 +150,8 @@ const localGuides = [
     rating: 5,
     reviews: 124,
     languages: ["Tiếng Việt", "English", "Français"],
-    avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400",
+    avatar:
+      "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400",
     tours: 15,
   },
 ];
@@ -211,7 +220,9 @@ export default function Home() {
   }, [tours]);
 
   // === LOAD ẢNH TỪ PEXELS (DYNAMIC + CACHE + KHÔNG TRÙNG) ===
-  const [destinationImages, setDestinationImages] = useState<Record<string, { url: string; id: string }>>({});
+  const [destinationImages, setDestinationImages] = useState<
+    Record<string, { url: string; id: string }>
+  >({});
 
   useEffect(() => {
     if (!uniqueDestinations.length || !PEXELS_API_KEY) return;
@@ -242,7 +253,11 @@ export default function Home() {
     const img = destinationImages[dest];
     return {
       name: dest,
-      image: img?.url || `https://picsum.photos/seed/loading-${encodeURIComponent(dest)}/800/600`,
+      image:
+        img?.url ||
+        `https://picsum.photos/seed/loading-${encodeURIComponent(
+          dest
+        )}/800/600`,
       id: `destination-${encodeURIComponent(dest)}-${index}`,
     };
   });
@@ -250,7 +265,10 @@ export default function Home() {
   // === TOUR NỔI BẬT (3 tour đầu có ảnh) ===
   const featuredTours = useMemo(() => {
     return tours
-      .filter((t: TourResponse) => Array.isArray(t.imageUrls) && t.imageUrls.length > 0)
+      .filter(
+        (t: TourResponse) =>
+          Array.isArray(t.imageUrls) && t.imageUrls.length > 0
+      )
       .slice(0, 3)
       .map((t: TourResponse) => ({
         ...t,
@@ -290,28 +308,30 @@ export default function Home() {
             Điểm đến nổi bật
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-            {isLoading || Object.keys(destinationImages).length === 0 ? (
-              Array(12).fill(0).map((_, i) => <SkeletonDestination key={i} />)
-            ) : (
-              destinations.map((dest) => (
-                <Link
-                  key={dest.id}
-                  to={`/tours?destination=${encodeURIComponent(dest.name)}`}
-                  className="group relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-                >
-                  <img
-                    src={dest.image}
-                    alt={dest.name}
-                    className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/70 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300"></div>
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                    <p className="font-bold text-lg drop-shadow-md">{dest.name}</p>
-                  </div>
-                </Link>
-              ))
-            )}
+            {isLoading || Object.keys(destinationImages).length === 0
+              ? Array(12)
+                  .fill(0)
+                  .map((_, i) => <SkeletonDestination key={i} />)
+              : destinations.map((dest) => (
+                  <Link
+                    key={dest.id}
+                    to={`/tours?destination=${encodeURIComponent(dest.name)}`}
+                    className="group relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                  >
+                    <img
+                      src={dest.image}
+                      alt={dest.name}
+                      className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/70 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300"></div>
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                      <p className="font-bold text-lg drop-shadow-md">
+                        {dest.name}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
           </div>
         </div>
       </section>
@@ -412,71 +432,71 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {isLoading ? (
-              Array(3).fill(0).map((_, i) => <SkeletonTour key={i} />)
-            ) : (
-              featuredTours.map((tour, i) => (
-                <Link
-                  key={tour.tourId}
-                  to={`/tours/${tour.tourId}`}
-                  className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in-up flex flex-col"
-                  style={{ animationDelay: `${i * 100}ms` }}
-                >
-                  <div className="relative">
-                    <img
-                      src={tour.imageUrls[0]}
-                      alt={tour.title}
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                    <button className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-all shadow-md z-10">
-                      <Heart className="w-5 h-5 text-indigo-600" />
-                    </button>
+            {isLoading
+              ? Array(3)
+                  .fill(0)
+                  .map((_, i) => <SkeletonTour key={i} />)
+              : featuredTours.map((tour, i) => (
+                  <Link
+                    key={tour.tourId}
+                    to={`/tours/${tour.tourId}`}
+                    className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in-up flex flex-col"
+                    style={{ animationDelay: `${i * 100}ms` }}
+                  >
+                    <div className="relative">
+                      <img
+                        src={tour.imageUrls[0]}
+                        alt={tour.title}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                      <button className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-all shadow-md z-10">
+                        <Heart className="w-5 h-5 text-indigo-600" />
+                      </button>
 
-                    {tour.rating === 4.9 && (
-                      <div className="absolute top-4 left-4 bg-cyan-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
-                        Best Seller
+                      {tour.rating === 4.9 && (
+                        <div className="absolute top-4 left-4 bg-cyan-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
+                          Best Seller
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="p-6 flex flex-col flex-grow">
+                      <div className="flex items-center text-sm text-gray-600 mb-2">
+                        <MapPin className="w-4 h-4 mr-1 text-indigo-600" />
+                        <span>{tour.destination}</span>
                       </div>
-                    )}
-                  </div>
 
-                  <div className="p-6 flex flex-col flex-grow">
-                    <div className="flex items-center text-sm text-gray-600 mb-2">
-                      <MapPin className="w-4 h-4 mr-1 text-indigo-600" />
-                      <span>{tour.destination}</span>
-                    </div>
+                      <h3 className="text-lg font-bold text-indigo-900 mb-2 group-hover:text-indigo-700 transition line-clamp-2">
+                        {tour.title}
+                      </h3>
 
-                    <h3 className="text-lg font-bold text-indigo-900 mb-2 group-hover:text-indigo-700 transition line-clamp-2">
-                      {tour.title}
-                    </h3>
-
-                    <div className="flex items-center mb-3">
-                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                      <span className="ml-1 text-sm font-medium">
-                        {tour.rating}
-                      </span>
-                      <span className="ml-1 text-sm text-gray-600">
-                        ({tour.reviews})
-                      </span>
-                    </div>
-
-                    <div className="flex items-center text-sm text-gray-600 mb-4">
-                      <Clock className="w-4 h-4 mr-1 text-indigo-600" />
-                      <span>{tour.duration}</span>
-                    </div>
-
-                    <div className="border-t pt-4 mt-auto">
-                      <div className="flex justify-between items-center">
-                        <span className="text-2xl font-bold text-indigo-600">
-                          {Number(tour.priceAdult).toLocaleString("vi-VN")}₫
+                      <div className="flex items-center mb-3">
+                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                        <span className="ml-1 text-sm font-medium">
+                          {tour.rating}
                         </span>
-                        <ArrowRight className="w-5 h-5 text-indigo-600 group-hover:translate-x-1 transition-all" />
+                        <span className="ml-1 text-sm text-gray-600">
+                          ({tour.reviews})
+                        </span>
+                      </div>
+
+                      <div className="flex items-center text-sm text-gray-600 mb-4">
+                        <Clock className="w-4 h-4 mr-1 text-indigo-600" />
+                        <span>{tour.duration}</span>
+                      </div>
+
+                      <div className="border-t pt-4 mt-auto">
+                        <div className="flex justify-between items-center">
+                          <span className="text-2xl font-bold text-indigo-600">
+                            {Number(tour.priceAdult).toLocaleString("vi-VN")}₫
+                          </span>
+                          <ArrowRight className="w-5 h-5 text-indigo-600 group-hover:translate-x-1 transition-all" />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              ))
-            )}
+                  </Link>
+                ))}
           </div>
         </div>
       </section>
@@ -533,8 +553,9 @@ export default function Home() {
                 Tại sao chọn <span className="text-indigo-600">VietVivu</span>?
               </h2>
               <p className="text-lg text-gray-600 mb-8">
-                Chúng tôi không chỉ là nền tảng đặt tour – chúng tôi là người bạn đồng hành
-                trong mỗi chuyến đi, mang đến trải nghiệm cá nhân hóa và đáng nhớ.
+                Chúng tôi không chỉ là nền tảng đặt tour – chúng tôi là người
+                bạn đồng hành trong mỗi chuyến đi, mang đến trải nghiệm cá nhân
+                hóa và đáng nhớ.
               </p>
               <div className="space-y-4">
                 <Link
@@ -604,9 +625,7 @@ export default function Home() {
                   <h3 className="text-xl font-semibold text-indigo-900 mb-3 group-hover:text-indigo-700 transition-colors">
                     <Link to={p.link}>{p.title}</Link>
                   </h3>
-                  <p className="text-gray-600 mb-4 line-clamp-3">
-                    {p.excerpt}
-                  </p>
+                  <p className="text-gray-600 mb-4 line-clamp-3">{p.excerpt}</p>
                   <Link
                     to={p.link}
                     className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
@@ -631,9 +650,8 @@ export default function Home() {
             Trở thành thành viên của Việt Vi Vu
           </h2>
           <p className="text-xl mb-8 max-w-3xl mx-auto drop-shadow-md">
-            Bạn yêu du lịch, am hiểu địa phương?
-            Hãy chia sẻ trải nghiệm độc
-            đáo với du khách toàn cầu.
+            Bạn yêu du lịch, am hiểu địa phương? Hãy chia sẻ trải nghiệm độc đáo
+            với du khách toàn cầu.
           </p>
           <Link
             to="/become-guide"

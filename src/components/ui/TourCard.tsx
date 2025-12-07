@@ -5,36 +5,71 @@ interface Props {
   title: string;
   description?: string;
   link: string;
-  imageUrl?: string;          // fallback
-  imageUrls?: string[];       // toàn bộ ảnh
+  imageUrl?: string;
+  imageUrls?: string[];
   onClick?: () => void;
 }
 
-const TourCard: React.FC<Props> = ({ title, description, link, imageUrl, imageUrls, onClick }) => {
+const TourCard: React.FC<Props> = ({
+  title,
+  description,
+  link,
+  imageUrl,
+  imageUrls,
+  onClick,
+}) => {
   const navigate = useNavigate();
-  const imagesToShow = imageUrls && imageUrls.length > 0 ? imageUrls : imageUrl ? [imageUrl] : [];
+  const images = imageUrls && imageUrls.length > 0 ? imageUrls : imageUrl ? [imageUrl] : [];
 
   return (
     <div
-      className="border rounded-xl shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition"
       onClick={onClick || (() => navigate(link))}
+      className="
+        bg-white rounded-2xl overflow-hidden shadow-md cursor-pointer
+        transition-all duration-300 hover:shadow-xl hover:scale-[1.02]
+      "
     >
-      {imagesToShow.length > 0 && (
-        <div className="grid grid-cols-2 gap-1">
-          {imagesToShow.map((url, i) => (
+      {/* PHẦN ẢNH */}
+      {images.length > 0 && (
+        <div className="w-full">
+          {/* ẢNH LỚN */}
+          <div className="relative w-full h-40">
             <img
-              key={i}
-              src={url}
-              alt={`${title} - ảnh ${i + 1}`}
-              className="w-full h-24 object-cover"
+              src={images[0]}
+              alt={title}
+              className="w-full h-full object-cover"
             />
-          ))}
+
+            {/* GRADIENT OVERLAY */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+          </div>
+
+          {/* ẢNH NHỎ (nếu có thêm) */}
+          {images.length > 1 && (
+            <div className="grid grid-cols-2 gap-1 mt-1">
+              {images.slice(1, 3).map((img, i) => (
+                <img
+                  key={i}
+                  src={img}
+                  alt=""
+                  className="w-full h-20 object-cover rounded-md"
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
-      <div className="p-3">
-        <h3 className="font-bold text-indigo-900">{title}</h3>
+
+      {/* CONTENT */}
+      <div className="p-4">
+        <h3 className="font-bold text-lg text-indigo-900 leading-tight">
+          {title}
+        </h3>
+
         {description && (
-          <p className="text-gray-600 text-sm whitespace-pre-line">{description}</p>
+          <p className="text-gray-600 text-sm mt-1 line-clamp-2">
+            {description}
+          </p>
         )}
       </div>
     </div>
