@@ -36,6 +36,7 @@ import { usePayOS, PayOSConfig } from "@payos/payos-checkout";
 import toast from "react-hot-toast";
 import TourFilters from "../components/tour/TourFilters";
 import PaginationControls from "../components/tour/PaginationControls";
+import ConfirmationModal from "../components/ui/ConfirmationModal";
 
 // Import types
 import type { TourResponse } from "../types/tour";
@@ -64,6 +65,8 @@ const ChangeTourPage = () => {
     // Stepper State
     const [activeStep, setActiveStep] = useState(0);
     const [selectedTour, setSelectedTour] = useState<TourResponse | null>(null);
+    const [tourToConfirm, setTourToConfirm] = useState<TourResponse | null>(null);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [reason, setReason] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState<"pending" | "success" | "failed">("pending");
@@ -166,11 +169,21 @@ const ChangeTourPage = () => {
 
     // Selection Logic
     const handleTourSelect = (tour: TourResponse) => {
-        if (window.confirm(`Bạn có chắc muốn đổi sang tour "${tour.title}" không?`)) {
-            setSelectedTour(tour);
-            setActiveStep(1);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-        }
+        setTourToConfirm(tour);
+        setIsConfirmModalOpen(true);
+    };
+
+    const handleConfirmTourSelection = () => {
+        if (!tourToConfirm) return;
+        setSelectedTour(tourToConfirm);
+        setActiveStep(1);
+        setIsConfirmModalOpen(false);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const handleCloseConfirmModal = () => {
+        setIsConfirmModalOpen(false);
+        setTourToConfirm(null);
     };
 
     // Payment Logic
@@ -490,7 +503,7 @@ const ChangeTourPage = () => {
                                             </Typography>
                                             <Typography variant="body2" color="text.secondary">
                                                 Việc đổi tour có thể phát sinh thêm chi phí chênh lệch.
-                                                Nếu tour mới có giá thấp hơn, phần chênh lệch sẽ không được hoàn lại theo chính sách.
+                                                Nếu tour mới có giá thấp hơn, phần chênh lệch sẽ tính toán lại được hoàn lại theo chính sách của công ty.
                                             </Typography>
                                         </Box>
                                     </Box>
@@ -610,6 +623,20 @@ const ChangeTourPage = () => {
                     </Box>
                 )}
             </Container>
+            <ConfirmationModal
+                open={isConfirmModalOpen}
+                onClose={handleCloseConfirmModal}
+                onConfirm={handleConfirmTourSelection}
+                title="Xác nhận đổi tour"
+                content={
+                    tourToConfirm
+                        ? `Bạn có chắc chắn muốn chọn tour "${tourToConfirm.title}"?`
+                        : "Bạn có chắc chắn muốn chọn tour này?"
+                }
+                confirmLabel="Chọn tour này"
+                cancelLabel="Hủy"
+                variant="info"
+            />
         </Box>
     );
 };

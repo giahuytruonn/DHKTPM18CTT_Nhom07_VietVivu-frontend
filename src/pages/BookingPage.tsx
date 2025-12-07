@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -11,30 +10,58 @@ import {
   Card,
   CardContent,
   Pagination,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  Tooltip,
+  Avatar,
+  Dialog,
+  DialogContent,
+  Divider,
+  LinearProgress,
+  Alert,
 } from "@mui/material";
 import {
   Calendar,
   MapPin,
   Users,
-  DollarSign,
   Tag,
-  Clock,
   ArrowLeft,
   XCircle,
   CheckCircle,
   AlertCircle,
   RefreshCw,
+  Eye,
+  X,
+  Sparkles,
 } from "lucide-react";
 import { getBookings } from "../services/booking.services";
 import type { BookingResponse } from "../services/booking.services";
+import { getTourById } from "../services/tour.services";
+import type { TourResponse } from "../types/tour";
 
 import ConfirmationModal from "../components/ui/ConfirmationModal";
 
 const BookingPage = () => {
   const navigate = useNavigate();
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
-  const [selectedBooking, setSelectedBooking] = useState<BookingResponse | null>(null);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
+    null
+  );
+  const [selectedBooking, setSelectedBooking] =
+    useState<BookingResponse | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailBooking, setDetailBooking] = useState<BookingResponse | null>(
+    null
+  );
+  const [tourDetail, setTourDetail] = useState<TourResponse | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -59,14 +86,14 @@ const BookingPage = () => {
     switch (status) {
       case "PENDING":
         return {
-          label: "Chờ xác nhận",
+          label: "Chưa thanh toán",
           color: "#F59E0B",
           bgGradient: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
           icon: <AlertCircle size={16} />,
         };
       case "CONFIRMED":
         return {
-          label: "Đã xác nhận",
+          label: "Đã thanh toán",
           color: "#10B981",
           bgGradient: "linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)",
           icon: <CheckCircle size={16} />,
@@ -137,6 +164,91 @@ const BookingPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   const itemsPerPage = 6;
+  const bookingStats = useMemo(() => {
+    const confirmed = bookings.filter(
+      (booking) => booking.bookingStatus === "CONFIRMED"
+    ).length;
+    const pending = bookings.filter(
+      (booking) => booking.bookingStatus === "PENDING"
+    ).length;
+    const cancelled = bookings.filter((booking) =>
+      ["CANCELLED", "CONFIRMED_CANCELLATION", "DENIED_CANCELLATION"].includes(
+        booking.bookingStatus
+      )
+    ).length;
+    const totalAmount = bookings.reduce(
+      (sum, booking) => sum + booking.remainingAmount,
+      0
+    );
+
+    return {
+      confirmed,
+      pending,
+      cancelled,
+      totalAmount,
+    };
+  }, [bookings]);
+
+  const formattedTotalAmount = formatCurrency(bookingStats.totalAmount);
+  const heroCaption =
+    bookingStats.totalAmount > 0
+      ? "Bao gồm tất cả booking đang hoạt động"
+      : "Chưa có booking nào - đặt tour để bắt đầu hành trình mới";
+
+  const overviewCards = [
+    {
+      label: "Tổng booking",
+      value: bookings.length.toString(),
+      helper: bookings.length > 0 ? "Tour đã đặt" : "Bạn chưa có tour nào",
+      icon: <Tag size={18} />,
+      avatarBg: "rgba(37, 99, 235, 0.12)",
+      avatarColor: "#1D4ED8",
+      gradient: "linear-gradient(135deg, #ecf2ff 0%, #f9fbff 100%)",
+    },
+    {
+      label: "Đã thanh toán",
+      value: bookingStats.confirmed.toString(),
+      helper: "Sẵn sàng khởi hành",
+      icon: <CheckCircle size={18} />,
+      avatarBg: "rgba(16, 185, 129, 0.12)",
+      avatarColor: "#059669",
+      gradient: "linear-gradient(135deg, #ecfff8 0%, #f4fffb 100%)",
+    },
+    {
+      label: "Chưa thanh toán",
+      value: bookingStats.pending.toString(),
+      helper: "Cần bạn xử lý",
+      icon: <AlertCircle size={18} />,
+      avatarBg: "rgba(245, 158, 11, 0.12)",
+      avatarColor: "#D97706",
+      gradient: "linear-gradient(135deg, #fffaf0 0%, #fffaf5 100%)",
+    },
+    {
+      label: "Đã hủy",
+      value: bookingStats.cancelled.toString(),
+      helper: "Không còn hiệu lực",
+      icon: <XCircle size={18} />,
+      avatarBg: "rgba(248, 113, 113, 0.12)",
+      avatarColor: "#DC2626",
+      gradient: "linear-gradient(135deg, #fff3f3 0%, #fff7f7 100%)",
+    },
+  ];
+  const tableHeadCellSx = {
+    fontWeight: 700,
+    backgroundColor: "transparent",
+    color: "#0F172A",
+    fontSize: "0.75rem",
+    borderBottom: "2px solid rgba(226, 232, 240, 0.7)",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    py: 1,
+    px: 2,
+  };
+  const tableBodyCellSx = {
+    borderBottom: "1px solid rgba(226, 232, 240, 0.6)",
+    py: 0.75,
+    px: 2,
+  };
 
   const fetchData = async () => {
     try {
@@ -150,7 +262,7 @@ const BookingPage = () => {
         err instanceof Error
           ? err.message
           : (err as { response?: { data?: { message?: string } } })?.response
-            ?.data?.message || "Không thể tải danh sách booking";
+              ?.data?.message || "Không thể tải danh sách booking";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -173,6 +285,13 @@ const BookingPage = () => {
     (page - 1) * itemsPerPage,
     page * itemsPerPage
   );
+  const detailHeroImage =
+    tourDetail?.imageUrls?.[0] ||
+    detailBooking?.imageUrl ||
+    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80";
+  const activeDetailStatusConfig = detailBooking
+    ? getStatusConfig(detailBooking.bookingStatus)
+    : null;
 
   const canCancel = (status: string) => {
     return (
@@ -190,30 +309,47 @@ const BookingPage = () => {
     );
   };
 
-  const shouldShowButtons = (status: string) => {
-    // Hiển thị buttons nếu có thể hủy hoặc đổi
-    return canCancel(status) || canChange(status);
+  const handleViewDetails = async (booking: BookingResponse) => {
+    setDetailBooking(booking);
+    setDetailModalOpen(true);
+    setDetailError(null);
+    setTourDetail(null);
+    try {
+      setDetailLoading(true);
+      const tour = await getTourById(booking.tourId);
+      setTourDetail(tour);
+    } catch (err) {
+      console.error("Error fetching tour detail:", err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : (
+              err as {
+                response?: { data?: { message?: string } };
+              }
+            )?.response?.data?.message || "Không thể tải thông tin tour";
+      setDetailError(message);
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
-  const shouldShowStatusOnly = (status: string) => {
-    // Chỉ hiển thị trạng thái nếu đang chờ xử lý hoặc đã hoàn thành
-    return (
-      status === "PENDING_CANCELLATION" ||
-      status === "CONFIRMED_CANCELLATION" ||
-      status === "CANCELLED" ||
-      status === "PENDING_CHANGE" ||
-      status === "CONFIRMED_CHANGE" ||
-      status === "COMPLETED"
-    );
+  const handleCloseDetailModal = () => {
+    setDetailModalOpen(false);
+    setDetailBooking(null);
+    setTourDetail(null);
+    setDetailError(null);
   };
 
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)",
-        py: { xs: 3, md: 5 },
-        px: { xs: 2, md: 3 },
+        background:
+          "linear-gradient(180deg, #f5f7ff 0%, #fef2ff 45%, #fef9f5 100%)",
+        py: { xs: 4, md: 6 },
+        px: { xs: 2, md: 4 },
+        position: "relative",
       }}
     >
       <ConfirmationModal
@@ -221,7 +357,9 @@ const BookingPage = () => {
         onClose={() => setConfirmModalOpen(false)}
         onConfirm={() => {
           setConfirmModalOpen(false);
-          const bookingToPass = selectedBooking || bookings.find(b => b.bookingId === selectedBookingId);
+          const bookingToPass =
+            selectedBooking ||
+            bookings.find((b) => b.bookingId === selectedBookingId);
           if (bookingToPass) {
             navigate("/change-tour", { state: { booking: bookingToPass } });
           } else {
@@ -241,73 +379,204 @@ const BookingPage = () => {
           mx: "auto",
         }}
       >
-        {/* Header Section */}
+        {/* Hero Section */}
         <Box
           sx={{
-            mb: 4,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 2,
+            mb: 5,
+            borderRadius: "32px",
+            background:
+              "linear-gradient(120deg, #1d4ed8 0%, #2563eb 45%, #7c3aed 100%)",
+            px: { xs: 3, md: 5 },
+            py: { xs: 4, md: 5 },
+            color: "white",
+            boxShadow: "0 35px 65px rgba(30, 64, 175, 0.35)",
+            position: "relative",
+            overflow: "hidden",
           }}
         >
-          <Box>
-            <Button
-              startIcon={<ArrowLeft size={20} />}
-              onClick={() => navigate("/")}
-              sx={{
-                mb: 2,
-                borderRadius: "12px",
-                textTransform: "none",
-                background: "rgba(255, 255, 255, 0.2)",
-                backdropFilter: "blur(10px)",
-                color: "white",
-                "&:hover": {
-                  background: "rgba(255, 255, 255, 0.3)",
-                },
-              }}
-            >
-              Quay lại
-            </Button>
-            <Typography
-              variant="h3"
-              component="h1"
-              sx={{
-                fontWeight: 800,
-                background: "linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                mb: 1,
-              }}
-            >
-              Booking của tôi
-            </Typography>
-            <Typography
-              variant="body1"
-              sx={{ color: "rgba(255, 255, 255, 0.9)", fontSize: "1.1rem" }}
-            >
-              Quản lý và theo dõi các tour đã đặt của bạn
-            </Typography>
-          </Box>
           <Box
             sx={{
-              background: "rgba(255, 255, 255, 0.15)",
-              backdropFilter: "blur(10px)",
-              borderRadius: "20px",
-              px: 3,
-              py: 2,
-              border: "1px solid rgba(255, 255, 255, 0.2)",
+              position: "absolute",
+              inset: 0,
+              background:
+                "radial-gradient(circle at top left, rgba(255,255,255,0.35), transparent 50%)",
+              opacity: 0.8,
             }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "radial-gradient(circle at bottom right, rgba(255,255,255,0.2), transparent 55%)",
+              opacity: 0.6,
+            }}
+          />
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            alignItems={{ xs: "flex-start", md: "center" }}
+            justifyContent="space-between"
+            spacing={4}
+            sx={{ position: "relative", zIndex: 1 }}
           >
-            <Typography variant="h4" sx={{ color: "white", fontWeight: 700 }}>
-              {bookings.length}
-            </Typography>
-            <Typography sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
-              Tổng số booking
-            </Typography>
-          </Box>
+            <Box>
+              <Button
+                startIcon={<ArrowLeft size={20} />}
+                onClick={() => navigate("/")}
+                sx={{
+                  mb: 3,
+                  borderRadius: "14px",
+                  textTransform: "none",
+                  background: "rgba(15, 23, 42, 0.25)",
+                  color: "white",
+                  px: 3,
+                  "&:hover": {
+                    background: "rgba(15, 23, 42, 0.4)",
+                  },
+                }}
+              >
+                Quay lại
+              </Button>
+              <Chip
+                icon={<Sparkles size={14} />}
+                label="Trải nghiệm đặt tour tinh gọn"
+                sx={{
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  color: "white",
+                  fontWeight: 600,
+                  mb: 2,
+                  "& .MuiChip-icon": {
+                    color: "inherit",
+                  },
+                }}
+              />
+              <Typography
+                variant="h3"
+                component="h1"
+                sx={{
+                  fontWeight: 800,
+                  mb: 1,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 1,
+                  alignItems: "baseline",
+                  fontSize: { xs: "2rem", md: "2.75rem" },
+                  fontFamily:
+                    '"Be Vietnam Pro", "Inter", "Roboto", "Helvetica", sans-serif',
+                }}
+              >
+                Booking của tôi
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{ color: "rgba(255, 255, 255, 0.9)", fontSize: "1.05rem" }}
+              >
+                Quản lý và theo dõi các tour đã đặt với giao diện tinh gọn hơn
+              </Typography>
+            </Box>
+            <Paper
+              elevation={0}
+              sx={{
+                px: { xs: 3, md: 4 },
+                py: { xs: 3, md: 4 },
+                borderRadius: "24px",
+                background: "rgba(15, 23, 42, 0.35)",
+                border: "1px solid rgba(255, 255, 255, 0.25)",
+                color: "white",
+                minWidth: { md: 320 },
+                backdropFilter: "blur(6px)",
+              }}
+            >
+              <Typography
+                variant="overline"
+                sx={{
+                  letterSpacing: "0.2em",
+                  color: "rgba(255, 255, 255, 0.75)",
+                }}
+              >
+                Giá trị booking còn lại
+              </Typography>
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: 800,
+                  mt: 1,
+                  fontSize: { xs: "2.1rem", md: "2.5rem" },
+                }}
+              >
+                {formattedTotalAmount}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ color: "rgba(255, 255, 255, 0.85)", mt: 1.5 }}
+              >
+                {heroCaption}
+              </Typography>
+            </Paper>
+          </Stack>
+        </Box>
+
+        {/* Overview Cards */}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, minmax(0, 1fr))",
+              md: "repeat(4, minmax(0, 1fr))",
+            },
+            gap: 2,
+            mb: 5,
+          }}
+        >
+          {overviewCards.map((card) => (
+            <Card
+              key={card.label}
+              elevation={0}
+              sx={{
+                height: "100%",
+                borderRadius: "22px",
+                background: card.gradient,
+                border: "1px solid rgba(15, 23, 42, 0.05)",
+                boxShadow: "0 18px 40px rgba(15, 23, 42, 0.07)",
+              }}
+            >
+              <CardContent
+                sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
+              >
+                <Avatar
+                  sx={{
+                    backgroundColor: card.avatarBg,
+                    color: card.avatarColor,
+                    mb: 1.5,
+                    width: 48,
+                    height: 48,
+                  }}
+                >
+                  {card.icon}
+                </Avatar>
+                <Typography
+                  variant="body2"
+                  sx={{ color: "#6B7280", fontWeight: 600 }}
+                >
+                  {card.label}
+                </Typography>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    color: "#0F172A",
+                    fontWeight: 800,
+                    fontSize: { xs: "1.9rem", md: "2.1rem" },
+                  }}
+                >
+                  {card.value}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#94A3B8" }}>
+                  {card.helper}
+                </Typography>
+              </CardContent>
+            </Card>
+          ))}
         </Box>
 
         {/* Content */}
@@ -318,9 +587,10 @@ const BookingPage = () => {
               justifyContent: "center",
               alignItems: "center",
               minHeight: "400px",
-              background: "rgba(255, 255, 255, 0.95)",
-              borderRadius: "24px",
-              backdropFilter: "blur(10px)",
+              background: "linear-gradient(145deg, #ffffff 0%, #f5f7ff 100%)",
+              borderRadius: "28px",
+              border: "1px solid rgba(148, 163, 184, 0.15)",
+              boxShadow: "0 25px 60px rgba(15, 23, 42, 0.08)",
             }}
           >
             <CircularProgress size={60} sx={{ color: "#3B82F6" }} />
@@ -330,9 +600,10 @@ const BookingPage = () => {
             sx={{
               p: 4,
               textAlign: "center",
-              background: "rgba(255, 255, 255, 0.95)",
-              borderRadius: "24px",
-              backdropFilter: "blur(10px)",
+              background: "linear-gradient(145deg, #ffffff 0%, #f5f7ff 100%)",
+              borderRadius: "28px",
+              border: "1px solid rgba(148, 163, 184, 0.15)",
+              boxShadow: "0 25px 60px rgba(15, 23, 42, 0.08)",
             }}
           >
             <Typography color="error" variant="h6">
@@ -344,9 +615,10 @@ const BookingPage = () => {
             sx={{
               p: 6,
               textAlign: "center",
-              background: "rgba(255, 255, 255, 0.95)",
-              borderRadius: "24px",
-              backdropFilter: "blur(10px)",
+              background: "linear-gradient(145deg, #ffffff 0%, #f5f7ff 100%)",
+              borderRadius: "28px",
+              border: "1px solid rgba(148, 163, 184, 0.15)",
+              boxShadow: "0 25px 60px rgba(15, 23, 42, 0.08)",
             }}
           >
             <Typography variant="h5" color="text.secondary" sx={{ mb: 2 }}>
@@ -372,340 +644,254 @@ const BookingPage = () => {
           </Box>
         ) : (
           <>
-            <Box
+            <Card
               sx={{
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  md: "repeat(2, 1fr)",
-                  lg: "repeat(3, 1fr)",
-                },
-                gap: 3,
+                background: "linear-gradient(145deg, #ffffff 0%, #f8fbff 100%)",
+                borderRadius: "28px",
+                boxShadow: "0 30px 70px rgba(15, 23, 42, 0.08)",
+                border: "1px solid rgba(226, 232, 240, 0.8)",
+                overflow: "hidden",
               }}
             >
-              {paginatedBookings.map((booking) => {
-                const statusConfig = getStatusConfig(booking.bookingStatus);
-                return (
-                  <Card
-                    key={booking.bookingId}
+              <TableContainer
+                sx={{
+                  "&::-webkit-scrollbar": {
+                    height: 8,
+                    width: 8,
+                  },
+                  "&::-webkit-scrollbar-thumb": {
+                    borderRadius: "999px",
+                    backgroundColor: "rgba(148, 163, 184, 0.6)",
+                  },
+                }}
+              >
+                <Table>
+                  <TableHead
                     sx={{
-                      height: "100%",
-                      borderRadius: "24px",
-                      background: "rgba(255, 255, 255, 0.95)",
-                      backdropFilter: "blur(10px)",
-                      border: "1px solid rgba(255, 255, 255, 0.3)",
-                      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-                      transition: "all 0.3s ease",
-                      "&:hover": {
-                        transform: "translateY(-8px)",
-                        boxShadow: "0 16px 48px rgba(59, 130, 246, 0.3)",
-                      },
-                      display: "flex",
-                      flexDirection: "column",
+                      backgroundColor: "rgba(226, 232, 240, 0.4)",
+                      backdropFilter: "blur(6px)",
                     }}
                   >
-                    {/* Status Badge */}
-                    <Box
-                      sx={{
-                        background: statusConfig.bgGradient,
-                        p: 2,
-                        borderRadius: "24px 24px 0 0",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <Chip
-                        icon={statusConfig.icon}
-                        label={statusConfig.label}
-                        sx={{
-                          background: "rgba(255, 255, 255, 0.9)",
-                          color: statusConfig.color,
-                          fontWeight: 600,
-                          borderRadius: "12px",
-                          height: "32px",
-                        }}
-                      />
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: statusConfig.color,
-                          fontWeight: 600,
-                          fontSize: "0.75rem",
-                        }}
+                    <TableRow>
+                      <TableCell sx={tableHeadCellSx}>Mã Booking</TableCell>
+                      <TableCell sx={tableHeadCellSx}>Tour</TableCell>
+                      <TableCell sx={tableHeadCellSx}>Địa điểm</TableCell>
+                      <TableCell sx={tableHeadCellSx}>Ngày đặt</TableCell>
+                      <TableCell sx={tableHeadCellSx}>Số người</TableCell>
+                      <TableCell sx={tableHeadCellSx}>Tổng tiền</TableCell>
+                      <TableCell sx={tableHeadCellSx}>Trạng thái</TableCell>
+                      <TableCell
+                        sx={{ ...tableHeadCellSx, textAlign: "center" }}
                       >
-                        {booking.bookingId.substring(0, 8)}...
-                      </Typography>
-                    </Box>
-
-                    <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                      {/* Tour Title */}
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          fontWeight: 700,
-                          mb: 2,
-                          background:
-                            "linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)",
-                          WebkitBackgroundClip: "text",
-                          WebkitTextFillColor: "transparent",
-                          backgroundClip: "text",
-                          minHeight: "56px",
-                        }}
-                      >
-                        {booking.tourTitle}
-                      </Typography>
-
-                      {/* Info Grid */}
-                      <Stack spacing={2}>
-                        <Box
+                        Thao tác
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {paginatedBookings.map((booking) => {
+                      const statusConfig = getStatusConfig(
+                        booking.bookingStatus
+                      );
+                      return (
+                        <TableRow
+                          key={booking.bookingId}
                           sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
+                            "&:hover": {
+                              backgroundColor: "rgba(37, 99, 235, 0.05)",
+                              boxShadow:
+                                "inset 0 0 0 1px rgba(37, 99, 235, 0.08)",
+                            },
+                            "&:last-of-type td": {
+                              borderBottom: "none",
+                            },
+                            transition: "all 0.25s ease",
                           }}
                         >
-                          <MapPin size={18} style={{ color: "#3B82F6" }} />
-                          <Typography variant="body2" color="text.secondary">
-                            {booking.tourDestination}
-                          </Typography>
-                        </Box>
-
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                          }}
-                        >
-                          <Calendar size={18} style={{ color: "#3B82F6" }} />
-                          <Typography variant="body2" color="text.secondary">
-                            {formatDate(booking.bookingDate)}
-                          </Typography>
-                        </Box>
-
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                          }}
-                        >
-                          <Users size={18} style={{ color: "#3B82F6" }} />
-                          <Typography variant="body2" color="text.secondary">
-                            {booking.numOfAdults} người lớn
-                            {booking.numOfChildren > 0 &&
-                              `, ${booking.numOfChildren} trẻ em`}
-                          </Typography>
-                        </Box>
-
-                        {booking.paymentTerm && (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <Clock size={18} style={{ color: "#3B82F6" }} />
-                            <Typography variant="body2" color="text.secondary">
-                              Hạn thanh toán: {formatDate(booking.paymentTerm)}
+                          <TableCell sx={tableBodyCellSx}>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontFamily:
+                                  '"JetBrains Mono", "Fira Code", monospace',
+                                fontWeight: 600,
+                                color: "#3B82F6",
+                              }}
+                            >
+                              {booking.bookingId.substring(0, 8)}...
                             </Typography>
-                          </Box>
-                        )}
-                      </Stack>
-
-                      {/* Divider */}
-                      <Box
-                        sx={{
-                          my: 2,
-                          height: "1px",
-                          background:
-                            "linear-gradient(90deg, transparent, #e0e7ff, transparent)",
-                        }}
-                      />
-
-                      {/* Price Section */}
-                      <Stack spacing={1} sx={{ mb: 2 }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <DollarSign
-                              size={18}
-                              style={{ color: "#10B981" }}
-                            />
-                            <Typography variant="body2" color="text.secondary">
-                              Tổng tiền:
+                          </TableCell>
+                          <TableCell sx={tableBodyCellSx}>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontWeight: 600,
+                                color: "#1F2937",
+                                maxWidth: "200px",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {booking.tourTitle}
                             </Typography>
-                          </Box>
-                          <Typography
-                            variant="body1"
-                            sx={{ fontWeight: 700, color: "#10B981" }}
-                          >
-                            {formatCurrency(booking.totalPrice)}
-                          </Typography>
-                        </Box>
-
-                        {booking.discountAmount > 0 && (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                            }}
-                          >
+                          </TableCell>
+                          <TableCell sx={tableBodyCellSx}>
                             <Box
                               sx={{
                                 display: "flex",
                                 alignItems: "center",
-                                gap: 1,
+                                gap: 0.5,
                               }}
                             >
-                              <Tag size={18} style={{ color: "#F59E0B" }} />
+                              <MapPin size={14} style={{ color: "#6B7280" }} />
                               <Typography
                                 variant="body2"
                                 color="text.secondary"
                               >
-                                Giảm giá:
+                                {booking.tourDestination}
                               </Typography>
                             </Box>
+                          </TableCell>
+                          <TableCell sx={tableBodyCellSx}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                              }}
+                            >
+                              <Calendar
+                                size={14}
+                                style={{ color: "#6B7280" }}
+                              />
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {formatDate(booking.bookingDate)}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell sx={tableBodyCellSx}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                              }}
+                            >
+                              <Users size={14} style={{ color: "#6B7280" }} />
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {booking.numOfAdults} người lớn
+                                {booking.numOfChildren > 0 &&
+                                  `, ${booking.numOfChildren} trẻ em`}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell sx={tableBodyCellSx}>
                             <Typography
                               variant="body2"
-                              sx={{ fontWeight: 600, color: "#F59E0B" }}
+                              sx={{ fontWeight: 700, color: "#10B981" }}
                             >
-                              -{formatCurrency(booking.discountAmount)}
+                              {formatCurrency(booking.remainingAmount)}
                             </Typography>
-                          </Box>
-                        )}
-
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            pt: 1,
-                            borderTop: "2px solid #e0e7ff",
-                          }}
-                        >
-                          <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                            Còn lại:
-                          </Typography>
-                          <Typography
-                            variant="h6"
-                            sx={{
-                              fontWeight: 800,
-                              background:
-                                "linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)",
-                              WebkitBackgroundClip: "text",
-                              WebkitTextFillColor: "transparent",
-                              backgroundClip: "text",
-                            }}
-                          >
-                            {formatCurrency(booking.remainingAmount)}
-                          </Typography>
-                        </Box>
-                      </Stack>
-
-                      {/* Action Buttons */}
-                      {shouldShowButtons(booking.bookingStatus) ? (
-                        <Stack spacing={1.5}>
-                          {canCancel(booking.bookingStatus) && (
-                            <Button
-                              fullWidth
-                              variant="contained"
-                              onClick={() => {
-                                navigate("/request-booking", {
-                                  state: {
-                                    bookingId: booking.bookingId,
-                                    action: "cancel",
-                                    booking: booking,
-                                  },
-                                });
-                              }}
+                          </TableCell>
+                          <TableCell sx={tableBodyCellSx}>
+                            <Chip
+                              icon={statusConfig.icon}
+                              label={statusConfig.label}
                               sx={{
-                                borderRadius: "12px",
-                                textTransform: "none",
-                                py: 1.5,
-                                background:
-                                  "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)",
-                                "&:hover": {
-                                  background:
-                                    "linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)",
-                                  transform: "scale(1.02)",
-                                },
+                                background: statusConfig.bgGradient,
+                                color: statusConfig.color,
                                 fontWeight: 600,
-                                boxShadow: "0 4px 16px rgba(239, 68, 68, 0.3)",
+                                borderRadius: "8px",
+                                height: "28px",
+                                fontSize: "0.75rem",
+                                boxShadow: "0 6px 14px rgba(15, 23, 42, 0.08)",
                               }}
-                              startIcon={<XCircle size={18} />}
-                            >
-                              Hủy tour
-                            </Button>
-                          )}
-                          {canChange(booking.bookingStatus) && (
-                            <Button
-                              fullWidth
-                              variant="contained"
-                              onClick={() => {
-                                setConfirmModalOpen(true);
-                                setSelectedBookingId(booking.bookingId);
-                                setSelectedBooking(booking);
-                              }}
-                              sx={{
-                                borderRadius: "12px",
-                                textTransform: "none",
-                                py: 1.5,
-                                background:
-                                  "linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)",
-                                "&:hover": {
-                                  background:
-                                    "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
-                                  transform: "scale(1.02)",
-                                },
-                                fontWeight: 600,
-                                boxShadow: "0 4px 16px rgba(59, 130, 246, 0.3)",
-                              }}
-                              startIcon={<RefreshCw size={18} />}
-                            >
-                              Đổi tour
-                            </Button>
-                          )}
-                        </Stack>
-                      ) : shouldShowStatusOnly(booking.bookingStatus) ? (
-                        <Box
-                          sx={{
-                            textAlign: "center",
-                            py: 1.5,
-                            borderRadius: "12px",
-                            background: statusConfig.bgGradient,
-                          }}
-                        >
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: statusConfig.color,
-                              fontWeight: 600,
-                            }}
+                            />
+                          </TableCell>
+                          <TableCell
+                            sx={{ ...tableBodyCellSx, textAlign: "center" }}
                           >
-                            {statusConfig.label}
-                          </Typography>
-                        </Box>
-                      ) : null}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </Box>
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              justifyContent="center"
+                            >
+                              <Tooltip title="Xem chi tiết">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleViewDetails(booking)}
+                                  sx={{
+                                    color: "#3B82F6",
+                                    "&:hover": {
+                                      backgroundColor:
+                                        "rgba(59, 130, 246, 0.1)",
+                                    },
+                                  }}
+                                >
+                                  <Eye size={18} />
+                                </IconButton>
+                              </Tooltip>
+                              {canCancel(booking.bookingStatus) && (
+                                <Tooltip title="Hủy tour">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                      navigate("/request-booking", {
+                                        state: {
+                                          bookingId: booking.bookingId,
+                                          action: "cancel",
+                                          booking: booking,
+                                        },
+                                      });
+                                    }}
+                                    sx={{
+                                      color: "#EF4444",
+                                      "&:hover": {
+                                        backgroundColor:
+                                          "rgba(239, 68, 68, 0.1)",
+                                      },
+                                    }}
+                                  >
+                                    <XCircle size={18} />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                              {canChange(booking.bookingStatus) && (
+                                <Tooltip title="Đổi tour">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                      setConfirmModalOpen(true);
+                                      setSelectedBookingId(booking.bookingId);
+                                      setSelectedBooking(booking);
+                                    }}
+                                    sx={{
+                                      color: "#3B82F6",
+                                      "&:hover": {
+                                        backgroundColor:
+                                          "rgba(59, 130, 246, 0.1)",
+                                      },
+                                    }}
+                                  >
+                                    <RefreshCw size={18} />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Card>
 
             {/* Pagination */}
             {bookings.length > itemsPerPage && (
@@ -714,10 +900,12 @@ const BookingPage = () => {
                   display: "flex",
                   justifyContent: "center",
                   mt: 4,
-                  background: "rgba(255, 255, 255, 0.95)",
+                  background:
+                    "linear-gradient(145deg, #ffffff 0%, #f5f7ff 100%)",
                   borderRadius: "20px",
                   p: 2,
-                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(226, 232, 240, 0.8)",
+                  boxShadow: "0 18px 35px rgba(15, 23, 42, 0.08)",
                 }}
               >
                 <Pagination
@@ -742,6 +930,385 @@ const BookingPage = () => {
           </>
         )}
       </Box>
+      <Dialog
+        open={detailModalOpen}
+        onClose={handleCloseDetailModal}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            borderRadius: "28px",
+            background: "linear-gradient(180deg, #f9fbff 0%, #ffffff 100%)",
+            boxShadow: "0 35px 80px rgba(15, 23, 42, 0.25)",
+            overflow: "hidden",
+          },
+        }}
+      >
+        {detailBooking && (
+          <DialogContent sx={{ p: 0 }}>
+            <Box>
+              <Box
+                sx={{
+                  position: "relative",
+                  height: { xs: 220, md: 260 },
+                  backgroundImage: `url(${detailHeroImage})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              >
+                <Box
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "linear-gradient(135deg, rgba(15,23,42,0.8) 0%, rgba(15,23,42,0.35) 70%)",
+                  }}
+                />
+                <IconButton
+                  onClick={handleCloseDetailModal}
+                  sx={{
+                    position: "absolute",
+                    top: 16,
+                    right: 16,
+                    color: "white",
+                    backgroundColor: "rgba(255,255,255,0.15)",
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.25)",
+                    },
+                  }}
+                >
+                  <X size={18} />
+                </IconButton>
+                <Box
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    color: "white",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "flex-end",
+                    p: { xs: 3, md: 4 },
+                    gap: 1,
+                  }}
+                >
+                  {activeDetailStatusConfig && (
+                    <Chip
+                      icon={activeDetailStatusConfig.icon}
+                      label={activeDetailStatusConfig.label}
+                      sx={{
+                        alignSelf: "flex-start",
+                        background: activeDetailStatusConfig.bgGradient,
+                        color: activeDetailStatusConfig.color,
+                        fontWeight: 600,
+                        borderRadius: "10px",
+                        mb: 1,
+                        boxShadow: "0 10px 25px rgba(15,23,42,0.35)",
+                        border: "1px solid rgba(255,255,255,0.2)",
+                        "& .MuiChip-icon": {
+                          color: activeDetailStatusConfig.color,
+                        },
+                      }}
+                    />
+                  )}
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontWeight: 800,
+                      textShadow: "0 10px 35px rgba(0,0,0,0.45)",
+                    }}
+                  >
+                    {tourDetail?.title || detailBooking.tourTitle}
+                  </Typography>
+                  <Stack direction="row" spacing={2} flexWrap="wrap">
+                    <Stack direction="row" spacing={0.5} alignItems="center">
+                      <MapPin size={16} />
+                      <Typography variant="body2">
+                        {tourDetail?.destination ||
+                          detailBooking.tourDestination}
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" spacing={0.5} alignItems="center">
+                      <Calendar size={16} />
+                      <Typography variant="body2">
+                        {tourDetail?.duration || detailBooking.tourDuration}
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                </Box>
+              </Box>
+              {detailLoading && (
+                <LinearProgress
+                  sx={{
+                    height: 4,
+                    borderRadius: "999px",
+                    backgroundColor: "rgba(226, 232, 240, 0.6)",
+                    "& .MuiLinearProgress-bar": {
+                      background:
+                        "linear-gradient(135deg, #3B82F6 0%, #7C3AED 100%)",
+                    },
+                  }}
+                />
+              )}
+              <Box
+                sx={{
+                  p: { xs: 3, md: 4 },
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 3,
+                }}
+              >
+                {detailError && (
+                  <Alert severity="error" sx={{ borderRadius: "12px" }}>
+                    {detailError}
+                  </Alert>
+                )}
+                <Stack
+                  direction={{ xs: "column", md: "row" }}
+                  spacing={3}
+                  alignItems={{ md: "center" }}
+                  justifyContent="space-between"
+                >
+                  <Box>
+                    <Typography
+                      variant="h6"
+                      sx={{ fontWeight: 700, color: "#0F172A" }}
+                    >
+                      Chi tiết booking
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Mã: {detailBooking.bookingId}
+                    </Typography>
+                  </Box>
+                  <Stack direction="row" spacing={2}>
+                    <Box>
+                      <Typography
+                        variant="overline"
+                        sx={{ color: "#94A3B8", letterSpacing: "0.1em" }}
+                      >
+                        Tổng thanh toán
+                      </Typography>
+                      <Typography
+                        variant="h5"
+                        sx={{ fontWeight: 800, color: "#10B981" }}
+                      >
+                        {formatCurrency(detailBooking.totalPrice)}
+                      </Typography>
+                    </Box>
+                    <Divider orientation="vertical" flexItem />
+                    <Box>
+                      <Typography
+                        variant="overline"
+                        sx={{ color: "#94A3B8", letterSpacing: "0.1em" }}
+                      >
+                        Còn lại
+                      </Typography>
+                      <Typography
+                        variant="h6"
+                        sx={{ fontWeight: 700, color: "#2563EB" }}
+                      >
+                        {formatCurrency(detailBooking.remainingAmount)}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Stack>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                    gap: 3,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      border: "1px solid rgba(226, 232, 240, 0.8)",
+                      borderRadius: "20px",
+                      background: "linear-gradient(180deg, #f9fbff, #fefefe)",
+                      p: 3,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1.5,
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      sx={{ fontWeight: 700, color: "#0F172A" }}
+                    >
+                      Thông tin tour
+                    </Typography>
+                    <Stack spacing={1.2}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <MapPin size={16} color="#64748B" />
+                        <Typography variant="body2" color="text.secondary">
+                          {tourDetail?.destination ||
+                            detailBooking.tourDestination}
+                        </Typography>
+                      </Stack>
+                      {tourDetail?.duration || detailBooking.tourDuration ? (
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Calendar size={16} color="#64748B" />
+                          <Typography variant="body2" color="text.secondary">
+                            {tourDetail?.duration || detailBooking.tourDuration}
+                          </Typography>
+                        </Stack>
+                      ) : null}
+                      {tourDetail?.startDate && (
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Calendar size={16} color="#64748B" />
+                          <Typography variant="body2" color="text.secondary">
+                            Bắt đầu: {formatDate(tourDetail.startDate)}
+                          </Typography>
+                        </Stack>
+                      )}
+                      {tourDetail?.endDate && (
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Calendar size={16} color="#64748B" />
+                          <Typography variant="body2" color="text.secondary">
+                            Kết thúc: {formatDate(tourDetail.endDate)}
+                          </Typography>
+                        </Stack>
+                      )}
+                    </Stack>
+                    {tourDetail?.itinerary &&
+                      tourDetail.itinerary.length > 0 && (
+                        <Box sx={{ mt: 1 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: 600, color: "#1F2937", mb: 0.5 }}
+                          >
+                            Lịch trình nổi bật
+                          </Typography>
+                          <Box
+                            component="ul"
+                            sx={{
+                              m: 0,
+                              pl: 3,
+                              color: "#64748B",
+                              fontSize: "0.9rem",
+                            }}
+                          >
+                            {tourDetail.itinerary
+                              .slice(0, 4)
+                              .map((item, index) => (
+                                <Box
+                                  component="li"
+                                  key={index}
+                                  sx={{ mb: 0.5 }}
+                                >
+                                  {item}
+                                </Box>
+                              ))}
+                            {tourDetail.itinerary.length > 4 && (
+                              <Box
+                                component="li"
+                                sx={{ listStyle: "none", color: "#94A3B8" }}
+                              >
+                                +{tourDetail.itinerary.length - 4} hoạt động
+                                khác
+                              </Box>
+                            )}
+                          </Box>
+                        </Box>
+                      )}
+                  </Box>
+                  <Box
+                    sx={{
+                      border: "1px solid rgba(226, 232, 240, 0.8)",
+                      borderRadius: "20px",
+                      background: "linear-gradient(180deg, #fefaff, #ffffff)",
+                      p: 3,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1.5,
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      sx={{ fontWeight: 700, color: "#0F172A" }}
+                    >
+                      Thông tin đặt chỗ
+                    </Typography>
+                    <Stack spacing={1.2}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Calendar size={16} color="#64748B" />
+                        <Typography variant="body2" color="text.secondary">
+                          Đặt lúc: {formatDate(detailBooking.bookingDate)}
+                        </Typography>
+                      </Stack>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Users size={16} color="#64748B" />
+                        <Typography variant="body2" color="text.secondary">
+                          {detailBooking.numOfAdults} người lớn
+                          {detailBooking.numOfChildren > 0 &&
+                            `, ${detailBooking.numOfChildren} trẻ em`}
+                        </Typography>
+                      </Stack>
+                      <Typography variant="body2" color="text.secondary">
+                        Người đặt: {detailBooking.name}
+                      </Typography>
+                      {detailBooking.phone && (
+                        <Typography variant="body2" color="text.secondary">
+                          Điện thoại: {detailBooking.phone}
+                        </Typography>
+                      )}
+                      {detailBooking.email && (
+                        <Typography variant="body2" color="text.secondary">
+                          Email: {detailBooking.email}
+                        </Typography>
+                      )}
+                      {detailBooking.note && (
+                        <Typography variant="body2" color="text.secondary">
+                          Ghi chú: {detailBooking.note}
+                        </Typography>
+                      )}
+                    </Stack>
+                    <Divider sx={{ my: 1.5 }} />
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                        gap: 1.5,
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Tiền người lớn
+                        </Typography>
+                        <Typography sx={{ fontWeight: 600, color: "#0F172A" }}>
+                          {formatCurrency(detailBooking.totalPriceAdults)}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Tiền trẻ em
+                        </Typography>
+                        <Typography sx={{ fontWeight: 600, color: "#0F172A" }}>
+                          {formatCurrency(detailBooking.totalPriceChildren)}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Ưu đãi
+                        </Typography>
+                        <Typography sx={{ fontWeight: 600, color: "#EF4444" }}>
+                          -{formatCurrency(detailBooking.discountAmount)}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Thời hạn thanh toán
+                        </Typography>
+                        <Typography sx={{ fontWeight: 600, color: "#2563EB" }}>
+                          {detailBooking.paymentTerm}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+          </DialogContent>
+        )}
+      </Dialog>
     </Box>
   );
 };
