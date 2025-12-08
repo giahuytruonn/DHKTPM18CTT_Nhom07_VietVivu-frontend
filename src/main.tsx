@@ -196,6 +196,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                     />
                     <Route path="/about" element={<AboutPage />} />
                     <Route path="/blog" element={<BlogPage />} />
+                    <Route path="/blog/:blogId" element={<BlogDetailPage />} />
+                    <Route path="/guides" element={<GuidesListPage />} />
+                    <Route
+                      path="/guides/:guideId"
+                      element={<GuideDetailPage />}
+                    />
                     <Route path="/profile" element={<UserProfilePage />} />
                     <Route
                       path="/change-password"

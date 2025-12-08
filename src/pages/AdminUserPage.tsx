@@ -20,11 +20,15 @@ import {
   MapPin,
   User as UserIcon,
   Lock,
+  Calendar,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import type { UserResponse, UserCreationRequest, UserUpdateRequest } from "../types/user";
+import UserBookingsModal from "../components/modal/UserBookingsModal";
 
 const AdminUsersPage: React.FC = () => {
+  const [showBookingsModal, setShowBookingsModal] = useState(false);
+  const [selectedUserForBookings, setSelectedUserForBookings] = useState<{ id: string; name: string } | null>(null);
   const queryClient = useQueryClient();
   const [searchKeyword, setSearchKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
@@ -89,7 +93,7 @@ const AdminUsersPage: React.FC = () => {
   const handleToggleStatus = (user: UserResponse) => {
     const newStatus = !user.isActive;
     const action = newStatus ? "kích hoạt" : "khóa";
-    
+
     if (window.confirm(`Bạn có chắc muốn ${action} tài khoản "${user.username}"?`)) {
       toggleStatusMutation.mutate({ userId: user.id, isActive: newStatus });
     }
@@ -249,14 +253,23 @@ const AdminUsersPage: React.FC = () => {
                       </button>
                       <button
                         onClick={() => handleToggleStatus(user)}
-                        className={`p-2 rounded-lg transition-colors ${
-                          user.isActive
-                            ? "hover:bg-red-50 text-red-600"
-                            : "hover:bg-green-50 text-green-600"
-                        }`}
+                        className={`p-2 rounded-lg transition-colors ${user.isActive
+                          ? "hover:bg-red-50 text-red-600"
+                          : "hover:bg-green-50 text-green-600"
+                          }`}
                         title={user.isActive ? "Khóa tài khoản" : "Kích hoạt"}
                       >
                         {user.isActive ? <UserX size={18} /> : <UserCheck size={18} />}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedUserForBookings({ id: user.id, name: user.name });
+                          setShowBookingsModal(true);
+                        }}
+                        className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
+                        title="Xem booking"
+                      >
+                        <Calendar size={18} />
                       </button>
                     </div>
                   </td>
@@ -296,6 +309,17 @@ const AdminUsersPage: React.FC = () => {
             setShowEditModal(false);
             setSelectedUser(null);
             queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
+          }}
+        />
+      )}
+
+      {showBookingsModal && selectedUserForBookings && (
+        <UserBookingsModal
+          userId={selectedUserForBookings.id}
+          userName={selectedUserForBookings.name}
+          onClose={() => {
+            setShowBookingsModal(false);
+            setSelectedUserForBookings(null);
           }}
         />
       )}

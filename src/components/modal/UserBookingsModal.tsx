@@ -25,8 +25,8 @@ const UserBookingsModal: React.FC<UserBookingsModalProps> = ({ userId, userName,
             COMPLETED: 'bg-blue-100 text-blue-800',
         };
         const labels = {
-            PENDING: 'Chờ xác nhận',
-            CONFIRMED: 'Đã xác nhận',
+            PENDING: 'Chờ thanh toán',
+            CONFIRMED: 'Đã thanh toán',
             CANCELLED: 'Đã hủy',
             COMPLETED: 'Hoàn thành',
         };
