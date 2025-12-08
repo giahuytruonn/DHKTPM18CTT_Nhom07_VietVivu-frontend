@@ -86,6 +86,7 @@ export default function Header() {
               { to: "/about", label: "Về chúng tôi" },
               { to: "/blog", label: "Blog" },
               { to: "/feed", label: "Khám phá" },
+              { to: "/contact", label: "Liên hệ" },
             ].map((item, idx) => (
               <Link
                 key={idx}

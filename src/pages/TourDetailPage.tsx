@@ -253,7 +253,7 @@ const TourDetailPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Star className="w-5 h-5 text-yellow-400 fill-current" />
                   <span className="font-bold text-gray-900">{rating.toFixed(1)}</span>
-                  <span className="text-sm">({reviewsCount} đánh giá)</span>
+                  <span className="text-sm">({rating} đánh giá)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Heart className="w-5 h-5 text-red-500" />

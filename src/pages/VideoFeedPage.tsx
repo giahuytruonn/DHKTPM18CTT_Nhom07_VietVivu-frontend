@@ -182,7 +182,7 @@ const VideoFeedPage: React.FC = () => {
   const [videos, setVideos] = useState<IExploreVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 

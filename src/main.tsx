@@ -41,6 +41,7 @@ import UserProfilePage from "./pages/UserProfilePage";
 import AdminUsersPage from "./pages/AdminUserPage";
 import VideoFeedPage from "./pages/VideoFeedPage"
 import MyReviewsPage from "./pages/MyReviewsPage";
+import ContactPage from './pages/ContactPage';
 
 const queryClient = new QueryClient();
 
@@ -93,6 +94,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="/booking/:tourId" element={<BookingStepper />} />
                   <Route path="/feed" element={<VideoFeedPage />} />
                   <Route path="/review" element={<MyReviewsPage />} />
+                  <Route path="/contact" element={<ContactPage />} />
 
                   {/* Protected User Routes */}
                   <Route
