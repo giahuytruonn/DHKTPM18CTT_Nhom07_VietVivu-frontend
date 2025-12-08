@@ -5,6 +5,7 @@ import {
   savePaymentSuccess,
 } from "../../services/payments.services";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 type Booking = {
   bookingId: string;
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export default function PaymentStep({ booking, onPaid, onBack }: Props) {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [showQR, setShowQR] = useState(false);
 
@@ -110,6 +112,12 @@ export default function PaymentStep({ booking, onPaid, onBack }: Props) {
           style={{ height: 420 }}
         ></div>
       </div>
+      <button
+        onClick={() => navigate("/")}
+        className={`px-6 py-3 rounded-xl text-white font-semibold transition-all shadow-md bg-gradient-to-r from-purple-500 to-indigo-600 hover:opacity-90 `}
+      >
+        Bỏ qua
+      </button>
 
       <button
         onClick={onBack}

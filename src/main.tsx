@@ -1,4 +1,5 @@
 // src/main.tsx - FULLY UPDATED VERSION
+import "./index.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -82,9 +83,13 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 const ContactPage = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
     <div className="text-center">
-      <h2 className="text-3xl font-bold text-gray-900 mb-4">Liên hệ với chúng tôi</h2>
+      <h2 className="text-3xl font-bold text-gray-900 mb-4">
+        Liên hệ với chúng tôi
+      </h2>
       <p className="text-gray-600 mb-6">Trang đang được phát triển...</p>
-      <a href="/" className="text-indigo-600 hover:text-indigo-800 font-medium">← Quay lại trang chủ</a>
+      <a href="/" className="text-indigo-600 hover:text-indigo-800 font-medium">
+        ← Quay lại trang chủ
+      </a>
     </div>
   </div>
 );
@@ -92,9 +97,13 @@ const ContactPage = () => (
 const FAQPage = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
     <div className="text-center">
-      <h2 className="text-3xl font-bold text-gray-900 mb-4">Câu hỏi thường gặp</h2>
+      <h2 className="text-3xl font-bold text-gray-900 mb-4">
+        Câu hỏi thường gặp
+      </h2>
       <p className="text-gray-600 mb-6">Trang đang được phát triển...</p>
-      <a href="/" className="text-indigo-600 hover:text-indigo-800 font-medium">← Quay lại trang chủ</a>
+      <a href="/" className="text-indigo-600 hover:text-indigo-800 font-medium">
+        ← Quay lại trang chủ
+      </a>
     </div>
   </div>
 );
@@ -102,9 +111,13 @@ const FAQPage = () => (
 const PrivacyPage = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
     <div className="text-center">
-      <h2 className="text-3xl font-bold text-gray-900 mb-4">Chính sách bảo mật</h2>
+      <h2 className="text-3xl font-bold text-gray-900 mb-4">
+        Chính sách bảo mật
+      </h2>
       <p className="text-gray-600 mb-6">Trang đang được phát triển...</p>
-      <a href="/" className="text-indigo-600 hover:text-indigo-800 font-medium">← Quay lại trang chủ</a>
+      <a href="/" className="text-indigo-600 hover:text-indigo-800 font-medium">
+        ← Quay lại trang chủ
+      </a>
     </div>
   </div>
 );
@@ -180,7 +193,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                     <Route path="/about" element={<AboutPage />} />
                     <Route path="/blog" element={<BlogPage />} />
                     <Route path="/profile" element={<UserProfilePage />} />
-                    <Route path="/change-password" element={<ChangePasswordPage />} />
+                    <Route
+                      path="/change-password"
+                      element={<ChangePasswordPage />}
+                    />
                   </Routes>
                 </main>
 
@@ -216,7 +232,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             />
             <Route path="reports" element={<AdminStatisticsPage />} />
             <Route path="bookings-request" element={<BookingRequestPage />} />
-            <Route path="bookings-request/:requestId" element={<BookingRequestDetailPage />} />
+            <Route
+              path="bookings-request/:requestId"
+              element={<BookingRequestDetailPage />}
+            />
           </Route>
         </Routes>
       </BrowserRouter>
