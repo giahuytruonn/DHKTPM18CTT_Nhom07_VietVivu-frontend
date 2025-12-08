@@ -825,6 +825,11 @@ const BookingPage = () => {
                                 <Tooltip title="Thanh toán">
                                   <IconButton
                                     size="small"
+                                    onClick={() => {
+                                      navigate(
+                                        `/payment-later/${booking.bookingId}`
+                                      );
+                                    }}
                                     sx={{
                                       color: "#0EA5E9",
                                       "&:hover": {
