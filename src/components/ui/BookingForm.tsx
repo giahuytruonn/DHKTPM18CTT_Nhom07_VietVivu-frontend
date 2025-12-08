@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { bookTour } from "../../services/booking.services";
+import { bookTour, type BookingRequest } from "../../services/booking.services";
 import { toast } from "sonner";
 
 interface BookingFormProps {
@@ -9,26 +9,13 @@ interface BookingFormProps {
   onBooked: (data: any) => void;
 }
 
-interface BookingFormData {
-  tourId: string;
-  userId: string | null;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  numOfAdults: number;
-  numOfChildren: number;
-  bookingDate: string;
-  promotionId: string; // ← thêm vào
-}
-
 export default function BookingForm({
   tourId,
   userId,
   authenticated,
   onBooked,
 }: BookingFormProps) {
-  const [form, setForm] = useState<BookingFormData>({
+  const [form, setForm] = useState<BookingRequest>({
     tourId,
     userId,
     name: "",
@@ -38,22 +25,20 @@ export default function BookingForm({
     numOfAdults: 1,
     numOfChildren: 0,
     bookingDate: new Date().toISOString().split("T")[0],
-    promotionId: "124-51-1198", // hoặc "" nếu backend chấp nhận
+    promotionId: "",
   });
 
-  const handleChange = (key: keyof BookingFormData, value: any) => {
+  const handleChange = (key: keyof BookingRequest, value: any) => {
     setForm({ ...form, [key]: value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log("Submitting booking form:", form);
     e.preventDefault();
-    console.log("userId:", form.userId);
 
-    if (!authenticated) {
-      if (!form.name || !form.email || !form.phone) {
-        toast.error("Vui lòng nhập đầy đủ thông tin!");
-        return;
-      }
+    if (!authenticated && (!form.name || !form.email || !form.phone)) {
+      toast.error("Vui lòng nhập đầy đủ thông tin!");
+      return;
     }
 
     try {
@@ -67,7 +52,7 @@ export default function BookingForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 ">
       {!authenticated && (
         <>
           <input
@@ -75,7 +60,7 @@ export default function BookingForm({
             placeholder="Họ tên"
             value={form.name}
             onChange={(e) => handleChange("name", e.target.value)}
-            className="border p-2 rounded"
+            className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500"
           />
 
           <input
@@ -83,7 +68,7 @@ export default function BookingForm({
             placeholder="Email"
             value={form.email}
             onChange={(e) => handleChange("email", e.target.value)}
-            className="border p-2 rounded"
+            className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500"
           />
 
           <input
@@ -91,40 +76,59 @@ export default function BookingForm({
             placeholder="Số điện thoại"
             value={form.phone}
             onChange={(e) => handleChange("phone", e.target.value)}
-            className="border p-2 rounded"
+            className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500"
           />
         </>
       )}
-      <p>Số người lớn</p>
-      <input
-        type="number"
-        min={1}
-        placeholder="Số người lớn"
-        value={form.numOfAdults}
-        onChange={(e) => handleChange("numOfAdults", Number(e.target.value))}
-        className="border p-2 rounded"
-      />
-      <p>Số trẻ em</p>
-      <input
-        type="number"
-        min={0}
-        placeholder="Số trẻ em"
-        value={form.numOfChildren}
-        onChange={(e) => handleChange("numOfChildren", Number(e.target.value))}
-        className="border p-2 rounded"
-      />
-      <p>Địa chỉ</p>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium">Người lớn</label>
+          <input
+            type="number"
+            min={1}
+            value={form.numOfAdults}
+            onChange={(e) =>
+              handleChange("numOfAdults", Number(e.target.value))
+            }
+            className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 w-full"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium">Trẻ em</label>
+          <input
+            type="number"
+            min={0}
+            value={form.numOfChildren}
+            onChange={(e) =>
+              handleChange("numOfChildren", Number(e.target.value))
+            }
+            className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 w-full"
+          />
+        </div>
+      </div>
+
       <input
         type="text"
         placeholder="Địa chỉ"
         value={form.address}
         onChange={(e) => handleChange("address", e.target.value)}
-        className="border p-2 rounded"
+        className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500"
+      />
+
+      {/* ⭐ Thêm field mã giảm giá */}
+      <input
+        type="text"
+        placeholder="Mã khuyến mãi (nếu có)"
+        value={form.promotionId}
+        onChange={(e) => handleChange("promotionId", e.target.value)}
+        className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500"
       />
 
       <button
         type="submit"
-        className="bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+        className="bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 shadow-md mt-2"
       >
         Tiếp tục
       </button>

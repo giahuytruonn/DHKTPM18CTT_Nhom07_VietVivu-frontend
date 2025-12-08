@@ -2,7 +2,7 @@
 import api from "./api";
 
 interface PaymentRequest {
-  tourId: number;
+  tourId: string;
   description: string;
   amount: number;
 }
