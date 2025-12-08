@@ -31,6 +31,7 @@ import {
   getPendingRequests,
   type BookingRequestResponse,
 } from "../services/bookingRequest.services";
+import { formatDateYMD } from "../utils/date";
 
 const BookingRequestPage = () => {
   const navigate = useNavigate();
@@ -103,17 +104,8 @@ const BookingRequestPage = () => {
       };
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("vi-VN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const formatDate = (dateString?: string | null) =>
+    formatDateYMD(dateString, { includeTime: true });
 
   return (
     <Box sx={{ width: "100%", minHeight: "100%" }}>

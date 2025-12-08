@@ -31,6 +31,7 @@ import { useAuthStore } from "./stores/useAuthStore";
 import BookingRequestPage from "./pages/BookingRequestPage";
 import BookingRequestDetailPage from "./pages/BookingRequestDetailPage";
 import BookingPage from "./pages/BookingPage";
+import BookingDetailPage from "./pages/BookingDetailPage";
 import RequestBookingPage from "./pages/RequestBookingPage";
 import BookingForm from "./components/ui/BookingForm";
 import BookingStepper from "./components/ui/BookingStepper";
@@ -107,6 +108,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                     element={
                       <ProtectedRoute>
                         <BookingPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/bookings/:bookingId"
+                    element={
+                      <ProtectedRoute>
+                        <BookingDetailPage />
                       </ProtectedRoute>
                     }
                   />
