@@ -69,6 +69,14 @@ export const getBookings = async (): Promise<BookingResponse[]> => {
   return response.data.result;
 };
 
+
+export const getUserBookings = async (userId: string): Promise<BookingResponse[]> => {
+  const response = await api.get<ApiResponse<BookingResponse[]>>(
+    `/bookings/user/${userId}`
+  );
+  return response.data.result;
+};
+
 export const getBookingById = async (
   bookingId: string
 ): Promise<BookingResponse> => {
@@ -77,3 +85,4 @@ export const getBookingById = async (
   );
   return response.data.result;
 };
+
