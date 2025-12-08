@@ -32,7 +32,7 @@ import { getTours, searchTours } from "../services/tour.service";
 import type { TourSearchParams } from "../services/tour.service";
 import { requestChangeTour } from "../services/bookingRequest.services";
 import { createPaymentLink } from "../services/payments.services";
-import { usePayOS, PayOSConfig } from "@payos/payos-checkout";
+import { usePayOS } from "@payos/payos-checkout";
 import toast from "react-hot-toast";
 import TourFilters from "../components/tour/TourFilters";
 import PaginationControls from "../components/tour/PaginationControls";
@@ -212,7 +212,7 @@ const ChangeTourPage = () => {
     };
 
     const handleConfirmChange = async () => {
-        if (!reason.trim()) {
+        if (!reason.trim()) {   
             toast.error("Vui lòng nhập lý do đổi tour");
             return;
         }

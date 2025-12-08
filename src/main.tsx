@@ -37,8 +37,13 @@ import BlogPage from "./pages/BlogPage";
 import AboutPage from "./pages/AboutPage";
 import UserProfilePage from "./pages/UserProfilePage";
 import AdminUsersPage from "./pages/AdminUserPage";
-import ExplorePage from "./pages/ExplorePage"
-import VideoFeedPage from "./pages/VideoFeedPage"
+import ExplorePage from "./pages/ExplorePage";
+import VideoFeedPage from "./pages/VideoFeedPage";
+import GetOtpPage from "./pages/GetOtpPage";
+import ConfirmOtpPage from "./pages/ConfirmOtpPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
+import PaymentLaterStepper from "./components/ui/PaymentLaterStepper";
 
 const queryClient = new QueryClient();
 
@@ -54,13 +59,13 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
   const isAdmin = token
     ? (() => {
-      try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        return payload.scope?.includes("ROLE_ADMIN") || false;
-      } catch {
-        return false;
-      }
-    })()
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          return payload.scope?.includes("ROLE_ADMIN") || false;
+        } catch {
+          return false;
+        }
+      })()
     : false;
 
   if (!authenticated) return <Navigate to="/login" replace />;
@@ -78,60 +83,74 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route
             path="/*"
             element={
-              <>
+              <div className="min-h-screen flex flex-col">
                 <Header />
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
-                  <Route path="/authenticate" element={<Authenticate />} />
-                  <Route path="/tours" element={<AllToursPage />} />
-                  <Route path="/tours/:tourId" element={<TourDetailPage />} />
-                  <Route path="/change-tour" element={<ChangeTourPage />} />
-                  <Route path="/booking/:tourId" element={<BookingStepper />} />
-                  <Route path="/feed" element={<VideoFeedPage />} />
-                  <Route path="/upload" element={<ExplorePage />} />
+                <main className="flex-1 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/get-otp-page" element={<GetOtpPage />} />
+                    <Route path="/confirm-otp" element={<ConfirmOtpPage />} />
+                    <Route
+                      path="/reset-password"
+                      element={<ResetPasswordPage />}
+                    />
+                    <Route path="/authenticate" element={<Authenticate />} />
+                    <Route path="/tours" element={<AllToursPage />} />
+                    <Route path="/tours/:tourId" element={<TourDetailPage />} />
+                    <Route path="/change-tour" element={<ChangeTourPage />} />
+                    <Route
+                      path="/booking/:tourId"
+                      element={<BookingStepper />}
+                    />
+                    <Route
+                      path="/payment-later/:bookingId"
+                      element={<PaymentLaterStepper />}
+                    />
+                    <Route path="/feed" element={<VideoFeedPage />} />
+                    <Route path="/upload" element={<ExplorePage />} />
 
-                  {/* Protected User Routes */}
-                  <Route
-                    path="/favorite-tours"
-                    element={
-                      <ProtectedRoute>
-                        <FavoriteToursPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/bookings"
-                    element={
-                      <ProtectedRoute>
-                        <BookingPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/request-booking"
-                    element={
-                      <ProtectedRoute>
-                        <RequestBookingPage />
-                      </ProtectedRoute>
-                    }
-                  />
+                    {/* Protected User Routes */}
+                    <Route
+                      path="/favorite-tours"
+                      element={
+                        <ProtectedRoute>
+                          <FavoriteToursPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/bookings"
+                      element={
+                        <ProtectedRoute>
+                          <BookingPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/request-booking"
+                      element={
+                        <ProtectedRoute>
+                          <RequestBookingPage />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  {/* Placeholder routes */}
-                  <Route
-                    path="/favorite-tours"
-                    element={<FavoriteToursPage />}
-                  />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route path="/blog" element={<BlogPage />} />
-                  <Route path="/profile" element={<UserProfilePage />} />
+                    {/* Placeholder routes */}
+                    <Route
+                      path="/favorite-tours"
+                      element={<FavoriteToursPage />}
+                    />
+                    <Route path="/about" element={<AboutPage />} />
+                    <Route path="/blog" element={<BlogPage />} />
+                    <Route path="/profile" element={<UserProfilePage />} />
+                    <Route path="/change-password" element={<ChangePasswordPage />} />
+                  </Routes>
+                </main>
 
-
-                </Routes>
                 <Footer />
-                
-              </>
+              </div>
             }
           />
 
@@ -149,10 +168,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="tours" element={<AdminToursManagement />} />
             <Route path="tours/create" element={<CreateTourPage />} />
             <Route path="tours/edit/:tourId" element={<EditTourPage />} />
-            <Route
-              path="users"
-              element={<AdminUsersPage />}
-            />
+            <Route path="users" element={<AdminUsersPage />} />
 
             <Route
               path="reviews"

@@ -10,6 +10,7 @@ import {
   Settings,
   Shield,
   TicketCheck,
+  Key,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuthStore } from "../../stores/useAuthStore";
@@ -180,6 +181,15 @@ export default function Header() {
                   >
                     <Heart size={18} />
                     <span className="font-medium">Tour yêu thích</span>
+                  </Link>
+
+                  <Link
+                    to="/change-password"
+                    className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                    onClick={() => setUserDropdown(false)}
+                  >
+                    <Key size={18} />
+                    <span className="font-medium">Đổi mật khẩu</span>
                   </Link>
 
                   <button
