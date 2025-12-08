@@ -49,9 +49,6 @@ import ChangeTourPage from "./pages/ChangeTourPage";
 import Header from "./components/layout/Header";
 import { useAuthStore } from "./stores/useAuthStore";
 import Footer from "./components/layout/Footer";
-import AdminUsersPage from "./pages/AdminUserPage";
-import ExplorePage from "./pages/ExplorePage"
-import VideoFeedPage from "./pages/VideoFeedPage"
 import AdminStatisticsRevenuePage from "./pages/AdminStatisticsRevenuePage";
 
 const queryClient = new QueryClient();
