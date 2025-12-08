@@ -34,10 +34,16 @@ const STATUS_LIST = ["ALL", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"];
 
 const STATUS_VI_MAP: Record<string, string> = {
   ALL: "Tất cả",
-  PENDING: "Chờ xử lý",
-  CONFIRMED: "Đã xác nhận",
+  PENDING: "Xử lý",
+  CONFIRMED: "Xác nhận",
   COMPLETED: "Hoàn thành",
   CANCELLED: "Đã hủy",
+  PENDING_CANCELLATION: "Chờ hủy",
+  PENDING_CHANGE: "Chờ thay đổi",
+  CONFIRMED_CANCELLATION: "Xác nhận hủy",
+  CONFIRMED_CHANGE: "Xác nhận thay đổi",
+  DENIED_CHANGE: "Từ chối thay đổi",
+  DENIED_CANCELLATION: "Từ chối hủy",
 };
 
 const AdminStatisticsPage: React.FC = () => {
@@ -47,6 +53,8 @@ const AdminStatisticsPage: React.FC = () => {
   const [filterUserTable, setFilterUserTable] = useState<
     "BOOKED" | "CANCELLED"
   >("BOOKED");
+  const [startTime, setStartTime] = useState<string>("");
+  const [endTime, setEndTime] = useState<string>("");
 
   // Booking status summary
   const {
@@ -55,7 +63,13 @@ const AdminStatisticsPage: React.FC = () => {
     refetch: refetchBooking,
   } = useQuery({
     queryKey: ["bookingStatusSummary"],
-    queryFn: getBookingStatusSummary,
+    queryFn: () =>
+  getBookingStatusSummary(
+    filterStatusSummary === "ALL" ? "" : filterStatusSummary,
+    startTime || undefined,
+    endTime || undefined
+  ),
+
     staleTime: 1000 * 60 * 5,
   });
 
@@ -65,9 +79,7 @@ const AdminStatisticsPage: React.FC = () => {
       : bookingStatusRaw.filter((item: any) =>
           [item.name, item.code]
             .map((x) => (x ?? "").toLowerCase())
-            .some((x) =>
-              x.includes(filterStatusSummary.toLowerCase())
-            )
+            .some((x) => x.includes(filterStatusSummary.toLowerCase()))
         );
 
   // Top booked tours
@@ -78,7 +90,12 @@ const AdminStatisticsPage: React.FC = () => {
   } = useQuery({
     queryKey: ["topBookedTours", filterStatusTours],
     queryFn: () =>
-      getTopBookedTours(filterStatusTours === "ALL" ? "" : filterStatusTours),
+      getTopBookedTours(
+        filterStatusTours === "ALL" ? "" : filterStatusTours,
+        10,
+        startTime || undefined,
+        endTime || undefined
+      ),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -87,7 +104,10 @@ const AdminStatisticsPage: React.FC = () => {
     queryKey: ["rankingUsers", filterUserTable],
     queryFn: () =>
       getTopUsers(
-        filterUserTable === "BOOKED" ? "CONFIRMED" : "CANCELLED"
+        filterUserTable === "BOOKED" ? "CONFIRMED" : "CANCELLED",
+        5,
+        startTime || undefined,
+        endTime || undefined
       ),
     staleTime: 1000 * 60 * 5,
   });
@@ -100,18 +120,21 @@ const AdminStatisticsPage: React.FC = () => {
   };
 
   // Chart data
-  const pieChartData = bookingStatusData.map((item: any) => ({
-    name: item.name ?? item.status ?? item.code ?? "Unknown",
-    value: item.value ?? item.count ?? 0,
-  }));
+  const pieChartData = (bookingStatusData || []).map((item: any) => {
+    const rawName = item.name ?? item.status ?? item.code ?? "Unknown";
+    const viName = STATUS_VI_MAP[rawName] || rawName; // <-- chuyển sang tiếng Việt
+
+    return {
+      name: viName,
+      value: item.value ?? item.count ?? 0,
+    };
+  });
 
   const topToursChartData = (topToursData as TopTour[])
     .slice(0, 10)
     .map((tour) => ({
       name:
-        tour.name.length > 20
-          ? tour.name.substring(0, 20) + "..."
-          : tour.name,
+        tour.name.length > 20 ? tour.name.substring(0, 20) + "..." : tour.name,
       fullName: tour.name,
       value: tour.value ?? 0,
     }));
@@ -120,9 +143,7 @@ const AdminStatisticsPage: React.FC = () => {
     .slice(0, 10)
     .map((user) => ({
       name:
-        user.name.length > 20
-          ? user.name.substring(0, 20) + "..."
-          : user.name,
+        user.name.length > 20 ? user.name.substring(0, 20) + "..." : user.name,
       fullName: user.name,
       value: user.value ?? 0,
     }));
@@ -176,6 +197,29 @@ const AdminStatisticsPage: React.FC = () => {
             <span className="font-medium">Làm mới</span>
           </button>
         </div>
+      </div>
+
+      <div className="flex gap-3 mt-3">
+        <input
+          type="date"
+          value={startTime}
+          onChange={(e) => setStartTime(e.target.value)}
+          className="border px-3 py-2 rounded-lg"
+        />
+
+        <input
+          type="date"
+          value={endTime}
+          onChange={(e) => setEndTime(e.target.value)}
+          className="border px-3 py-2 rounded-lg"
+        />
+
+        <button
+          onClick={handleRefresh}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
+        >
+          Lọc
+        </button>
       </div>
 
       {/* Charts */}
