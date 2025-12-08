@@ -72,7 +72,8 @@ const ChangeTourPage = () => {
   const [selectedTour, setSelectedTour] = useState<TourResponse | null>(null);
   const [tourToConfirm, setTourToConfirm] = useState<TourResponse | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [reason, setReason] = useState("");
+    const [reason, setReason] = useState("");
+    const [promotionCode, setPromotionCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<
     "pending" | "success" | "failed"
@@ -248,13 +249,14 @@ const ChangeTourPage = () => {
     return newTotal - oldBooking.totalPrice;
   };
 
-  const submitChangeRequest = async () => {
+    const submitChangeRequest = async () => {
     setIsSubmitting(true);
     try {
       await requestChangeTour(
         oldBooking!.bookingId,
         selectedTour!.tourId,
-        reason
+                reason,
+                promotionCode.trim() || undefined
       );
       setActiveStep(3);
     } catch (error) {
@@ -635,6 +637,14 @@ const ChangeTourPage = () => {
                     onChange={(e) => setReason(e.target.value)}
                     sx={{ mb: 2 }}
                   />
+                                    <TextField
+                                        fullWidth
+                                        label="Mã khuyến mãi (nếu có)"
+                                        placeholder="Nhập mã giảm giá giống như khi đặt tour"
+                                        value={promotionCode}
+                                        onChange={(e) => setPromotionCode(e.target.value)}
+                                        sx={{ mb: 1 }}
+                                    />
                 </CardContent>
               </Card>
             </Box>
