@@ -29,7 +29,7 @@ const ChatBox: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // --- DRAG CHATBOX ---
-  const [position, setPosition] = useState({ x: 20, y: 80 });
+  const [position, setPosition] = useState({ x: 1450, y: 300 });
   const dragOffset = useRef({ x: 0, y: 0 });
   const dragging = useRef(false);
 
@@ -181,7 +181,7 @@ const ChatBox: React.FC = () => {
             width: "380px",
             height: "520px",
             left: position.x,
-            bottom: position.y,
+            top: position.y,
           }}
         >
           {/* Header */}

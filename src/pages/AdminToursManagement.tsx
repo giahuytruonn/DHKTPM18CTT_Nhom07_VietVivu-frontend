@@ -13,6 +13,7 @@ import {
     DollarSign,
     ChevronLeft,
     ChevronRight,
+    AlertTriangle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { formatDateYMD, parseDateSafely } from "../utils/date";
@@ -24,9 +25,11 @@ const AdminToursManagement: React.FC = () => {
     const [statusFilter, setStatusFilter] = useState<string>("ALL");
     const [sortBy, setSortBy] = useState<"date" | "bookings" | "price">("date");
     const [currentPage, setCurrentPage] = useState(0);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [tourToDelete, setTourToDelete] = useState<{ id: string; title: string; hasBookings: boolean } | null>(null);
+
     const queryClient = useQueryClient();
 
-    // Fetch tours với phân trang
     const { data: toursResponse, isLoading } = useQuery({
         queryKey: ["adminToursManagement", statusFilter, currentPage],
         queryFn: async () => {
@@ -52,7 +55,6 @@ const AdminToursManagement: React.FC = () => {
     const filteredTours = useMemo(() => {
         let result = [...tours];
 
-        // Search filter
         if (searchKeyword) {
             result = result.filter(
                 (tour) =>
@@ -61,7 +63,6 @@ const AdminToursManagement: React.FC = () => {
             );
         }
 
-        // Sort
         result.sort((a, b) => {
             switch (sortBy) {
                 case "date":
@@ -85,15 +86,34 @@ const AdminToursManagement: React.FC = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["adminToursManagement"] });
             toast.success("Xóa tour thành công!");
+            setShowDeleteModal(false);
+            setTourToDelete(null);
         },
         onError: (error: any) => {
             toast.error("Có lỗi xảy ra: " + (error.response?.data?.message || error.message));
+            setShowDeleteModal(false);
+            setTourToDelete(null);
         },
     });
 
-    const handleDeleteTour = (tourId: string, tourTitle: string) => {
-        if (window.confirm(`Bạn có chắc muốn xóa tour "${tourTitle}"?`)) {
-            deleteTourMutation.mutate(tourId);
+    const handleDeleteClick = (tourId: string, tourTitle: string, totalBookings: number) => {
+        const hasBookings = totalBookings > 0;
+
+        if (hasBookings) {
+            toast.error(
+                `Không thể xóa tour "${tourTitle}" vì đã có ${totalBookings} người đặt!`,
+                { duration: 4000 }
+            );
+            return;
+        }
+
+        setTourToDelete({ id: tourId, title: tourTitle, hasBookings });
+        setShowDeleteModal(true);
+    };
+
+    const confirmDelete = () => {
+        if (tourToDelete) {
+            deleteTourMutation.mutate(tourToDelete.id);
         }
     };
 
@@ -105,7 +125,7 @@ const AdminToursManagement: React.FC = () => {
         };
         const labels = {
             OPEN_BOOKING: "Đang mở",
-            IN_PROGRESS: "Đang chạy",
+            IN_PROGRESS: "Đang thực hiện",
             COMPLETED: "Hoàn thành",
         };
         return (
@@ -122,7 +142,7 @@ const AdminToursManagement: React.FC = () => {
 
     const handleStatusFilterChange = (newStatus: string) => {
         setStatusFilter(newStatus);
-        setCurrentPage(0); // Reset về trang đầu
+        setCurrentPage(0);
     };
 
     if (isLoading) {
@@ -158,7 +178,6 @@ const AdminToursManagement: React.FC = () => {
             {/* Filters */}
             <div className="bg-white rounded-xl p-6 shadow-md">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Search */}
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                         <input
@@ -170,7 +189,6 @@ const AdminToursManagement: React.FC = () => {
                         />
                     </div>
 
-                    {/* Status Filter */}
                     <select
                         value={statusFilter}
                         onChange={(e) => handleStatusFilterChange(e.target.value)}
@@ -182,7 +200,6 @@ const AdminToursManagement: React.FC = () => {
                         <option value="COMPLETED">Đã hoàn thành</option>
                     </select>
 
-                    {/* Sort */}
                     <select
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value as any)}
@@ -201,27 +218,13 @@ const AdminToursManagement: React.FC = () => {
                     <table className="w-full">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Tour
-                                </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Điểm đến
-                                </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Trạng thái
-                                </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Ngày khởi hành
-                                </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Giá
-                                </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Bookings
-                                </th>
-                                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Thao tác
-                                </th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tour</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Điểm đến</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trạng thái</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ngày khởi hành</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Giá</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Bookings</th>
+                                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
@@ -246,7 +249,6 @@ const AdminToursManagement: React.FC = () => {
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         {getStatusBadge(tour.tourStatus)}
                                     </td>
-
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2 text-sm text-gray-900">
                                             <Calendar size={16} className="text-gray-400" />
@@ -279,15 +281,27 @@ const AdminToursManagement: React.FC = () => {
                                             </Link>
                                             <Link
                                                 to={`/admin/tours/edit/${tour.tourId}`}
-                                                className="p-2 hover:bg-indigo-50 text-indigo-600 rounded-lg transition-colors"
-                                                title="Sửa"
+                                                className={`p-2 rounded-lg transition-colors ${tour.tourStatus === 'COMPLETED'
+                                                        ? 'opacity-50 cursor-not-allowed text-gray-400'
+                                                        : 'hover:bg-indigo-50 text-indigo-600'
+                                                    }`}
+                                                title={tour.tourStatus === 'COMPLETED' ? 'Tour đã hoàn thành không thể sửa' : 'Sửa'}
+                                                onClick={(e) => {
+                                                    if (tour.tourStatus === 'COMPLETED') {
+                                                        e.preventDefault();
+                                                        toast.error('Tour đã hoàn thành không thể chỉnh sửa!');
+                                                    }
+                                                }}
                                             >
                                                 <Edit size={18} />
                                             </Link>
                                             <button
-                                                onClick={() => handleDeleteTour(tour.tourId, tour.title)}
-                                                className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
-                                                title="Xóa"
+                                                onClick={() => handleDeleteClick(tour.tourId, tour.title, tour.totalBookings || 0)}
+                                                className={`p-2 rounded-lg transition-colors ${(tour.totalBookings || 0) > 0
+                                                        ? 'opacity-50 cursor-not-allowed text-gray-400'
+                                                        : 'hover:bg-red-50 text-red-600'
+                                                    }`}
+                                                title={(tour.totalBookings || 0) > 0 ? 'Không thể xóa tour đã có booking' : 'Xóa'}
                                             >
                                                 <Trash2 size={18} />
                                             </button>
@@ -319,7 +333,6 @@ const AdminToursManagement: React.FC = () => {
                     </button>
 
                     <div className="flex items-center gap-2">
-                        {/* First page */}
                         {currentPage > 2 && (
                             <>
                                 <button
@@ -332,7 +345,6 @@ const AdminToursManagement: React.FC = () => {
                             </>
                         )}
 
-                        {/* Pages around current */}
                         {Array.from({ length: totalPages }, (_, i) => i)
                             .filter(page =>
                                 page === currentPage ||
@@ -352,7 +364,6 @@ const AdminToursManagement: React.FC = () => {
                                 </button>
                             ))}
 
-                        {/* Last page */}
                         {currentPage < totalPages - 3 && (
                             <>
                                 <span className="text-gray-400">...</span>
@@ -374,6 +385,44 @@ const AdminToursManagement: React.FC = () => {
                         Trang sau
                         <ChevronRight size={20} />
                     </button>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && tourToDelete && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                <AlertTriangle className="w-6 h-6 text-red-600" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900">Xác nhận xóa tour</h3>
+                        </div>
+
+                        <p className="text-gray-600 mb-6">
+                            Bạn có chắc chắn muốn xóa tour <span className="font-semibold">"{tourToDelete.title}"</span>?
+                            Hành động này không thể hoàn tác.
+                        </p>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowDeleteModal(false);
+                                    setTourToDelete(null);
+                                }}
+                                className="flex-1 px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                disabled={deleteTourMutation.isPending}
+                                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
+                            >
+                                {deleteTourMutation.isPending ? 'Đang xóa...' : 'Xóa tour'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

@@ -45,3 +45,27 @@ export interface AuthenticationRequest {
   username: string;
   password: string;
 }
+
+export interface ResetPasswordRequest {
+  email: string;
+  newPassword: string;
+  resetToken: string;
+}
+
+export interface OtpRequest {
+  email: string;
+  otp: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
+}
+
+export interface VerifyOtpResponse {
+  resetToken: string;
+}
