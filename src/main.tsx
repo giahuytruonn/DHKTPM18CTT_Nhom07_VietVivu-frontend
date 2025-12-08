@@ -183,7 +183,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       }
     />
     <Route
-      path="/my-reviews" // Đã đổi /review thành /my-reviews cho đúng ngữ nghĩa
+      path="/review" // Đã đổi /review thành /my-reviews cho đúng ngữ nghĩa
       element={
         <ProtectedRoute>
           <MyReviewsPage />

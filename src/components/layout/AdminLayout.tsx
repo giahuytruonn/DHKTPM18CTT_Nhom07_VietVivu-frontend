@@ -63,16 +63,6 @@ const AdminLayout: React.FC = () => {
       path: "/admin/bookings-request",
     },
     {
-      title: "Đánh giá",
-      icon: Heart,
-      path: "/admin/reviews",
-    },
-    {
-      title: "Báo cáo",
-      icon: BarChart3,
-      path: "/admin/reports",
-    },
-    {
       title: "Quản lý Video", // Mục mới
       icon: LucideVideo,      // Dùng icon Video
       path: "/admin/videos",

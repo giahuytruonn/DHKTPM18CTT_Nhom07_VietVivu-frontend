@@ -49,6 +49,7 @@ import type { TourResponse } from "../types/tour";
 import { formatDateYMD } from "../utils/date";
 
 import ConfirmationModal from "../components/ui/ConfirmationModal";
+import ReviewModal from "../components/review/ReviewModal";
 
 const BookingPage = () => {
   const navigate = useNavigate();
@@ -1318,7 +1319,7 @@ const BookingPage = () => {
                         pt: 3,
                         borderTop: "1px solid rgba(226, 232, 240, 0.8)",
                         display: "flex",
-                        justifyContent: "flex-end", // Căn phải cho chuyên nghiệp
+                        justifyContent: "flex-start", // Căn phải cho chuyên nghiệp
                         alignItems: "center",
                       }}
                     >
@@ -1352,7 +1353,14 @@ const BookingPage = () => {
                   )}
                   {/* --- KẾT THÚC PHẦN NÚT ĐÁNH GIÁ --- */}
                 </Box>
-                
+                {detailBooking && (
+        <ReviewModal
+          open={reviewModalOpen}
+          onClose={() => setReviewModalOpen(false)}
+          bookingId={detailBooking.bookingId}
+          tourTitle={detailBooking.tourTitle}
+        />
+      )}
               </Box>
             </Box>
           </DialogContent>
