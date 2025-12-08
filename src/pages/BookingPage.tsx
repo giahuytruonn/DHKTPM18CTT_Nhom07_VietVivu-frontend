@@ -237,17 +237,18 @@ const BookingPage = () => {
     fontWeight: 700,
     backgroundColor: "transparent",
     color: "#0F172A",
-    fontSize: "0.75rem",
+    fontSize: "0.85rem",
     borderBottom: "2px solid rgba(226, 232, 240, 0.7)",
     letterSpacing: "0.08em",
     textTransform: "uppercase",
-    py: 1,
+    py: 1.5,
     px: 2,
   };
   const tableBodyCellSx = {
     borderBottom: "1px solid rgba(226, 232, 240, 0.6)",
-    py: 0.75,
+    py: 1.25,
     px: 2,
+    fontSize: "0.95rem",
   };
 
   const fetchData = async () => {
@@ -704,6 +705,10 @@ const BookingPage = () => {
                             "&:last-of-type td": {
                               borderBottom: "none",
                             },
+                            "& td": {
+                              fontSize: "0.95rem",
+                            },
+                            minHeight: 68,
                             transition: "all 0.25s ease",
                           }}
                         >
@@ -743,7 +748,7 @@ const BookingPage = () => {
                                 gap: 0.5,
                               }}
                             >
-                              <MapPin size={14} style={{ color: "#6B7280" }} />
+                              <MapPin size={16} style={{ color: "#6B7280" }} />
                               <Typography
                                 variant="body2"
                                 color="text.secondary"
@@ -761,7 +766,7 @@ const BookingPage = () => {
                               }}
                             >
                               <Calendar
-                                size={14}
+                                size={16}
                                 style={{ color: "#6B7280" }}
                               />
                               <Typography
@@ -780,7 +785,7 @@ const BookingPage = () => {
                                 gap: 0.5,
                               }}
                             >
-                              <Users size={14} style={{ color: "#6B7280" }} />
+                              <Users size={16} style={{ color: "#6B7280" }} />
                               <Typography
                                 variant="body2"
                                 color="text.secondary"
