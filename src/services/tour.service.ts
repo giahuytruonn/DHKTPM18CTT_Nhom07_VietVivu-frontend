@@ -29,9 +29,10 @@ export const getAllToursAdmin = async (page: number = 0, size: number = 10): Pro
 };
 
 // Get tour by ID (không đổi)
+
 export const getTourById = async (tourId: string): Promise<TourResponse> => {
-  const res = await api.get<ApiResponse<TourResponse>>(`/tours/${tourId}`);
-  return res.data.result;
+  const response = await api.get<ApiResponse<TourResponse>>(`/tours/${tourId}`);
+  return response.data.result;
 };
 
 // Search params interface

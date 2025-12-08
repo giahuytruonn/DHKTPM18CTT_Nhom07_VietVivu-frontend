@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import type { BookingResponse } from "../services/booking.services";
 import { cancelBooking } from "../services/bookingRequest.services";
-import { getTourById } from "../services/tour.services";
+import { getTourById } from "../services/tour.service";
 import type { TourResponse } from "../types/tour";
 import CancellationPolicyNotice from "../components/ui/CancellationPolicyNotice";
 import { formatDateYMD } from "../utils/date";
