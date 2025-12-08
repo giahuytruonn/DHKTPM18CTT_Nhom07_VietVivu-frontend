@@ -29,9 +29,10 @@ export const getAllToursAdmin = async (page: number = 0, size: number = 10): Pro
 };
 
 // Get tour by ID (không đổi)
+
 export const getTourById = async (tourId: string): Promise<TourResponse> => {
-  const res = await api.get<ApiResponse<TourResponse>>(`/tours/${tourId}`);
-  return res.data.result;
+  const response = await api.get<ApiResponse<TourResponse>>(`/tours/${tourId}`);
+  return response.data.result;
 };
 
 // Search params interface
@@ -67,4 +68,15 @@ export const searchTours = async (
 // Xóa tour (chỉ Admin)
 export const deleteTour = async (tourId: string): Promise<void> => {
   await api.delete(`/tours/${tourId}`);
+};
+
+export interface ITourSelection {
+  id: string;
+  title: string;
+}
+
+// Hàm gọi API lấy danh sách tour
+export const getAllTourNames = async (): Promise<ITourSelection[]> => {
+  const response = await api.get<ITourSelection[]>("/tours/all-names"); 
+  return response.data;
 };

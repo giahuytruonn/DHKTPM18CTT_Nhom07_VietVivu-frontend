@@ -29,6 +29,12 @@ import CreateTourPage from "./pages/CreateTourPage";
 import EditTourPage from "./pages/EditTourPage";
 import AdminStatisticsPage from "./pages/AdminStatisticsPage";
 import AdminUsersPage from "./pages/AdminUserPage";
+import AdminVideoManagement from "./pages/AdminVideoManagement";
+
+import "./index.css";
+import Header from "./components/layout/Header";
+import Footer from "./components/layout/Footer";
+import { useAuthStore } from "./stores/useAuthStore";
 import BookingRequestPage from "./pages/BookingRequestPage";
 import BookingRequestDetailPage from "./pages/BookingRequestDetailPage";
 
@@ -40,7 +46,6 @@ import BookingForm from "./components/ui/BookingForm";
 import BookingStepper from "./components/ui/BookingStepper";
 import AboutPage from "./pages/AboutPage";
 import UserProfilePage from "./pages/UserProfilePage";
-import ExplorePage from "./pages/ExplorePage";
 import VideoFeedPage from "./pages/VideoFeedPage";
 import GetOtpPage from "./pages/GetOtpPage";
 import ConfirmOtpPage from "./pages/ConfirmOtpPage";
@@ -48,12 +53,10 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import PaymentLaterStepper from "./components/ui/PaymentLaterStepper";
 import ChangeTourPage from "./pages/ChangeTourPage";
-import Header from "./components/layout/Header";
-import { useAuthStore } from "./stores/useAuthStore";
-import Footer from "./components/layout/Footer";
 import AdminStatisticsRevenuePage from "./pages/AdminStatisticsRevenuePage";
 import AdminPromotionsPage from "./pages/AdminPromotionPage";
 import AddPromotionsPage from "./pages/AddPromotionPage";
+import ContactPage from './pages/ContactPage';
 
 const queryClient = new QueryClient();
 
@@ -139,31 +142,68 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <div className="min-h-screen flex flex-col">
                 <Header />
                 <main className="flex-1 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
-                    <Route path="/get-otp-page" element={<GetOtpPage />} />
-                    <Route path="/confirm-otp" element={<ConfirmOtpPage />} />
-                    <Route
-                      path="/reset-password"
-                      element={<ResetPasswordPage />}
-                    />
-                    <Route path="/authenticate" element={<Authenticate />} />
-                    <Route path="/tours" element={<AllToursPage />} />
-                    <Route path="/promotions" element={<AdminPromotionsPage />} />
-                    <Route path="/tours/:tourId" element={<TourDetailPage />} />
-                    <Route path="/change-tour" element={<ChangeTourPage />} />
-                    <Route
-                      path="/booking/:tourId"
-                      element={<BookingStepper />}
-                    />
-                    <Route
-                      path="/payment-later/:bookingId"
-                      element={<PaymentLaterStepper />}
-                    />
-                    <Route path="/feed" element={<VideoFeedPage />} />
-                    <Route path="/upload" element={<ExplorePage />} />
+  <Routes>
+    {/* Public Routes */}
+    <Route path="/" element={<Home />} />
+    <Route path="/login" element={<LoginPage />} />
+    <Route path="/register" element={<RegisterPage />} />
+    <Route path="/get-otp-page" element={<GetOtpPage />} />
+    <Route path="/confirm-otp" element={<ConfirmOtpPage />} />
+    <Route path="/reset-password" element={<ResetPasswordPage />} />
+    <Route path="/authenticate" element={<Authenticate />} />
+    
+    <Route path="/tours" element={<AllToursPage />} />
+    <Route path="/tours/:tourId" element={<TourDetailPage />} />
+    <Route path="/change-tour" element={<ChangeTourPage />} />
+    
+    <Route path="/booking/:tourId" element={<BookingStepper />} />
+    <Route path="/payment-later/:bookingId" element={<PaymentLaterStepper />} />
+    
+    <Route path="/feed" element={<VideoFeedPage />} />
+    <Route path="/upload" element={<ExplorePage />} />
+    <Route path="/contact" element={<ContactPage />} />
+
+    {/* Protected User Routes */}
+    <Route
+      path="/favorite-tours"
+      element={
+        <ProtectedRoute>
+          <FavoriteToursPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/bookings"
+      element={
+        <ProtectedRoute>
+          <BookingPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/bookings/:bookingId"
+      element={
+        <ProtectedRoute>
+          <BookingDetailPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/request-booking"
+      element={
+        <ProtectedRoute>
+          <RequestBookingPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/my-reviews" // Đã đổi /review thành /my-reviews cho đúng ngữ nghĩa
+      element={
+        <ProtectedRoute>
+          <MyReviewsPage />
+        </ProtectedRoute>
+      }
+    />
 
                     {/* Protected User Routes */}
                     <Route
@@ -233,7 +273,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="tours/create" element={<CreateTourPage />} />
             <Route path="promotions/create" element={<AddPromotionsPage />} />
             <Route path="tours/edit/:tourId" element={<EditTourPage />} />
-            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="videos" element={<AdminVideoManagement />} />
+            <Route
+              path="users"
+              element={<AdminUsersPage />}
+            />
 
             <Route
               path="reviews"

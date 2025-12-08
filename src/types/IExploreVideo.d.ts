@@ -1,12 +1,12 @@
 export interface IExploreVideo {
   id: string;
   title: string;
-  description: string | null;
+  description: string;
   videoUrl: string;
   uploaderUsername: string;
-  tourId: string | null;
-  approved: boolean;
   uploadedAt: string;
+  likeCount: number;
+  tourId?: string | null;
 }
 
 export interface IExploreVideoRequest {
