@@ -10,13 +10,13 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import {
   getTopBookedTours,
   getTopUsers,
   getBookingStatusSummary,
+  getTotalRevenue,
   type TopTour,
   type TopUser,
 } from "../services/statistical.service";
@@ -29,15 +29,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-const COLORS = {
-  primary: ["#6366f1", "#8b5cf6"], // indigo-purple
-  blue: ["#3b82f6", "#2563eb"],
-  green: ["#10b981", "#059669"],
-  purple: ["#8b5cf6", "#7c3aed"],
-  orange: ["#f59e0b", "#d97706"],
-  pink: ["#ec4899", "#db2777"],
-};
-
 const CHART_COLORS = [
   "#6366f1",
   "#8b5cf6",
@@ -49,66 +40,113 @@ const CHART_COLORS = [
   "#f97316",
 ];
 
-const AdminStatisticsPage: React.FC = () => {
-  const [selectedBookingStatus, setSelectedBookingStatus] = useState<string>("ALL");
+const STATUS_LIST = ["ALL", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"];
 
-  // Fetch booking status summary
-  const { data: bookingStatusData = [], isLoading: isLoadingStatus } = useQuery({
+const AdminStatisticsPage: React.FC = () => {
+  // --- Filters (separate for each dashboard) ---
+  const [filterStatusSummary, setFilterStatusSummary] = useState<string>("ALL");
+  const [filterStatusTours, setFilterStatusTours] = useState<string>("ALL");
+  const [filterStatusUsers, setFilterStatusUsers] = useState<string>("ALL");
+
+  // --- Booking status summary (fetch once, filter client-side) ---
+  const {
+    data: bookingStatusRaw = [],
+    isLoading: isLoadingStatus,
+    refetch: refetchBooking,
+  } = useQuery({
     queryKey: ["bookingStatusSummary"],
     queryFn: getBookingStatusSummary,
     staleTime: 1000 * 60 * 5,
   });
 
-  // Fetch top booked tours
+  // Filter booking data locally so summary filter doesn't affect other dashboards
+  const bookingStatusData =
+    filterStatusSummary === "ALL"
+      ? bookingStatusRaw
+      : bookingStatusRaw.filter((item: any) => {
+          // try to match on different possible fields (name or code)
+          const s = filterStatusSummary.toLowerCase();
+          const name = String(item.name || "").toLowerCase();
+          const code = String(item.code || "").toLowerCase();
+          return name.includes(s) || code.includes(s);
+        });
+
+  // --- Top booked tours (filtered by filterStatusTours) ---
   const {
     data: topToursData = [],
     isLoading: isLoadingTours,
     refetch: refetchTours,
   } = useQuery({
-    queryKey: ["topBookedTours", selectedBookingStatus],
-    queryFn: () => getTopBookedTours(selectedBookingStatus === "ALL" ? "" : selectedBookingStatus),
+    queryKey: ["topBookedTours", filterStatusTours],
+    queryFn: () =>
+      getTopBookedTours(filterStatusTours === "ALL" ? "" : filterStatusTours),
     enabled: true,
     staleTime: 1000 * 60 * 5,
   });
 
-  // Fetch top users
+  // --- Top users (filtered by filterStatusUsers) ---
   const {
     data: topUsersData = [],
     isLoading: isLoadingUsers,
     refetch: refetchUsers,
   } = useQuery({
-    queryKey: ["topUsers", selectedBookingStatus],
-    queryFn: () => getTopUsers(selectedBookingStatus === "ALL" ? "" : selectedBookingStatus),
+    queryKey: ["topUsers", filterStatusUsers],
+    queryFn: () =>
+      getTopUsers(filterStatusUsers === "ALL" ? "" : filterStatusUsers),
     enabled: true,
     staleTime: 1000 * 60 * 5,
   });
 
-  const isLoading = isLoadingStatus || isLoadingTours || isLoadingUsers;
+  const {
+    data: totalRevenue = 0,
+    isLoading: isLoadingRevenue,
+    refetch: refetchRevenue,
+  } = useQuery({
+    queryKey: ["totalRevenue"],
+    queryFn: getTotalRevenue,
+    staleTime: 1000 * 60 * 5,
+  });
 
+  const isLoading =
+    isLoadingStatus || isLoadingTours || isLoadingUsers || isLoadingRevenue;
+
+  // Refresh all three sections
   const handleRefresh = () => {
+    refetchBooking();
     refetchTours();
     refetchUsers();
+    refetchRevenue();
   };
 
-  // Format data for pie chart (booking status)
-  const pieChartData = bookingStatusData.map((item) => ({
-    name: item.name,
-    value: item.value,
+  // --- Prepare chart data ---
+  const pieChartData = (bookingStatusData || []).map((item: any) => ({
+    name: item.name ?? item.status ?? item.code ?? "Unknown",
+    value: item.value ?? item.count ?? 0,
   }));
 
-  // Format data for bar charts
-  const topToursChartData = topToursData.slice(0, 10).map((tour) => ({
-    name: tour.name.length > 20 ? tour.name.substring(0, 20) + "..." : tour.name,
-    fullName: tour.name,
-    value: tour.value,
-  }));
+  const topToursChartData = (topToursData as TopTour[] | any[])
+    .slice(0, 10)
+    .map((tour) => ({
+      name:
+        typeof tour.name === "string" && tour.name.length > 20
+          ? tour.name.substring(0, 20) + "..."
+          : tour.name,
+      fullName: tour.name,
+      value: tour.value ?? 0,
+    }));
 
-  const topUsersChartData = topUsersData.slice(0, 10).map((user) => ({
-    name: user.name.length > 20 ? user.name.substring(0, 20) + "..." : user.name,
-    fullName: user.name,
-    value: user.value,
-  }));
+  const topUsersChartData = (topUsersData as TopUser[] | any[])
+    .slice(0, 10)
+    .map((user) => ({
+      name:
+        typeof user.name === "string" && user.name.length > 20
+          ? user.name.substring(0, 20) + "..."
+          : user.name,
+      fullName: user.name,
+      value: user.value ?? 0,
+    }));
 
+  // Custom tooltip reused
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -117,7 +155,7 @@ const AdminStatisticsPage: React.FC = () => {
             {payload[0].payload.fullName || payload[0].payload.name}
           </p>
           <p className="text-indigo-600 font-medium">
-            {payload[0].name}: {payload[0].value.toLocaleString()}
+            {payload[0].name}: {Number(payload[0].value).toLocaleString()}
           </p>
         </div>
       );
@@ -160,50 +198,25 @@ const AdminStatisticsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter Section */}
-      <div className="bg-white rounded-xl p-4 md:p-6 shadow-md">
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2 text-gray-700">
-            <Filter size={20} className="text-indigo-600" />
-            <span className="font-semibold">Lọc theo trạng thái:</span>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {["ALL", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"].map((status) => (
-              <button
-                key={status}
-                onClick={() => setSelectedBookingStatus(status)}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  selectedBookingStatus === status
-                    ? "bg-indigo-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {status === "ALL"
-                  ? "Tất cả"
-                  : status === "PENDING"
-                  ? "Chờ xử lý"
-                  : status === "CONFIRMED"
-                  ? "Đã xác nhận"
-                  : status === "COMPLETED"
-                  ? "Hoàn thành"
-                  : "Đã hủy"}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
         <div className="bg-white rounded-xl p-4 md:p-6 shadow-md hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 bg-indigo-50 rounded-lg">
               <Package className="text-indigo-600" size={24} />
             </div>
           </div>
-          <h3 className="text-gray-600 text-sm font-medium mb-1">Tổng Booking</h3>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">
+            Tổng Booking
+          </h3>
           <p className="text-2xl md:text-3xl font-bold text-gray-900">
-            {bookingStatusData.reduce((sum, item) => sum + item.value, 0).toLocaleString()}
+            {(bookingStatusRaw || [])
+              .reduce(
+                (sum: number, item: any) =>
+                  sum + (item.value ?? item.count ?? 0),
+                0
+              )
+              .toLocaleString()}
           </p>
         </div>
 
@@ -239,91 +252,284 @@ const AdminStatisticsPage: React.FC = () => {
           </div>
           <h3 className="text-gray-600 text-sm font-medium mb-1">Trạng thái</h3>
           <p className="text-2xl md:text-3xl font-bold text-gray-900">
-            {bookingStatusData.length}
+            {bookingStatusRaw.length}
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 md:p-6 shadow-md hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-yellow-50 rounded-lg">
+              <TrendingUp className="text-yellow-600" size={24} />
+            </div>
+          </div>
+          <h3 className="text-gray-600 text-sm font-medium mb-1">
+            Tổng Doanh Thu
+          </h3>
+          <p className="text-2xl md:text-3xl font-bold text-gray-900">
+            {Number(totalRevenue).toLocaleString()} ₫
           </p>
         </div>
       </div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        {/* Booking Status Pie Chart */}
+        {/* Booking Status Chart + Filter (filterStatusSummary) */}
         <div className="bg-white rounded-xl p-4 md:p-6 shadow-md">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4 md:mb-6">
-            Phân Bố Booking Theo Trạng Thái
-          </h2>
-          {pieChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) =>
-                    `${name}: ${(percent * 100).toFixed(0)}%`
-                  }
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {pieChartData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={CHART_COLORS[index % CHART_COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                          <p className="font-semibold text-gray-900">
-                            {payload[0].payload.name}
-                          </p>
-                          <p className="text-indigo-600 font-medium">
-                            Số lượng: {payload[0].value.toLocaleString()}
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">
-              Không có dữ liệu
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+                Phân Bố Booking Theo Trạng Thái
+              </h2>
+              <p className="text-sm text-gray-500">
+                Lọc chỉ ảnh hưởng biểu đồ phân bố này
+              </p>
             </div>
-          )}
+
+            <div className="flex items-center gap-2">
+              <Filter size={18} className="text-indigo-600" />
+              <div className="flex gap-2 flex-wrap">
+                {STATUS_LIST.map((status) => (
+                  <button
+                    key={`summary-${status}`}
+                    onClick={() => setFilterStatusSummary(status)}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                      filterStatusSummary === status
+                        ? "bg-indigo-600 text-white shadow-sm"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {status === "ALL"
+                      ? "Tất cả"
+                      : status === "PENDING"
+                      ? "Chờ xử lý"
+                      : status === "CONFIRMED"
+                      ? "Đã xác nhận"
+                      : status === "COMPLETED"
+                      ? "Hoàn thành"
+                      : "Đã hủy"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            {pieChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={pieChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip
+                    content={({ active, payload }: any) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                            <p className="font-semibold text-gray-900">
+                              {payload[0].payload.name}
+                            </p>
+                            <p className="text-indigo-600 font-medium">
+                              Số lượng:{" "}
+                              {Number(payload[0].value).toLocaleString()}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                    {pieChartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={CHART_COLORS[index % CHART_COLORS.length]}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-gray-500">
+                Không có dữ liệu
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Top Tours Bar Chart */}
+        {/* Top Tours Chart + Filter (filterStatusTours) */}
         <div className="bg-white rounded-xl p-4 md:p-6 shadow-md">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4 md:mb-6">
-            Top Tours Được Đặt Nhiều Nhất
-          </h2>
-          {topToursChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topToursChartData}>
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+                Top Tours Được Đặt Nhiều Nhất
+              </h2>
+              <p className="text-sm text-gray-500">
+                Lọc chỉ ảnh hưởng biểu đồ & bảng Tours
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Filter size={18} className="text-indigo-600" />
+              <div className="flex gap-2 flex-wrap">
+                {STATUS_LIST.map((status) => (
+                  <button
+                    key={`tours-${status}`}
+                    onClick={() => setFilterStatusTours(status)}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                      filterStatusTours === status
+                        ? "bg-indigo-600 text-white shadow-sm"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {status === "ALL"
+                      ? "Tất cả"
+                      : status === "PENDING"
+                      ? "Chờ xử lý"
+                      : status === "CONFIRMED"
+                      ? "Đã xác nhận"
+                      : status === "COMPLETED"
+                      ? "Hoàn thành"
+                      : "Đã hủy"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            {topToursChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={topToursChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="name"
+                    interval={0}
+                    height={60}
+                    tick={(props: any) => {
+                      const { x, y, payload } = props;
+                      const label: string = payload.value;
+                      const short =
+                        label.length > 14
+                          ? label.substring(0, 14) + "..."
+                          : label;
+                      const words: string[] = short.split(" ");
+                      return (
+                        <text
+                          x={x}
+                          y={y + 10}
+                          textAnchor="middle"
+                          fontSize="11"
+                          fill="#4b5563"
+                        >
+                          {words.map((w: string, i: number) => (
+                            <tspan key={i} x={x} dy={i === 0 ? 0 : 14}>
+                              {w}
+                            </tspan>
+                          ))}
+                        </text>
+                      );
+                    }}
+                  />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar
+                    dataKey="value"
+                    fill="url(#colorGradient)"
+                    radius={[8, 8, 0, 0]}
+                  >
+                    {topToursChartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={CHART_COLORS[index % CHART_COLORS.length]}
+                      />
+                    ))}
+                  </Bar>
+                  <defs>
+                    <linearGradient
+                      id="colorGradient"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="0%" stopColor="#6366f1" stopOpacity={1} />
+                      <stop
+                        offset="100%"
+                        stopColor="#8b5cf6"
+                        stopOpacity={0.8}
+                      />
+                    </linearGradient>
+                  </defs>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-gray-500">
+                Không có dữ liệu
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Top Users Chart + Filter (filterStatusUsers) */}
+      <div className="bg-white rounded-xl p-4 md:p-6 shadow-md">
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+              Top Khách Hàng Đặt Tour Nhiều Nhất
+            </h2>
+            <p className="text-sm text-gray-500">
+              Lọc chỉ ảnh hưởng biểu đồ & bảng Khách Hàng
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Filter size={18} className="text-indigo-600" />
+            <div className="flex gap-2 flex-wrap">
+              {STATUS_LIST.map((status) => (
+                <button
+                  key={`users-${status}`}
+                  onClick={() => setFilterStatusUsers(status)}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                    filterStatusUsers === status
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {status === "ALL"
+                    ? "Tất cả"
+                    : status === "PENDING"
+                    ? "Chờ xử lý"
+                    : status === "CONFIRMED"
+                    ? "Đã xác nhận"
+                    : status === "COMPLETED"
+                    ? "Hoàn thành"
+                    : "Đã hủy"}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          {topUsersChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={topUsersChartData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
+                <XAxis type="number" tick={{ fontSize: 12 }} />
+                <YAxis
                   dataKey="name"
-                  angle={-45}
-                  textAnchor="end"
-                  height={100}
+                  type="category"
+                  width={150}
                   tick={{ fontSize: 12 }}
                 />
-                <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar
                   dataKey="value"
-                  fill="url(#colorGradient)"
-                  radius={[8, 8, 0, 0]}
+                  fill="url(#colorGradient2)"
+                  radius={[0, 8, 8, 0]}
                 >
-                  {topToursChartData.map((entry, index) => (
+                  {topUsersChartData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={CHART_COLORS[index % CHART_COLORS.length]}
@@ -331,7 +537,13 @@ const AdminStatisticsPage: React.FC = () => {
                   ))}
                 </Bar>
                 <defs>
-                  <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient
+                    id="colorGradient2"
+                    x1="0"
+                    y1="0"
+                    x2="1"
+                    y2="0"
+                  >
                     <stop offset="0%" stopColor="#6366f1" stopOpacity={1} />
                     <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.8} />
                   </linearGradient>
@@ -339,64 +551,26 @@ const AdminStatisticsPage: React.FC = () => {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="flex items-center justify-center h-[400px] text-gray-500">
               Không có dữ liệu
             </div>
           )}
         </div>
       </div>
 
-      {/* Top Users Bar Chart */}
-      <div className="bg-white rounded-xl p-4 md:p-6 shadow-md">
-        <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4 md:mb-6">
-          Top Khách Hàng Đặt Tour Nhiều Nhất
-        </h2>
-        {topUsersChartData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={topUsersChartData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis type="number" tick={{ fontSize: 12 }} />
-              <YAxis
-                dataKey="name"
-                type="category"
-                width={150}
-                tick={{ fontSize: 12 }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar
-                dataKey="value"
-                fill="url(#colorGradient2)"
-                radius={[0, 8, 8, 0]}
-              >
-                {topUsersChartData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={CHART_COLORS[index % CHART_COLORS.length]}
-                  />
-                ))}
-              </Bar>
-              <defs>
-                <linearGradient id="colorGradient2" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#6366f1" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.8} />
-                </linearGradient>
-              </defs>
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="flex items-center justify-center h-[400px] text-gray-500">
-            Không có dữ liệu
-          </div>
-        )}
-      </div>
-
       {/* Data Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        {/* Top Tours Table */}
+        {/* Top Tours Table (same filterStatusTours) */}
         <div className="bg-white rounded-xl p-4 md:p-6 shadow-md">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4 md:mb-6">
-            Bảng Xếp Hạng Tours
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg md:text-xl font-bold text-gray-900">
+              Bảng Xếp Hạng Tours
+            </h2>
+            <div className="text-sm text-gray-500">
+              Filter: {filterStatusTours}
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -413,7 +587,7 @@ const AdminStatisticsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {topToursData.slice(0, 10).map((tour, index) => (
+                {topToursData.slice(0, 10).map((tour: any, index: number) => (
                   <tr
                     key={index}
                     className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
@@ -428,7 +602,7 @@ const AdminStatisticsPage: React.FC = () => {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <span className="font-semibold text-indigo-600">
-                        {tour.value.toLocaleString()}
+                        {Number(tour.value).toLocaleString()}
                       </span>
                     </td>
                   </tr>
@@ -445,11 +619,17 @@ const AdminStatisticsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Top Users Table */}
+        {/* Top Users Table (same filterStatusUsers) */}
         <div className="bg-white rounded-xl p-4 md:p-6 shadow-md">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4 md:mb-6">
-            Bảng Xếp Hạng Khách Hàng
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg md:text-xl font-bold text-gray-900">
+              Bảng Xếp Hạng Khách Hàng
+            </h2>
+            <div className="text-sm text-gray-500">
+              Filter: {filterStatusUsers}
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -466,7 +646,7 @@ const AdminStatisticsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {topUsersData.slice(0, 10).map((user, index) => (
+                {topUsersData.slice(0, 10).map((user: any, index: number) => (
                   <tr
                     key={index}
                     className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
@@ -481,7 +661,7 @@ const AdminStatisticsPage: React.FC = () => {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <span className="font-semibold text-purple-600">
-                        {user.value.toLocaleString()}
+                        {Number(user.value).toLocaleString()}
                       </span>
                     </td>
                   </tr>
@@ -503,4 +683,3 @@ const AdminStatisticsPage: React.FC = () => {
 };
 
 export default AdminStatisticsPage;
-
