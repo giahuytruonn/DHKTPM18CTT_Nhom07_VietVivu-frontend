@@ -24,6 +24,7 @@ import {
   CheckCircle,
   AlertCircle,
   RefreshCw,
+  Coins,
 } from "lucide-react";
 import { getBookings } from "../services/booking.services";
 import type { BookingResponse } from "../services/booking.services";
@@ -33,8 +34,11 @@ import ConfirmationModal from "../components/ui/ConfirmationModal";
 const BookingPage = () => {
   const navigate = useNavigate();
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
-  const [selectedBooking, setSelectedBooking] = useState<BookingResponse | null>(null);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
+    null
+  );
+  const [selectedBooking, setSelectedBooking] =
+    useState<BookingResponse | null>(null);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -150,7 +154,7 @@ const BookingPage = () => {
         err instanceof Error
           ? err.message
           : (err as { response?: { data?: { message?: string } } })?.response
-            ?.data?.message || "Không thể tải danh sách booking";
+              ?.data?.message || "Không thể tải danh sách booking";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -221,7 +225,9 @@ const BookingPage = () => {
         onClose={() => setConfirmModalOpen(false)}
         onConfirm={() => {
           setConfirmModalOpen(false);
-          const bookingToPass = selectedBooking || bookings.find(b => b.bookingId === selectedBookingId);
+          const bookingToPass =
+            selectedBooking ||
+            bookings.find((b) => b.bookingId === selectedBookingId);
           if (bookingToPass) {
             navigate("/change-tour", { state: { booking: bookingToPass } });
           } else {
@@ -700,7 +706,33 @@ const BookingPage = () => {
                             {statusConfig.label}
                           </Typography>
                         </Box>
-                      ) : null}
+                      ) : (
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          onClick={() => {
+                            navigate(`/payment-later/${booking.bookingId}`);
+                          }}
+                          sx={{
+                            borderRadius: "12px",
+                            textTransform: "none",
+                            py: 1.5,
+                            background:
+                              "linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%)",
+                            "&:hover": {
+                              background:
+                                "linear-gradient(135deg, #4338CA 0%, #2563EB 100%)",
+                              transform: "scale(1.03)",
+                            },
+                            transition: "all 0.2s ease",
+                            fontWeight: 600,
+                            boxShadow: "0 4px 14px rgba(59, 130, 246, 0.3)",
+                          }}
+                          startIcon={<Coins size={18} />}
+                        >
+                          Thanh toán ngay
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 );
