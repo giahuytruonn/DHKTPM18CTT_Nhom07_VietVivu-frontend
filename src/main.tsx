@@ -57,6 +57,7 @@ import AdminStatisticsRevenuePage from "./pages/AdminStatisticsRevenuePage";
 import AdminPromotionsPage from "./pages/AdminPromotionPage";
 import AddPromotionsPage from "./pages/AddPromotionPage";
 import ContactPage from './pages/ContactPage';
+import MyReviewsPage from "./pages/MyReviewsPage";
 
 const queryClient = new QueryClient();
 
@@ -87,20 +88,6 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Placeholder pages for missing routes
-const ContactPage = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
-    <div className="text-center">
-      <h2 className="text-3xl font-bold text-gray-900 mb-4">
-        Liên hệ với chúng tôi
-      </h2>
-      <p className="text-gray-600 mb-6">Trang đang được phát triển...</p>
-      <a href="/" className="text-indigo-600 hover:text-indigo-800 font-medium">
-        ← Quay lại trang chủ
-      </a>
-    </div>
-  </div>
-);
 
 const FAQPage = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -160,7 +147,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <Route path="/payment-later/:bookingId" element={<PaymentLaterStepper />} />
     
     <Route path="/feed" element={<VideoFeedPage />} />
-    <Route path="/upload" element={<ExplorePage />} />
     <Route path="/contact" element={<ContactPage />} />
 
     {/* Protected User Routes */}
