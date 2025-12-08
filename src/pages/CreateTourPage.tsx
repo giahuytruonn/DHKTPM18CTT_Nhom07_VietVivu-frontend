@@ -324,16 +324,7 @@ const CreateTourPage: React.FC = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedFiles.length === 0) {
-      toast.error("Vui lòng chọn ít nhất 1 ảnh");
-      return;
-    }
-    if (validateForm()) {
-      createTourMutation.mutate(formData);
-    }
-  };
+  
   const handleChange = (field: keyof TourFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -346,6 +337,25 @@ const CreateTourPage: React.FC = () => {
     setFormData(prev => ({ ...prev, [field]: newArray }));
   };
   const isPending = createTourMutation.isPending || isUploading;
+
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedFiles.length === 0) {
+      toast.error("Vui lòng chọn ít nhất 1 ảnh");
+      return;
+    }
+    if (validateForm()) {
+      setShowConfirmModal(true);
+    }
+  };
+
+  const confirmCreateTour = () => {
+    setShowConfirmModal(false);
+    createTourMutation.mutate(formData);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -765,6 +775,45 @@ const CreateTourPage: React.FC = () => {
           </div>
         </form>
       </div>
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
+                <Plus className="w-6 h-6 text-indigo-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Xác nhận tạo tour</h3>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <p className="text-gray-600">
+                Bạn có chắc chắn muốn tạo tour <span className="font-semibold">"{formData.title}"</span>?
+              </p>
+              <div className="bg-gray-50 p-3 rounded-lg text-sm">
+                <p><span className="font-medium">Điểm đến:</span> {formData.destination}</p>
+                <p><span className="font-medium">Thời gian:</span> {formData.duration}</p>
+                <p><span className="font-medium">Giá:</span> {formData.priceAdult.toLocaleString('vi-VN')}₫</p>
+                <p><span className="font-medium">Số lượng:</span> {formData.initialQuantity} chỗ</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirmCreateTour}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg font-semibold hover:from-indigo-700 hover:to-blue-700 transition-colors"
+              >
+                Xác nhận tạo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

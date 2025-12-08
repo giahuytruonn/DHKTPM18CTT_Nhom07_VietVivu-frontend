@@ -3,7 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
     ArrowLeft, Plus, X, Calendar, DollarSign, MapPin,
-    Clock, Users, Image as ImageIcon, Upload, Loader, Trash2
+    Clock, Users, Image as ImageIcon, Upload, Loader, Trash2, AlertTriangle,
+    Edit
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../services/api";
@@ -138,40 +139,36 @@ interface TourFormData {
     durationDays: number;
     durationNights: number;
     selectedDestinations: string[];
+    tourStatus: "OPEN_BOOKING" | "IN_PROGRESS" | "COMPLETED";
+    manualStatusOverride?: boolean;
 }
 
 const EditTourPage: React.FC = () => {
     const { tourId } = useParams<{ tourId: string }>();
     const navigate = useNavigate();
     const [formData, setFormData] = useState<TourFormData>({
-        title: "",
-        description: "",
-        initialQuantity: 0,
-        quantity: 0,
-        priceAdult: 0,
-        priceChild: 0,
-        duration: "",
-        destination: "",
-        startDate: "",
-        endDate: "",
-        itinerary: [""],
-        imageUrls: [],
-        durationDays: 0,
-        durationNights: 0,
-        selectedDestinations: [],
+        title: "", description: "", initialQuantity: 0, quantity: 0,
+        priceAdult: 0, priceChild: 0, duration: "", destination: "",
+        startDate: "", endDate: "", itinerary: [""], imageUrls: [],
+        durationDays: 0, durationNights: 0, selectedDestinations: [],
+        tourStatus: "OPEN_BOOKING",
+        manualStatusOverride: false,
     });
+
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [existingImages, setExistingImages] = useState<string[]>([]);
-
-    // Autocomplete states
     const [destinationInput, setDestinationInput] = useState("");
     const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
     const [filteredDestinations, setFilteredDestinations] = useState<string[]>([]);
-    const destinationRef = useRef<HTMLDivElement>(null);
+    const [customDestinations, setCustomDestinations] = useState<string[]>([]);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [errors, setErrors] = useState<Partial<Record<keyof TourFormData, string>>>({});
 
-    // Helper functions for date formatting
+    const destinationRef = useRef<HTMLDivElement>(null);
+    const originalBookingsRef = useRef(0);
+
     const formatDateForDisplay = (dateStr: string) => {
         if (!dateStr) return "";
         const [year, month, day] = dateStr.split('-');
@@ -181,39 +178,29 @@ const EditTourPage: React.FC = () => {
     const formatApiDateToInputDate = (apiDate: string | null): string => {
         if (!apiDate) return "";
         const parts = apiDate.split('/');
-        if (parts.length === 3) {
-            return `${parts[2]}-${parts[1]}-${parts[0]}`;
-        }
-        if (apiDate.includes('-')) {
-            return apiDate;
-        }
+        if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        if (apiDate.includes('-')) return apiDate;
         return "";
     };
 
-    // Parse duration string to extract days and nights
     const parseDuration = (durationStr: string) => {
         const match = durationStr.match(/(\d+)N(\d+)Đ/i);
-        if (match) {
-            return {
-                days: parseInt(match[1]),
-                nights: parseInt(match[2])
-            };
-        }
+        if (match) return { days: parseInt(match[1]), nights: parseInt(match[2]) };
         return { days: 0, nights: 0 };
     };
 
-    // Fetch tour data
     const { data: tour, isLoading } = useQuery({
         queryKey: ["tour", tourId],
         queryFn: () => getTourById(tourId!),
         enabled: !!tourId,
     });
 
-    // Load tour data into form
     useEffect(() => {
         if (tour) {
             const { days, nights } = parseDuration(tour.duration || "");
             const destinations = tour.destination ? tour.destination.split(" - ") : [];
+
+            originalBookingsRef.current = tour.totalBookings || 0;
 
             setFormData({
                 title: tour.title || "",
@@ -231,12 +218,13 @@ const EditTourPage: React.FC = () => {
                 durationDays: days,
                 durationNights: nights,
                 selectedDestinations: destinations,
+                tourStatus: tour.tourStatus,
+                manualStatusOverride: tour.manualStatusOverride === true
             });
             setExistingImages(tour.imageUrls || []);
         }
     }, [tour]);
 
-    // Click outside handler
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (destinationRef.current && !destinationRef.current.contains(event.target as Node)) {
@@ -247,64 +235,46 @@ const EditTourPage: React.FC = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Auto-update duration string and itinerary
     useEffect(() => {
         const { durationDays, durationNights } = formData;
-
         if (durationDays > 0) {
             const durationStr = `${durationDays}N${durationNights}Đ`;
             const newItinerary = Array.from({ length: durationDays }, (_, i) =>
                 formData.itinerary[i] || ""
             );
-
             setFormData(prev => ({
                 ...prev,
                 duration: durationStr,
                 itinerary: newItinerary
             }));
         }
-    }, [formData.durationDays, formData.durationNights]);
+    }, [formData.durationDays, formData.durationNights, formData.itinerary.length]);
 
-    // Auto-update endDate
     useEffect(() => {
         if (formData.startDate && formData.durationDays > 0) {
             const start = new Date(formData.startDate);
             start.setDate(start.getDate() + formData.durationDays - 1);
             const endDateStr = start.toISOString().split('T')[0];
-
-            setFormData(prev => ({
-                ...prev,
-                endDate: endDateStr
-            }));
+            setFormData(prev => ({ ...prev, endDate: endDateStr }));
         }
     }, [formData.startDate, formData.durationDays]);
 
-    // Auto-update child price
     useEffect(() => {
         if (formData.priceAdult > 0) {
             const calculatedChildPrice = Math.round(formData.priceAdult * 0.5);
-            setFormData(prev => ({
-                ...prev,
-                priceChild: calculatedChildPrice
-            }));
+            setFormData(prev => ({ ...prev, priceChild: calculatedChildPrice }));
         }
     }, [formData.priceAdult]);
 
-    // Auto-update destination string
     useEffect(() => {
         if (formData.selectedDestinations.length > 0) {
             const destinationStr = formData.selectedDestinations.join(" - ");
-            setFormData(prev => ({
-                ...prev,
-                destination: destinationStr
-            }));
+            setFormData(prev => ({ ...prev, destination: destinationStr }));
         }
     }, [formData.selectedDestinations]);
 
-    // Destination autocomplete handlers
     const handleDestinationInputChange = (value: string) => {
         setDestinationInput(value);
-
         if (value.trim()) {
             const filtered = POPULAR_DESTINATIONS.filter(dest =>
                 dest.toLowerCase().includes(value.toLowerCase())
@@ -335,7 +305,22 @@ const EditTourPage: React.FC = () => {
         }));
     };
 
-    // Handle file selection
+    const addCustomDestination = () => {
+        const trimmedInput = destinationInput.trim();
+        if (trimmedInput && !formData.selectedDestinations.includes(trimmedInput)) {
+            setFormData(prev => ({
+                ...prev,
+                selectedDestinations: [...prev.selectedDestinations, trimmedInput]
+            }));
+            if (!customDestinations.includes(trimmedInput)) {
+                setCustomDestinations(prev => [...prev, trimmedInput]);
+            }
+            setDestinationInput("");
+            setShowDestinationSuggestions(false);
+            toast.success(`Đã thêm điểm đến: ${trimmedInput}`);
+        }
+    };
+
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         const validFiles = files.filter(file => {
@@ -351,24 +336,19 @@ const EditTourPage: React.FC = () => {
         });
 
         if (validFiles.length === 0) return;
-
         const newPreviewUrls = validFiles.map(file => URL.createObjectURL(file));
-
         setSelectedFiles(prev => [...prev, ...validFiles]);
         setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
     };
 
-    // Remove new image from selection
     const removeNewImage = (index: number) => {
         setSelectedFiles(prev => prev.filter((_, i) => i !== index));
         URL.revokeObjectURL(previewUrls[index]);
         setPreviewUrls(prev => prev.filter((_, i) => i !== index));
     };
 
-    // Remove existing image
     const removeExistingImage = async (index: number) => {
         const imageUrl = existingImages[index];
-
         try {
             await deleteImageFromCloudinary(imageUrl);
             setExistingImages(prev => prev.filter((_, i) => i !== index));
@@ -377,6 +357,38 @@ const EditTourPage: React.FC = () => {
             console.error("Failed to delete image:", error);
             toast.error("Lỗi khi xóa ảnh");
         }
+    };
+
+    const validateForm = (): boolean => {
+        const newErrors: Partial<Record<keyof TourFormData, string>> = {};
+        const totalBooked = originalBookingsRef.current;
+
+        if (!formData.title.trim()) newErrors.title = "Tiêu đề không được để trống";
+        if (!formData.description.trim()) newErrors.description = "Mô tả không được để trống";
+
+        // Validate initialQuantity
+        if (formData.initialQuantity <= 0) {
+            newErrors.initialQuantity = "Số lượng phải lớn hơn 0";
+        } else if (formData.initialQuantity < totalBooked) {
+            newErrors.initialQuantity = `Số lượng ban đầu không được nhỏ hơn số người đã đặt (${totalBooked})`;
+        }
+
+        // Validate quantity
+        const maxAvailableQuantity = formData.initialQuantity - totalBooked;
+        if (formData.quantity < 0) {
+            newErrors.quantity = "Số chỗ còn lại không được âm";
+        } else if (formData.quantity > maxAvailableQuantity) {
+            newErrors.quantity = `Số chỗ còn lại không được lớn hơn ${maxAvailableQuantity} (${formData.initialQuantity} - ${totalBooked} đã đặt)`;
+        }
+
+        if (formData.priceAdult <= 0) newErrors.priceAdult = "Giá người lớn phải lớn hơn 0";
+        if (formData.priceChild < 0) newErrors.priceChild = "Giá trẻ em không được âm";
+        if (!formData.duration.trim()) newErrors.duration = "Thời gian không được để trống";
+        if (!formData.destination.trim()) newErrors.destination = "Điểm đến không được để trống";
+        if (!formData.startDate) newErrors.startDate = "Ngày khởi hành không được để trống";
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
     };
 
     const updateTourMutation = useMutation({
@@ -397,22 +409,35 @@ const EditTourPage: React.FC = () => {
             }
 
             const allImageUrls = [...existingImages, ...newUploadedUrls];
-
             const cleanData = {
                 ...data,
                 itinerary: data.itinerary.filter(item => item.trim() !== ""),
                 imageUrls: allImageUrls,
                 startDate: data.startDate || null,
                 endDate: data.endDate || null,
+                // ✅ THÊM 2 field này vào payload
+                tourStatus: data.tourStatus,
+                manualStatusOverride: data.manualStatusOverride,
             };
+
+            console.log("📤 Sending to backend:", {
+                tourStatus: cleanData.tourStatus,
+                manualStatusOverride: cleanData.manualStatusOverride
+            });
 
             const response = await api.put(`/tours/${tourId}`, cleanData);
             return response.data;
         },
-        onSuccess: () => {
+        onSuccess: (responseData) => {
+            console.log("✅ Backend response:", responseData);
+
             previewUrls.forEach(url => URL.revokeObjectURL(url));
             toast.success("Cập nhật tour thành công!");
-            navigate("/admin/tours");
+
+            // ✅ Đợi 500ms để backend hoàn tất transaction
+            setTimeout(() => {
+                navigate("/admin/tours", { replace: true });
+            }, 500);
         },
         onError: (error: any) => {
             const errorMessage = error.response?.data?.message || "Có lỗi xảy ra khi cập nhật tour";
@@ -423,16 +448,38 @@ const EditTourPage: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+
+        console.log("=== SUBMIT DATA ===");
+        console.log("tourStatus:", formData.tourStatus);
+        console.log("manualStatusOverride:", formData.manualStatusOverride);
+        console.log("locked:", locked);
+
+        if (tour?.tourStatus === 'COMPLETED') {
+            toast.error('Tour đã hoàn thành không thể chỉnh sửa!');
+            return;
+        }
+
         if (existingImages.length === 0 && selectedFiles.length === 0) {
             toast.error("Vui lòng giữ ít nhất 1 ảnh");
             return;
         }
 
+        if (validateForm()) {
+            setShowConfirmModal(true);
+        }
+    };
+
+    const confirmUpdate = () => {
+        setShowConfirmModal(false);
         updateTourMutation.mutate(formData);
     };
 
     const handleChange = (field: keyof TourFormData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+        if (errors[field]) {
+            setErrors(prev => ({ ...prev, [field]: undefined }));
+        }
     };
 
     const handleArrayChange = (field: 'itinerary', index: number, value: string) => {
@@ -442,25 +489,6 @@ const EditTourPage: React.FC = () => {
     };
 
     const isPending = updateTourMutation.isPending || isUploading;
-
-    const [customDestinations, setCustomDestinations] = useState<string[]>([]);
-
-    // Thêm function addCustomDestination (sau function addDestination, khoảng dòng 250):
-    const addCustomDestination = () => {
-        const trimmedInput = destinationInput.trim();
-        if (trimmedInput && !formData.selectedDestinations.includes(trimmedInput)) {
-            setFormData(prev => ({
-                ...prev,
-                selectedDestinations: [...prev.selectedDestinations, trimmedInput]
-            }));
-            if (!customDestinations.includes(trimmedInput)) {
-                setCustomDestinations(prev => [...prev, trimmedInput]);
-            }
-            setDestinationInput("");
-            setShowDestinationSuggestions(false);
-            toast.success(`Đã thêm điểm đến: ${trimmedInput}`);
-        }
-    };
 
     if (isLoading) {
         return (
@@ -472,6 +500,90 @@ const EditTourPage: React.FC = () => {
             </div>
         );
     }
+
+    if (tour?.tourStatus === 'COMPLETED') {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-center max-w-md">
+                    <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <AlertTriangle className="w-8 h-8 text-yellow-600" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Tour đã hoàn thành</h2>
+                    <p className="text-gray-600 mb-6">Tour này đã hoàn thành và không thể chỉnh sửa.</p>
+                    <button
+                        onClick={() => navigate("/admin/tours")}
+                        className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                        Quay lại danh sách
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const totalBooked = originalBookingsRef.current;
+    const maxAvailableQuantity = formData.initialQuantity - totalBooked;
+
+    const isStatusLocked = () => {
+        if (!formData.startDate || !formData.endDate) return false;
+
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+
+        const startDate = new Date(formData.startDate);
+        const endDate = new Date(formData.endDate);
+
+
+        const lockDate = new Date(startDate);
+        lockDate.setDate(lockDate.getDate() - 1);
+
+
+        return now > endDate || now > lockDate;
+    };
+
+    const locked = isStatusLocked();
+
+    const getLockMessage = () => {
+        if (!formData.startDate || !formData.endDate) return null;
+
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+
+        const startDate = new Date(formData.startDate);
+        const endDate = new Date(formData.endDate);
+
+        
+        const lockDate = new Date(startDate);
+        lockDate.setDate(lockDate.getDate() - 1);
+
+        if (now > endDate) {
+            return {
+                type: 'completed',
+                message: `Tour đã hoàn thành (sau ${formatDateForDisplay(formData.endDate)})`,
+                icon: '🔒',
+                color: 'gray'
+            };
+        }
+
+        
+        if (now > lockDate) {
+            return {
+                type: 'in-progress',
+                message: `Tour đang thực hiện - Trạng thái đã khóa sau ${formatDateForDisplay(lockDate.toISOString().split('T')[0])}`,
+                icon: '⚠️',
+                color: 'yellow'
+            };
+        }
+
+        return {
+            type: 'editable',
+            message: `Có thể chỉnh sửa trạng thái đến hết ${formatDateForDisplay(lockDate.toISOString().split('T')[0])}`,
+            icon: '✅',
+            color: 'blue'
+        };
+    };
+
+    const lockInfo = getLockMessage();
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -486,23 +598,111 @@ const EditTourPage: React.FC = () => {
                     </button>
                     <h1 className="text-3xl font-bold text-gray-900">Chỉnh Sửa Tour</h1>
                     <p className="text-gray-600 mt-2">Cập nhật thông tin tour du lịch</p>
+
+                    {totalBooked > 0 && (
+                        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p className="text-sm text-blue-800">
+                                <span className="font-semibold">Lưu ý:</span> Tour này đã có {totalBooked} người đặt.
+                                Số lượng ban đầu tối thiểu: {totalBooked}, Số chỗ còn lại tối đa: {maxAvailableQuantity}
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Basic Info */}
                     <div className="bg-white rounded-xl shadow-md p-6">
                         <h2 className="text-xl font-bold text-gray-900 mb-4">Thông tin cơ bản</h2>
-
                         <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Trạng thái tour
+                                </label>
+
+                                {/* ✅ THÔNG BÁO KHÓA - HIỂN thị TRƯỚC SELECT */}
+                                {lockInfo && (
+                                    <div className={`mb-3 p-4 rounded-lg border-2 ${lockInfo.color === 'gray'
+                                        ? 'bg-gray-50 border-gray-300'
+                                        : lockInfo.color === 'yellow'
+                                            ? 'bg-yellow-50 border-yellow-300'
+                                            : 'bg-blue-50 border-blue-300'
+                                        }`}>
+                                        <div className="flex items-start gap-3">
+                                            <span className="text-xl">{lockInfo.icon}</span>
+                                            <div className="flex-1">
+                                                <p className={`font-semibold text-sm ${lockInfo.color === 'gray'
+                                                    ? 'text-gray-900'
+                                                    : lockInfo.color === 'yellow'
+                                                        ? 'text-yellow-800'
+                                                        : 'text-blue-800'
+                                                    }`}>
+                                                    {lockInfo.message}
+                                                </p>
+                                                {locked && (
+                                                    <p className="text-xs text-gray-600 mt-1">
+                                                        Không thể thay đổi trạng thái tour sau khi đã khóa
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <select
+                                    value={formData.tourStatus}
+                                    onChange={(e) => handleChange("tourStatus", e.target.value)}
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 ${locked
+                                        ? 'bg-gray-100 cursor-not-allowed border-gray-300'
+                                        : 'border-gray-300'
+                                        }`}
+                                    disabled={locked || isPending}
+                                >
+                                    <option value="OPEN_BOOKING">Đang mở booking</option>
+                                    <option value="IN_PROGRESS">Đang thực hiện</option>
+                                    {locked && <option value="COMPLETED">Đã hoàn thành</option>}
+                                </select>
+
+
+                                {!locked && (
+                                    <div className="mt-3 flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="manualOverride"
+                                            checked={formData.manualStatusOverride === true} // ✅ Strict check
+                                            onChange={(e) => {
+                                                const newValue = e.target.checked;
+                                                console.log("Checkbox changed to:", newValue); // ✅ Debug log
+                                                handleChange("manualStatusOverride", newValue);
+                                            }}
+                                            className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                                            disabled={isPending}
+                                        />
+                                        <label htmlFor="manualOverride" className="text-sm text-gray-600 cursor-pointer">
+                                            Giữ trạng thái này (không tự động cập nhật)
+                                        </label>
+                                    </div>
+                                )}
+
+                                <p className="text-xs text-gray-500 mt-2">
+                                    {locked
+                                        ? "🔒 Trạng thái đã bị khóa vĩnh viễn"
+                                        : formData.manualStatusOverride === true
+                                            ? "⚠️ Trạng thái sẽ KHÔNG tự động thay đổi (cho đến trước startDate 1 ngày)"
+                                            : "✅ Trạng thái sẽ tự động cập nhật theo lịch trình tour"
+                                    }
+                                </p>
+                            </div>
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">Tiêu đề tour</label>
                                 <input
                                     type="text"
                                     value={formData.title}
                                     onChange={(e) => handleChange("title", e.target.value)}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 ${errors.title ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                     disabled={isPending}
                                 />
+                                {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
                             </div>
 
                             <div>
@@ -511,12 +711,14 @@ const EditTourPage: React.FC = () => {
                                     value={formData.description}
                                     onChange={(e) => handleChange("description", e.target.value)}
                                     rows={4}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 ${errors.description ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                     disabled={isPending}
                                 />
+                                {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
                             </div>
 
-                            {/* Destination with Autocomplete */}
+                            {/* Destination */}
                             <div ref={destinationRef} className="relative">
                                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                     <MapPin className="w-4 h-4 text-indigo-600" />
@@ -532,6 +734,7 @@ const EditTourPage: React.FC = () => {
                                                     type="button"
                                                     onClick={() => removeDestination(index)}
                                                     className="hover:bg-indigo-200 rounded-full p-0.5"
+                                                    disabled={isPending}
                                                 >
                                                     <X size={14} />
                                                 </button>
@@ -555,7 +758,6 @@ const EditTourPage: React.FC = () => {
 
                                 {showDestinationSuggestions && (
                                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                        {/* Hiện danh sách gợi ý nếu có */}
                                         {filteredDestinations.length > 0 && filteredDestinations.map((dest, index) => (
                                             <button
                                                 key={index}
@@ -574,7 +776,6 @@ const EditTourPage: React.FC = () => {
                                             </button>
                                         ))}
 
-                                        {/* Luôn hiện nút "Thêm điểm đến" khi có text */}
                                         {destinationInput.trim() && (
                                             <button
                                                 type="button"
@@ -588,7 +789,6 @@ const EditTourPage: React.FC = () => {
                                             </button>
                                         )}
 
-                                        {/* Thông báo khi không có kết quả và không có text */}
                                         {filteredDestinations.length === 0 && !destinationInput.trim() && (
                                             <div className="px-4 py-3 text-gray-500 text-sm text-center">
                                                 Không tìm thấy địa điểm
@@ -596,9 +796,10 @@ const EditTourPage: React.FC = () => {
                                         )}
                                     </div>
                                 )}
+                                {errors.destination && <p className="text-red-500 text-sm mt-1">{errors.destination}</p>}
                             </div>
 
-                            {/* Duration - Smart input */}
+                            {/* Duration */}
                             <div>
                                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                     <Clock className="w-4 h-4 text-indigo-600" />
@@ -626,10 +827,7 @@ const EditTourPage: React.FC = () => {
                                     </div>
                                     <div className="flex items-center px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg min-w-[120px]">
                                         <span className="text-gray-700 font-medium">
-                                            {formData.durationDays > 0
-                                                ? `${formData.durationDays}N${formData.durationNights}Đ`
-                                                : "0N0Đ"
-                                            }
+                                            {formData.durationDays > 0 ? `${formData.durationDays}N${formData.durationNights}Đ` : "0N0Đ"}
                                         </span>
                                     </div>
                                 </div>
@@ -923,6 +1121,47 @@ const EditTourPage: React.FC = () => {
                     </div>
                 </form>
             </div>
+            {showConfirmModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <Edit className="w-6 h-6 text-blue-600" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900">Xác nhận cập nhật</h3>
+                        </div>
+
+                        <div className="space-y-3 mb-6">
+                            <p className="text-gray-600">
+                                Bạn có chắc chắn muốn cập nhật tour <span className="font-semibold">"{formData.title}"</span>?
+                            </p>
+                            <div className="bg-gray-50 p-3 rounded-lg text-sm space-y-1">
+                                <p><span className="font-medium">Số lượng ban đầu:</span> {formData.initialQuantity}</p>
+                                <p><span className="font-medium">Số chỗ còn lại:</span> {formData.quantity}</p>
+                                <p><span className="font-medium">Đã đặt:</span> {totalBooked}</p>
+                                <p><span className="font-medium">Trạng thái:</span> {
+                                    formData.tourStatus === 'OPEN_BOOKING' ? 'Đang mở booking' : 'Đang thực hiện'
+                                }</p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowConfirmModal(false)}
+                                className="flex-1 px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={confirmUpdate}
+                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+                            >
+                                Xác nhận cập nhật
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

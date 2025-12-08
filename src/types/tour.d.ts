@@ -21,4 +21,5 @@ export interface TourResponse {
     totalBookings: number;
     favoriteCount: number;
     isFavorited: boolean;
+    manualStatusOverride?: boolean;
 };
