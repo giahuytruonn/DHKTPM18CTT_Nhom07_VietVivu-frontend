@@ -1114,6 +1114,21 @@ const BookingPage = () => {
                         {formatCurrency(detailBooking.totalPrice)}
                       </Typography>
                     </Box>
+                    <Divider orientation="vertical" flexItem />
+                    <Box>
+                      <Typography
+                        variant="overline"
+                        sx={{ color: "#94A3B8", letterSpacing: "0.1em" }}
+                      >
+                        Còn lại
+                      </Typography>
+                      <Typography
+                        variant="h6"
+                        sx={{ fontWeight: 700, color: "#2563EB" }}
+                      >
+                        {formatCurrency(detailBooking.remainingAmount)}
+                      </Typography>
+                    </Box>
                   </Stack>
                 </Stack>
                 <Box
