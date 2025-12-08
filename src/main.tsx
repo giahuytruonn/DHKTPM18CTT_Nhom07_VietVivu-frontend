@@ -22,6 +22,7 @@ import AdminToursManagement from "./pages/AdminToursManagement";
 import CreateTourPage from "./pages/CreateTourPage";
 import EditTourPage from "./pages/EditTourPage";
 import AdminStatisticsPage from "./pages/AdminStatisticsPage";
+import AdminVideoManagement from "./pages/AdminVideoManagement";
 
 import "./index.css";
 import Header from "./components/layout/Header";
@@ -37,8 +38,8 @@ import BlogPage from "./pages/BlogPage";
 import AboutPage from "./pages/AboutPage";
 import UserProfilePage from "./pages/UserProfilePage";
 import AdminUsersPage from "./pages/AdminUserPage";
-import ExplorePage from "./pages/ExplorePage"
 import VideoFeedPage from "./pages/VideoFeedPage"
+import MyReviewsPage from "./pages/MyReviewsPage";
 
 const queryClient = new QueryClient();
 
@@ -90,7 +91,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="/change-tour" element={<ChangeTourPage />} />
                   <Route path="/booking/:tourId" element={<BookingStepper />} />
                   <Route path="/feed" element={<VideoFeedPage />} />
-                  <Route path="/upload" element={<ExplorePage />} />
+                  <Route path="/review" element={<MyReviewsPage />} />
 
                   {/* Protected User Routes */}
                   <Route
@@ -149,6 +150,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="tours" element={<AdminToursManagement />} />
             <Route path="tours/create" element={<CreateTourPage />} />
             <Route path="tours/edit/:tourId" element={<EditTourPage />} />
+            <Route path="videos" element={<AdminVideoManagement />} />
             <Route
               path="users"
               element={<AdminUsersPage />}

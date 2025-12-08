@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getMyReviews, deleteReview } from "../services/review.services";
-import { QUERY_KEYS } from "../utiils/queryKeys";
+import { QUERY_KEYS } from "../utils/queryKeys";
 import { useUser } from "../hooks/useUser";
 import ReviewForm from "../components/review/ReviewForm";
 

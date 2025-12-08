@@ -12,15 +12,15 @@ export interface ReviewRequest {
  */
 export interface ReviewResponse {
   reviewId: string;
-  bookingId: string;
-  // Backend may return UUID strings for users — use string to match DB values
-  userId: string;
-  userName: string;
-  tourId: string;
-  tourTitle: string;
   rating: number;
   comment: string;
-  // createdAt may be ISO string or numeric timestamp (ms). The service normalizes
-  // LocalDate-like objects to ISO strings. We do not expose updatedAt on frontend.
-  createdAt: string | number;
+  timestamp: string; // Backend trả về LocalDate ("2023-12-08")
+  userId: string;
+  
+  userName: string;
+  userAvatar?: string;
+  
+  tourId: string;
+  tourTitle?: string;
+  bookingId?: string;
 }

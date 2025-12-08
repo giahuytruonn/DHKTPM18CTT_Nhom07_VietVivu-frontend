@@ -68,3 +68,14 @@ export const searchTours = async (
 export const deleteTour = async (tourId: string): Promise<void> => {
   await api.delete(`/tours/${tourId}`);
 };
+
+export interface ITourSelection {
+  id: string;
+  title: string;
+}
+
+// Hàm gọi API lấy danh sách tour
+export const getAllTourNames = async (): Promise<ITourSelection[]> => {
+  const response = await api.get<ITourSelection[]>("/tours/all-names"); 
+  return response.data;
+};
