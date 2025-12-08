@@ -21,19 +21,25 @@ export default function Footer() {
             </p>
             <div className="flex space-x-3 pt-2">
               <a
-                href="#"
+                href="https://facebook.com/vietvivu"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-9 h-9 bg-gray-800 rounded-full flex items-center justify-center hover:bg-indigo-600 transition-all duration-300 group"
               >
                 <Facebook size={16} className="text-gray-400 group-hover:text-white" />
               </a>
               <a
-                href="#"
+                href="https://instagram.com/vietvivu"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-9 h-9 bg-gray-800 rounded-full flex items-center justify-center hover:bg-pink-600 transition-all duration-300 group"
               >
                 <Instagram size={16} className="text-gray-400 group-hover:text-white" />
               </a>
               <a
-                href="#"
+                href="https://youtube.com/@vietvivu"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-9 h-9 bg-gray-800 rounded-full flex items-center justify-center hover:bg-red-600 transition-all duration-300 group"
               >
                 <Youtube size={16} className="text-gray-400 group-hover:text-white" />
@@ -48,22 +54,51 @@ export default function Footer() {
               Khám phá
             </h4>
             <ul className="space-y-3">
-              {[
-                { to: "/tours", label: "Tất cả tour" },
-                { to: "/destinations", label: "Điểm đến nổi bật" },
-                { to: "/blog", label: "Blog du lịch" },
-                { to: "/experiences", label: "Trải nghiệm độc đáo" },
-              ].map((item) => (
-                <li key={item.to}>
-                  <Link
-                    to={item.to}
-                    className="text-sm flex items-center hover:text-white transition-colors duration-200 group"
-                  >
-                    <ChevronRight size={14} className="text-indigo-500 mr-1 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link
+                  to="/tours"
+                  className="text-sm flex items-center hover:text-white transition-colors duration-200 group"
+                >
+                  <ChevronRight size={14} className="text-indigo-500 mr-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  Tất cả tour
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/guides"
+                  className="text-sm flex items-center hover:text-white transition-colors duration-200 group"
+                >
+                  <ChevronRight size={14} className="text-indigo-500 mr-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  Hướng dẫn viên
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/blog"
+                  className="text-sm flex items-center hover:text-white transition-colors duration-200 group"
+                >
+                  <ChevronRight size={14} className="text-indigo-500 mr-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  Blog du lịch
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/feed"
+                  className="text-sm flex items-center hover:text-white transition-colors duration-200 group"
+                >
+                  <ChevronRight size={14} className="text-indigo-500 mr-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  Video khám phá
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/favorite-tours"
+                  className="text-sm flex items-center hover:text-white transition-colors duration-200 group"
+                >
+                  <ChevronRight size={14} className="text-indigo-500 mr-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  Tour yêu thích
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -74,22 +109,51 @@ export default function Footer() {
               Hỗ trợ
             </h4>
             <ul className="space-y-3">
-              {[
-                { to: "/help", label: "Trung tâm trợ giúp", icon: "help" },
-                { to: "/contact", label: "Liên hệ chúng tôi", icon: Mail },
-                { to: "/terms", label: "Điều khoản dịch vụ", icon: "doc" },
-                { to: "/privacy", label: "Chính sách bảo mật", icon: "lock" },
-              ].map((item) => (
-                <li key={item.to}>
-                  <Link
-                    to={item.to}
-                    className="text-sm flex items-center hover:text-white transition-colors duration-200 group"
-                  >
-                    <ChevronRight size={14} className="text-indigo-500 mr-1 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link
+                  to="/about"
+                  className="text-sm flex items-center hover:text-white transition-colors duration-200 group"
+                >
+                  <ChevronRight size={14} className="text-indigo-500 mr-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  Về chúng tôi
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/contact"
+                  className="text-sm flex items-center hover:text-white transition-colors duration-200 group"
+                >
+                  <ChevronRight size={14} className="text-indigo-500 mr-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  Liên hệ
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/faq"
+                  className="text-sm flex items-center hover:text-white transition-colors duration-200 group"
+                >
+                  <ChevronRight size={14} className="text-indigo-500 mr-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  Câu hỏi thường gặp
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/privacy"
+                  className="text-sm flex items-center hover:text-white transition-colors duration-200 group"
+                >
+                  <ChevronRight size={14} className="text-indigo-500 mr-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  Chính sách bảo mật
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/bookings"
+                  className="text-sm flex items-center hover:text-white transition-colors duration-200 group"
+                >
+                  <ChevronRight size={14} className="text-indigo-500 mr-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  Đơn đặt của tôi
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -124,7 +188,7 @@ export default function Footer() {
             © 2025 <span className="text-indigo-400 font-medium">VietVivu</span>. Tất cả quyền được bảo lưu.
           </p>
           <p className="mt-2 md:mt-0 flex items-center gap-1">
-            Made with <span className="text-red-500">Chuc and Double D H</span> in Vietnam
+            Made with <span className="text-red-500">❤</span> by Chuc and Double D H in Vietnam
           </p>
         </div>
       </div>
