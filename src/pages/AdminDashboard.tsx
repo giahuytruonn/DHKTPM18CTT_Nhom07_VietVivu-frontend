@@ -2,6 +2,10 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getAllToursAdmin } from "../services/tour.service";
 import {
+  getTotalRevenue,
+  getMonthlyRevenue,
+} from "../services/statistical.service";
+import {
   TrendingUp,
   Users,
   Package,
@@ -16,6 +20,15 @@ import {
   TrendingDown,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 const AdminDashboard: React.FC = () => {
   const { data: toursResponse, isLoading } = useQuery({
@@ -24,17 +37,28 @@ const AdminDashboard: React.FC = () => {
     staleTime: 1000 * 60 * 5,
   });
 
+  const { data: totalRevenue } = useQuery({
+    queryKey: ["totalRevenue"],
+    queryFn: getTotalRevenue,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: monthlyRevenue } = useQuery({
+    queryKey: ["monthlyRevenue", new Date().getFullYear()],
+    queryFn: () => getMonthlyRevenue(new Date().getFullYear()),
+  });
+
   const tours = toursResponse?.items || [];
 
   // Calculate statistics
   const stats = {
     totalTours: tours.length,
-    openTours: tours.filter(t => t.tourStatus === "OPEN_BOOKING").length,
-    inProgressTours: tours.filter(t => t.tourStatus === "IN_PROGRESS").length,
-    completedTours: tours.filter(t => t.tourStatus === "COMPLETED").length,
+    openTours: tours.filter((t) => t.tourStatus === "OPEN_BOOKING").length,
+    inProgressTours: tours.filter((t) => t.tourStatus === "IN_PROGRESS").length,
+    completedTours: tours.filter((t) => t.tourStatus === "COMPLETED").length,
     totalBookings: tours.reduce((sum, t) => sum + (t.totalBookings || 0), 0),
     totalFavorites: tours.reduce((sum, t) => sum + (t.favoriteCount || 0), 0),
-    totalRevenue: tours.reduce((sum, t) => sum + (t.totalBookings || 0) * t.priceAdult, 0),
+    totalRevenue: totalRevenue || 0,
     availableSpots: tours.reduce((sum, t) => sum + (t.quantity || 0), 0),
   };
 
@@ -84,8 +108,12 @@ const AdminDashboard: React.FC = () => {
   // Recent tours (5 newest by startDate)
   const recentTours = [...tours]
     .sort((a, b) => {
-      const dateA = a.startDate ? a.startDate.split('/').reverse().join('-') : '1970-01-01';
-      const dateB = b.startDate ? b.startDate.split('/').reverse().join('-') : '1970-01-01';
+      const dateA = a.startDate
+        ? a.startDate.split("/").reverse().join("-")
+        : "1970-01-01";
+      const dateB = b.startDate
+        ? b.startDate.split("/").reverse().join("-")
+        : "1970-01-01";
       return new Date(dateB).getTime() - new Date(dateA).getTime();
     })
     .slice(0, 5);
@@ -147,14 +175,22 @@ const AdminDashboard: React.FC = () => {
                 <div className={`p-3 ${stat.bgColor} rounded-xl`}>
                   <Icon className={stat.textColor} size={24} />
                 </div>
-                <div className={`flex items-center gap-1 text-sm font-semibold ${
-                  stat.isIncrease ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {stat.isIncrease ? <ArrowUp size={16} /> : <TrendingDown size={16} />}
+                <div
+                  className={`flex items-center gap-1 text-sm font-semibold ${
+                    stat.isIncrease ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {stat.isIncrease ? (
+                    <ArrowUp size={16} />
+                  ) : (
+                    <TrendingDown size={16} />
+                  )}
                   <span>{stat.change}</span>
                 </div>
               </div>
-              <h3 className="text-gray-600 text-sm font-medium mb-1">{stat.title}</h3>
+              <h3 className="text-gray-600 text-sm font-medium mb-1">
+                {stat.title}
+              </h3>
               <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
             </div>
           );
@@ -167,44 +203,76 @@ const AdminDashboard: React.FC = () => {
         <div className="bg-white rounded-xl p-6 shadow-md">
           <div className="flex items-center gap-3 mb-6">
             <Activity className="text-indigo-600" size={24} />
-            <h2 className="text-xl font-bold text-gray-900">Phân Bố Trạng Thái Tour</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              Phân Bố Trạng Thái Tour
+            </h2>
           </div>
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">Đang mở booking</span>
-                <span className="text-sm font-semibold text-green-600">{stats.openTours}</span>
+                <span className="text-sm font-medium text-gray-700">
+                  Đang mở booking
+                </span>
+                <span className="text-sm font-semibold text-green-600">
+                  {stats.openTours}
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                 <div
                   className="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${stats.totalTours > 0 ? (stats.openTours / stats.totalTours) * 100 : 0}%` }}
+                  style={{
+                    width: `${
+                      stats.totalTours > 0
+                        ? (stats.openTours / stats.totalTours) * 100
+                        : 0
+                    }%`,
+                  }}
                 />
               </div>
             </div>
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">Đang thực hiện</span>
-                <span className="text-sm font-semibold text-blue-600">{stats.inProgressTours}</span>
+                <span className="text-sm font-medium text-gray-700">
+                  Đang thực hiện
+                </span>
+                <span className="text-sm font-semibold text-blue-600">
+                  {stats.inProgressTours}
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                 <div
                   className="bg-gradient-to-r from-blue-400 to-blue-600 h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${stats.totalTours > 0 ? (stats.inProgressTours / stats.totalTours) * 100 : 0}%` }}
+                  style={{
+                    width: `${
+                      stats.totalTours > 0
+                        ? (stats.inProgressTours / stats.totalTours) * 100
+                        : 0
+                    }%`,
+                  }}
                 />
               </div>
             </div>
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">Đã hoàn thành</span>
-                <span className="text-sm font-semibold text-gray-600">{stats.completedTours}</span>
+                <span className="text-sm font-medium text-gray-700">
+                  Đã hoàn thành
+                </span>
+                <span className="text-sm font-semibold text-gray-600">
+                  {stats.completedTours}
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                 <div
                   className="bg-gradient-to-r from-gray-400 to-gray-600 h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${stats.totalTours > 0 ? (stats.completedTours / stats.totalTours) * 100 : 0}%` }}
+                  style={{
+                    width: `${
+                      stats.totalTours > 0
+                        ? (stats.completedTours / stats.totalTours) * 100
+                        : 0
+                    }%`,
+                  }}
                 />
               </div>
             </div>
@@ -215,40 +283,46 @@ const AdminDashboard: React.FC = () => {
         <div className="bg-white rounded-xl p-6 shadow-md">
           <div className="flex items-center gap-3 mb-6">
             <Star className="text-yellow-500" size={24} />
-            <h2 className="text-xl font-bold text-gray-900">Thống Kê Nhanh</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              Thống Kê Doanh Thu
+            </h2>
           </div>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Calendar className="text-blue-600" size={20} />
-                </div>
-                <span className="font-medium text-gray-700">Chỗ còn lại</span>
-              </div>
-              <span className="text-2xl font-bold text-blue-600">
-                {stats.availableSpots}
-              </span>
-            </div>
+          <div className="mt-4 w-full h-64">
+            {monthlyRevenue ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlyRevenue}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
 
-            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-xl border border-pink-100">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-pink-100 rounded-lg">
-                  <Heart className="text-pink-600" size={20} />
-                </div>
-                <span className="font-medium text-gray-700">Yêu thích</span>
-              </div>
-              <span className="text-2xl font-bold text-pink-600">{stats.totalFavorites}</span>
-            </div>
+                  <XAxis
+                    dataKey="month"
+                    tickFormatter={(m) => `T${m}`}
+                    stroke="#6b7280"
+                  />
 
-            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl border border-yellow-100">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Star className="text-yellow-600" size={20} />
-                </div>
-                <span className="font-medium text-gray-700">Đánh giá TB</span>
-              </div>
-              <span className="text-2xl font-bold text-yellow-600">4.8</span>
-            </div>
+                  <YAxis
+                    stroke="#6b7280"
+                    tickFormatter={(v) => `${(v / 1_000_000).toFixed(1)}M`}
+                  />
+
+                  <Tooltip
+                    formatter={(value) => `${Number(value).toLocaleString()} ₫`}
+                    labelFormatter={(label) => `Tháng ${label}`}
+                  />
+
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#4F46E5"
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                    animationDuration={800}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-gray-600">Đang tải dữ liệu doanh thu...</p>
+            )}
           </div>
         </div>
       </div>
@@ -279,14 +353,18 @@ const AdminDashboard: React.FC = () => {
                   {index + 1}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{tour.title}</p>
+                  <p className="font-semibold text-gray-900 truncate">
+                    {tour.title}
+                  </p>
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <MapPin className="w-3 h-3" />
                     <span className="truncate">{tour.destination}</span>
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="font-bold text-indigo-600">{tour.totalBookings}</p>
+                  <p className="font-bold text-indigo-600">
+                    {tour.totalBookings}
+                  </p>
                   <p className="text-xs text-gray-500">bookings</p>
                 </div>
               </div>
@@ -314,17 +392,28 @@ const AdminDashboard: React.FC = () => {
                 key={tour.tourId}
                 className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl transition-colors"
               >
-                <div className={`
+                <div
+                  className={`
                   flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold
-                  ${tour.tourStatus === 'OPEN_BOOKING' ? 'bg-green-100 text-green-700' : 
-                    tour.tourStatus === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' : 
-                    'bg-gray-100 text-gray-700'}
-                `}>
-                  {tour.tourStatus === 'OPEN_BOOKING' ? 'Mở' : 
-                   tour.tourStatus === 'IN_PROGRESS' ? 'Đang chạy' : 'Hoàn thành'}
+                  ${
+                    tour.tourStatus === "OPEN_BOOKING"
+                      ? "bg-green-100 text-green-700"
+                      : tour.tourStatus === "IN_PROGRESS"
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-gray-100 text-gray-700"
+                  }
+                `}
+                >
+                  {tour.tourStatus === "OPEN_BOOKING"
+                    ? "Mở"
+                    : tour.tourStatus === "IN_PROGRESS"
+                    ? "Đang chạy"
+                    : "Hoàn thành"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{tour.title}</p>
+                  <p className="font-semibold text-gray-900 truncate">
+                    {tour.title}
+                  </p>
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <MapPin className="w-3 h-3" />
                     <span className="truncate">{tour.destination}</span>
@@ -354,10 +443,14 @@ const AdminDashboard: React.FC = () => {
               className="p-4 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl border border-indigo-100 hover:shadow-md transition-all"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl font-bold text-indigo-600">#{index + 1}</span>
+                <span className="text-2xl font-bold text-indigo-600">
+                  #{index + 1}
+                </span>
                 <Clock className="text-indigo-400" size={16} />
               </div>
-              <p className="font-semibold text-gray-900 truncate">{dest.name}</p>
+              <p className="font-semibold text-gray-900 truncate">
+                {dest.name}
+              </p>
               <p className="text-sm text-gray-600">{dest.bookings} bookings</p>
             </div>
           ))}

@@ -39,6 +39,7 @@ import UserProfilePage from "./pages/UserProfilePage";
 import AdminUsersPage from "./pages/AdminUserPage";
 import ExplorePage from "./pages/ExplorePage"
 import VideoFeedPage from "./pages/VideoFeedPage"
+import AdminStatisticsRevenuePage from "./pages/AdminStatisticsRevenuePage";
 
 const queryClient = new QueryClient();
 
@@ -163,7 +164,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 </div>
               }
             />
-            <Route path="reports" element={<AdminStatisticsPage />} />
+            <Route path="reports/others" element={<AdminStatisticsPage />} />
+            <Route path="reports/revenue" element={<AdminStatisticsRevenuePage />} />
             <Route path="bookings-request" element={<BookingRequestPage />} />
             <Route
               path="bookings-request/:requestId"

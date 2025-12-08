@@ -61,11 +61,6 @@ const AdminLayout: React.FC = () => {
       icon: Heart,
       path: "/admin/reviews",
     },
-    {
-      title: "Báo cáo",
-      icon: BarChart3,
-      path: "/admin/reports",
-    },
   ];
 
   const logoutMutation = useMutation({
@@ -90,6 +85,7 @@ const AdminLayout: React.FC = () => {
   const handleLogout = () => {
     logoutMutation.mutate();
   };
+  const [reportOpen, setReportOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -125,6 +121,7 @@ const AdminLayout: React.FC = () => {
 
         {/* Navigation - Scrollable */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+          {/* Render các item mặc định */}
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -134,13 +131,14 @@ const AdminLayout: React.FC = () => {
                 key={item.path}
                 to={item.path}
                 className={`
-                  flex items-center gap-3 px-4 py-3 rounded-lg
-                  transition-all duration-200 whitespace-nowrap
-                  ${isActive
-                    ? "bg-white text-indigo-900 shadow-lg"
-                    : "hover:bg-white/10 text-white/80 hover:text-white"
-                  }
-                `}
+          flex items-center gap-3 px-4 py-3 rounded-lg
+          transition-all duration-200 whitespace-nowrap
+          ${
+            isActive
+              ? "bg-white text-indigo-900 shadow-lg"
+              : "hover:bg-white/10 text-white/80 hover:text-white"
+          }
+        `}
                 title={!sidebarOpen ? item.title : undefined}
               >
                 <Icon size={20} className="flex-shrink-0" />
@@ -150,6 +148,65 @@ const AdminLayout: React.FC = () => {
               </Link>
             );
           })}
+
+          {/* --- BÁO CÁO (Dropdown) --- */}
+          <button
+            onClick={() => setReportOpen(!reportOpen)}
+            className={`
+      flex items-center justify-between w-full px-4 py-3 rounded-lg
+      transition-all duration-200 
+      ${
+        location.pathname.includes("/admin/reports")
+          ? "bg-white text-indigo-900 shadow-lg"
+          : "hover:bg-white/10 text-white/80 hover:text-white"
+      }
+    `}
+          >
+            <div className="flex items-center gap-3">
+              <BarChart3 size={20} />
+              {sidebarOpen && <span className="font-medium">Báo cáo</span>}
+            </div>
+
+            {sidebarOpen && (
+              <ChevronDown
+                size={16}
+                className={`transition-transform ${
+                  reportOpen ? "rotate-180" : ""
+                }`}
+              />
+            )}
+          </button>
+
+          {/* --- Dropdown con --- */}
+          {reportOpen && sidebarOpen && (
+            <div className="ml-10 mt-1 space-y-2">
+              <Link
+                to="/admin/reports/revenue"
+                className={`block px-3 py-2 rounded-lg text-sm
+          ${
+            location.pathname === "/admin/reports/revenue"
+              ? "bg-white text-indigo-900 shadow-md"
+              : "hover:bg-white/10 text-white/80 hover:text-white"
+          }
+        `}
+              >
+                Doanh thu
+              </Link>
+
+              <Link
+                to="/admin/reports/others"
+                className={`block px-3 py-2 rounded-lg text-sm
+          ${
+            location.pathname === "/admin/reports/others"
+              ? "bg-white text-indigo-900 shadow-md"
+              : "hover:bg-white/10 text-white/80 hover:text-white"
+          }
+        `}
+              >
+                Báo cáo khác
+              </Link>
+            </div>
+          )}
         </nav>
 
         {/* Bottom Actions - Fixed at bottom */}
@@ -162,7 +219,6 @@ const AdminLayout: React.FC = () => {
             <Globe size={20} className="flex-shrink-0" />
             {sidebarOpen && <span className="font-medium">Về trang chủ</span>}
           </Link>
-
 
           <button
             onClick={handleLogout}
@@ -212,8 +268,9 @@ const AdminLayout: React.FC = () => {
               </div>
               <ChevronDown
                 size={16}
-                className={`transition-transform flex-shrink-0 ${userDropdown ? "rotate-180" : ""
-                  }`}
+                className={`transition-transform flex-shrink-0 ${
+                  userDropdown ? "rotate-180" : ""
+                }`}
               />
             </button>
 

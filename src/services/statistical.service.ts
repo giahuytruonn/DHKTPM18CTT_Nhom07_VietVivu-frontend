@@ -12,6 +12,11 @@ export interface TopUser {
   value: number;
 }
 
+export interface MonthlyRevenue {
+  month: number;   // đổi về number
+  revenue: number;
+}
+
 // Lấy top tour theo trạng thái
 export const getTopBookedTours = async (bookingStatus: string): Promise<TopTour[]> => {
   const res = await api.get<ApiResponse<Record<string, number>>>(`/statistical/top-booked-tours?bookingStatus=${bookingStatus}`);
@@ -45,4 +50,12 @@ export const getTotalRevenue = async (): Promise<number> => {
   return res.data.result ?? 0;
 };
 
+// Tổng doanh các tháng trong năm
+export const getMonthlyRevenue = async (year: number): Promise<MonthlyRevenue[]> => {
+  const res = await api.get<ApiResponse<Record<string, number>>>(`/statistical/revenue-by-month?year=${year}`);
 
+  return Object.entries(res.data.result || {}).map(([month, revenue]) => ({
+    month: Number(month),       // CHUYỂN STRING → NUMBER
+    revenue: Number(revenue),
+  }));
+};
