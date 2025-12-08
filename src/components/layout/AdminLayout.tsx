@@ -42,6 +42,11 @@ const AdminLayout: React.FC = () => {
       path: "/admin/tours",
     },
     {
+      title: "Quản lý Khuyến mãi",
+      icon: Package,
+      path: "/admin/promotions",
+    },
+    {
       title: "Thêm Tour",
       icon: PlusCircle,
       path: "/admin/tours/create",

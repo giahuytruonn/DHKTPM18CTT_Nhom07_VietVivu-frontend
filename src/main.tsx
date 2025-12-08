@@ -50,6 +50,8 @@ import Header from "./components/layout/Header";
 import { useAuthStore } from "./stores/useAuthStore";
 import Footer from "./components/layout/Footer";
 import AdminStatisticsRevenuePage from "./pages/AdminStatisticsRevenuePage";
+import AdminPromotionsPage from "./pages/AdminPromotionPage";
+import AddPromotionsPage from "./pages/AddPromotionPage";
 
 const queryClient = new QueryClient();
 
@@ -147,6 +149,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                     />
                     <Route path="/authenticate" element={<Authenticate />} />
                     <Route path="/tours" element={<AllToursPage />} />
+                    <Route path="/promotions" element={<AdminPromotionsPage />} />
                     <Route path="/tours/:tourId" element={<TourDetailPage />} />
                     <Route path="/change-tour" element={<ChangeTourPage />} />
                     <Route
@@ -218,7 +221,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="tours" element={<AdminToursManagement />} />
+            <Route path="promotions" element={<AdminPromotionsPage />} />
             <Route path="tours/create" element={<CreateTourPage />} />
+            <Route path="promotions/create" element={<AddPromotionsPage />} />
             <Route path="tours/edit/:tourId" element={<EditTourPage />} />
             <Route path="users" element={<AdminUsersPage />} />
 
