@@ -9,6 +9,12 @@ export interface BookingRequestStatusUpdateRequest {
   status: string;
 }
 
+export interface BookingStatusUpdateRequestPayload {
+  reason: string;
+  newTourId?: string;
+  promotionId?: string;
+}
+
 export interface BookingRequestResponse {
   requestId: string;
   reason: string;
@@ -21,6 +27,7 @@ export interface BookingRequestResponse {
   newTourId: string | null;
   oldTourId: string;
   userId: string;
+  promotionId?: string | null;
 }
 
 /**
@@ -80,11 +87,12 @@ export const updateBookingRequestStatus = async (
 export const requestChangeTour = async (
   bookingId: string,
   newTourId: string,
-  reason: string
+  reason: string,
+  promotionId?: string
 ): Promise<BookingRequestResponse> => {
   const response = await api.put<ApiResponse<BookingRequestResponse>>(
     `/bookings-request/${bookingId}/change-booking`,
-    { newTourId, reason }
+    { newTourId, reason, promotionId }
   );
   return response.data.result;
 };

@@ -34,6 +34,9 @@ import BookingRequestDetailPage from "./pages/BookingRequestDetailPage";
 
 // Other pages
 import BookingPage from "./pages/BookingPage";
+import BookingDetailPage from "./pages/BookingDetailPage";
+import RequestBookingPage from "./pages/RequestBookingPage";
+import BookingForm from "./components/ui/BookingForm";
 import BookingStepper from "./components/ui/BookingStepper";
 import AboutPage from "./pages/AboutPage";
 import UserProfilePage from "./pages/UserProfilePage";
@@ -44,7 +47,6 @@ import ConfirmOtpPage from "./pages/ConfirmOtpPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import PaymentLaterStepper from "./components/ui/PaymentLaterStepper";
-import RequestBookingPage from "./pages/RequestBookingPage";
 import ChangeTourPage from "./pages/ChangeTourPage";
 import Header from "./components/layout/Header";
 import { useAuthStore } from "./stores/useAuthStore";
@@ -243,7 +245,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               }
             />
             <Route path="reports/others" element={<AdminStatisticsPage />} />
-            <Route path="reports/revenue" element={<AdminStatisticsRevenuePage />} />
+            <Route
+              path="reports/revenue"
+              element={<AdminStatisticsRevenuePage />}
+            />
             <Route path="bookings-request" element={<BookingRequestPage />} />
             <Route
               path="bookings-request/:requestId"

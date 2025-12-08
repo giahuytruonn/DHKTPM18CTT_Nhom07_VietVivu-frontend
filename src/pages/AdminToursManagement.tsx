@@ -16,6 +16,7 @@ import {
     AlertTriangle,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { formatDateYMD, parseDateSafely } from "../utils/date";
 
 const TOURS_PER_PAGE = 15;
 
@@ -45,6 +46,12 @@ const AdminToursManagement: React.FC = () => {
     const totalPages = toursResponse?.totalPages || 0;
     const totalItems = toursResponse?.totalItems || 0;
 
+    // Filter và sort tours trong client
+    const getTimeValue = (value?: string | null) => {
+        const date = parseDateSafely(value);
+        return date ? date.getTime() : 0;
+    };
+
     const filteredTours = useMemo(() => {
         let result = [...tours];
 
@@ -59,9 +66,7 @@ const AdminToursManagement: React.FC = () => {
         result.sort((a, b) => {
             switch (sortBy) {
                 case "date":
-                    const dateA = a.startDate ? a.startDate.split('/').reverse().join('-') : '1970-01-01';
-                    const dateB = b.startDate ? b.startDate.split('/').reverse().join('-') : '1970-01-01';
-                    return new Date(dateB).getTime() - new Date(dateA).getTime();
+                    return getTimeValue(b.startDate) - getTimeValue(a.startDate);
                 case "bookings":
                     return (b.totalBookings || 0) - (a.totalBookings || 0);
                 case "price":
@@ -247,7 +252,10 @@ const AdminToursManagement: React.FC = () => {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2 text-sm text-gray-900">
                                             <Calendar size={16} className="text-gray-400" />
-                                            {tour.startDate || "N/A"}
+                                            {(() => {
+                                                const formatted = formatDateYMD(tour.startDate, { includeTime: false });
+                                                return formatted === "Không xác định" ? "N/A" : formatted;
+                                            })()}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
