@@ -13,6 +13,7 @@ import {
   CircularProgress,
   Container,
   Divider,
+  Stack,
 } from "@mui/material";
 import {
   ArrowLeft,
@@ -42,6 +43,7 @@ import PaginationControls from "../components/tour/PaginationControls";
 import ConfirmationModal from "../components/ui/ConfirmationModal";
 import CancellationPolicyNotice from "../components/ui/CancellationPolicyNotice";
 import { formatDateYMD } from "../utils/date";
+import { getPromotionById } from "../services/promotion.service";
 
 // Import types
 import type { TourResponse } from "../types/tour";
@@ -72,8 +74,14 @@ const ChangeTourPage = () => {
   const [selectedTour, setSelectedTour] = useState<TourResponse | null>(null);
   const [tourToConfirm, setTourToConfirm] = useState<TourResponse | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-    const [reason, setReason] = useState("");
-    const [promotionCode, setPromotionCode] = useState("");
+  const [reason, setReason] = useState("");
+  const [promotionCode, setPromotionCode] = useState("");
+  const [appliedPromotion, setAppliedPromotion] = useState<{
+    code: string;
+    discount: number;
+  } | null>(null);
+  const [promotionLoading, setPromotionLoading] = useState(false);
+  const [promotionError, setPromotionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<
     "pending" | "success" | "failed"
@@ -243,20 +251,25 @@ const ChangeTourPage = () => {
     const newTotal =
       selectedTour.priceAdult * oldBooking.numOfAdults +
       selectedTour.priceChild * oldBooking.numOfChildren;
-    console.log("Old Total:", oldBooking.totalPrice);
-    console.log("New Total:", newTotal);
-    console.log("Diff:", newTotal - oldBooking.totalPrice);
-    return newTotal - oldBooking.totalPrice;
+    const discount = appliedPromotion?.discount ?? 0;
+    const adjustedTotal = Math.max(newTotal - discount, 0);
+    return adjustedTotal - oldBooking.totalPrice;
   };
 
-    const submitChangeRequest = async () => {
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(val);
+
+  const submitChangeRequest = async () => {
     setIsSubmitting(true);
     try {
       await requestChangeTour(
         oldBooking!.bookingId,
         selectedTour!.tourId,
-                reason,
-                promotionCode.trim() || undefined
+        reason,
+        appliedPromotion?.code
       );
       setActiveStep(3);
     } catch (error) {
@@ -304,11 +317,41 @@ const ChangeTourPage = () => {
     }
   };
 
-  const formatCurrency = (val: number) =>
-    new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(val);
+  const handleApplyPromotion = async () => {
+    if (!promotionCode.trim()) {
+      toast.error("Vui lòng nhập mã khuyến mãi");
+      return;
+    }
+    try {
+      setPromotionLoading(true);
+      setPromotionError(null);
+      const promotion = await getPromotionById(promotionCode.trim());
+      const discount = promotion.discount ?? 0;
+      setAppliedPromotion({ code: promotion.promotionId, discount });
+      toast.success(
+        `Đã áp dụng mã ${promotion.promotionId} (-${formatCurrency(discount)})`
+      );
+    } catch (error) {
+      console.error(error);
+      setAppliedPromotion(null);
+      const message =
+        (error as { response?: { data?: { message?: string } } }).response
+          ?.data?.message ||
+        (error as Error)?.message ||
+        "Không thể áp dụng mã khuyến mãi";
+      setPromotionError(message);
+      toast.error(message);
+    } finally {
+      setPromotionLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (appliedPromotion && promotionCode.trim() !== appliedPromotion.code) {
+      setAppliedPromotion(null);
+      setPromotionError(null);
+    }
+  }, [promotionCode, appliedPromotion]);
 
   if (!oldBooking) return null;
 
@@ -587,6 +630,19 @@ const ChangeTourPage = () => {
                           )}{" "}
                           (Dự kiến)
                         </Typography>
+                        {appliedPromotion && (
+                          <Typography variant="body2" color="success.main">
+                            Sau khi giảm:{" "}
+                            {formatCurrency(
+                              Math.max(
+                                selectedTour.priceAdult * oldBooking.numOfAdults +
+                                  selectedTour.priceChild * oldBooking.numOfChildren -
+                                  appliedPromotion.discount,
+                                0
+                              )
+                            )}
+                          </Typography>
+                        )}
                       </Box>
                     </Box>
                   </Box>
@@ -637,14 +693,49 @@ const ChangeTourPage = () => {
                     onChange={(e) => setReason(e.target.value)}
                     sx={{ mb: 2 }}
                   />
-                                    <TextField
-                                        fullWidth
-                                        label="Mã khuyến mãi (nếu có)"
-                                        placeholder="Nhập mã giảm giá giống như khi đặt tour"
-                                        value={promotionCode}
-                                        onChange={(e) => setPromotionCode(e.target.value)}
-                                        sx={{ mb: 1 }}
-                                    />
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1}
+                    sx={{ mb: 1 }}
+                  >
+                    <TextField
+                      fullWidth
+                      label="Mã khuyến mãi (nếu có)"
+                      placeholder="Nhập mã giảm giá giống như khi đặt tour"
+                      value={promotionCode}
+                      onChange={(e) => setPromotionCode(e.target.value)}
+                    />
+                    <Button
+                      variant={appliedPromotion ? "contained" : "outlined"}
+                      color={appliedPromotion ? "success" : "primary"}
+                      onClick={handleApplyPromotion}
+                      disabled={promotionLoading}
+                      sx={{ minWidth: 140, whiteSpace: "nowrap" }}
+                    >
+                      {promotionLoading ? (
+                        <CircularProgress size={20} />
+                      ) : appliedPromotion ? (
+                        "Đã áp dụng"
+                      ) : (
+                        "Áp dụng"
+                      )}
+                    </Button>
+                  </Stack>
+                  {appliedPromotion && (
+                    <Typography
+                      variant="body2"
+                      color="success.main"
+                      sx={{ mb: 1 }}
+                    >
+                      Mã {appliedPromotion.code} giảm{" "}
+                      {formatCurrency(appliedPromotion.discount)} cho tour mới
+                    </Typography>
+                  )}
+                  {promotionError && (
+                    <Typography variant="body2" color="error" sx={{ mb: 1 }}>
+                      {promotionError}
+                    </Typography>
+                  )}
                 </CardContent>
               </Card>
             </Box>
@@ -666,6 +757,20 @@ const ChangeTourPage = () => {
                       {formatCurrency(calculatePriceDiff())}
                     </Typography>
                   </Box>
+                  {appliedPromotion && (
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      mb={1}
+                    >
+                      <Typography color="text.secondary">
+                        Giảm giá đã áp dụng:
+                      </Typography>
+                      <Typography fontWeight={600} color="success.main">
+                        -{formatCurrency(appliedPromotion.discount)}
+                      </Typography>
+                    </Box>
+                  )}
                   <Divider sx={{ my: 2 }} />
                   <Button
                     fullWidth
