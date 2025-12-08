@@ -33,6 +33,7 @@ import {
 import { getBookings } from "../services/booking.services";
 import type { BookingResponse } from "../services/booking.services";
 import ConfirmationModal from "../components/ui/ConfirmationModal";
+import { formatDateYMD } from "../utils/date";
 
 const BookingDetailPage = () => {
   const navigate = useNavigate();
@@ -53,16 +54,8 @@ const BookingDetailPage = () => {
     }).format(value);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("vi-VN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const formatDate = (dateString?: string | null, includeTime = true) =>
+    formatDateYMD(dateString, { includeTime });
 
   const getStatusConfig = (status: string) => {
     switch (status) {

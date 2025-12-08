@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -25,6 +25,10 @@ import {
 } from "lucide-react";
 import type { BookingResponse } from "../services/booking.services";
 import { cancelBooking } from "../services/bookingRequest.services";
+import { getTourById } from "../services/tour.services";
+import type { TourResponse } from "../types/tour";
+import CancellationPolicyNotice from "../components/ui/CancellationPolicyNotice";
+import { formatDateYMD } from "../utils/date";
 
 const getStatusConfig = (status: string) => {
   switch (status) {
@@ -102,16 +106,8 @@ const getStatusConfig = (status: string) => {
   }
 };
 
-const formatDateTime = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("vi-VN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
+const formatDateTime = (dateString?: string | null) =>
+  formatDateYMD(dateString, { includeTime: true });
 
 const RequestBookingPage = () => {
   const navigate = useNavigate();
@@ -126,9 +122,30 @@ const RequestBookingPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [tourDetail, setTourDetail] = useState<TourResponse | null>(null);
+  const [policyLoading, setPolicyLoading] = useState(false);
   const statusConfig = state?.booking
     ? getStatusConfig(state.booking.bookingStatus)
     : null;
+
+  useEffect(() => {
+    const fetchTourDetail = async () => {
+      if (!state?.booking?.tourId) {
+        return;
+      }
+      try {
+        setPolicyLoading(true);
+        const detail = await getTourById(state.booking.tourId);
+        setTourDetail(detail);
+      } catch (fetchError) {
+        console.error("Không thể tải thông tin tour để tính chính sách hoàn phí", fetchError);
+      } finally {
+        setPolicyLoading(false);
+      }
+    };
+
+    fetchTourDetail();
+  }, [state?.booking?.tourId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -377,6 +394,17 @@ const RequestBookingPage = () => {
             )}
           </Stack>
         </Box>
+
+        {state.booking && (
+          <Box sx={{ mb: 4 }}>
+            <CancellationPolicyNotice
+              totalPrice={state.booking.totalPrice}
+              startDate={tourDetail?.startDate ?? null}
+              loading={policyLoading}
+              variant="cancel"
+            />
+          </Box>
+        )}
 
         {/* Booking Info Card */}
         {state.booking && (

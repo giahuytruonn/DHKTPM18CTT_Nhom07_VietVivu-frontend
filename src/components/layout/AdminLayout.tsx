@@ -57,11 +57,6 @@ const AdminLayout: React.FC = () => {
       path: "/admin/bookings-request",
     },
     {
-      title: "Quản lý Booking",
-      icon: TicketCheck,
-      // path: "/admin/bookings-request",
-    },
-    {
       title: "Đánh giá",
       icon: Heart,
       path: "/admin/reviews",

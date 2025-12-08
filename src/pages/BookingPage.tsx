@@ -39,11 +39,13 @@ import {
   Eye,
   X,
   Sparkles,
+  CreditCard,
 } from "lucide-react";
 import { getBookings } from "../services/booking.services";
 import type { BookingResponse } from "../services/booking.services";
 import { getTourById } from "../services/tour.services";
 import type { TourResponse } from "../types/tour";
+import { formatDateYMD } from "../utils/date";
 
 import ConfirmationModal from "../components/ui/ConfirmationModal";
 
@@ -71,16 +73,8 @@ const BookingPage = () => {
     }).format(value);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("vi-VN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const formatDate = (dateString?: string | null, includeTime = true) =>
+    formatDateYMD(dateString, { includeTime });
 
   const getStatusConfig = (status: string) => {
     switch (status) {
@@ -827,6 +821,22 @@ const BookingPage = () => {
                               spacing={1}
                               justifyContent="center"
                             >
+                              {booking.bookingStatus === "PENDING" && (
+                                <Tooltip title="Thanh toán">
+                                  <IconButton
+                                    size="small"
+                                    sx={{
+                                      color: "#0EA5E9",
+                                      "&:hover": {
+                                        backgroundColor:
+                                          "rgba(14, 165, 233, 0.12)",
+                                      },
+                                    }}
+                                  >
+                                    <CreditCard size={18} />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
                               <Tooltip title="Xem chi tiết">
                                 <IconButton
                                   size="small"
@@ -1160,7 +1170,7 @@ const BookingPage = () => {
                         <Stack direction="row" spacing={1} alignItems="center">
                           <Calendar size={16} color="#64748B" />
                           <Typography variant="body2" color="text.secondary">
-                            Bắt đầu: {formatDate(tourDetail.startDate)}
+                            Bắt đầu: {formatDate(tourDetail.startDate, false)}
                           </Typography>
                         </Stack>
                       )}
@@ -1168,7 +1178,7 @@ const BookingPage = () => {
                         <Stack direction="row" spacing={1} alignItems="center">
                           <Calendar size={16} color="#64748B" />
                           <Typography variant="body2" color="text.secondary">
-                            Kết thúc: {formatDate(tourDetail.endDate)}
+                            Kết thúc: {formatDate(tourDetail.endDate, false)}
                           </Typography>
                         </Stack>
                       )}

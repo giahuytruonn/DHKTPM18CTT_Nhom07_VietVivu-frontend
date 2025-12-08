@@ -3,9 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { Clock, Heart, MapPin, Star, Calendar, Users } from "lucide-react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addToFavorites, removeFromFavorites } from "../../services/favorite.service";
+import {
+  addToFavorites,
+  removeFromFavorites,
+} from "../../services/favorite.service";
 import toast from "react-hot-toast";
 import type { TourResponse } from "../../types/tour";
+import { formatDateYMD } from "../../utils/date";
 
 interface Props {
   tour: TourResponse;
@@ -16,7 +20,8 @@ const TourCard: React.FC<Props> = ({ tour }) => {
   const queryClient = useQueryClient();
   const { authenticated } = useAuthStore();
 
-  const rating = tour.favoriteCount > 50 ? 4.9 : tour.favoriteCount > 20 ? 4.7 : 4.5;
+  const rating =
+    tour.favoriteCount > 50 ? 4.9 : tour.favoriteCount > 20 ? 4.7 : 4.5;
   const reviews = tour.totalBookings || 0;
 
   const toggleFavoriteMutation = useMutation({
@@ -32,15 +37,24 @@ const TourCard: React.FC<Props> = ({ tour }) => {
       queryClient.invalidateQueries({ queryKey: ["tours"] });
       queryClient.invalidateQueries({ queryKey: ["tour", tour.tourId] });
       queryClient.invalidateQueries({ queryKey: ["favoriteTours"] }); // THÊM DÒNG NÀY
-      toast.success(tour.isFavorited ? "Đã xóa khỏi yêu thích" : "Đã thêm vào yêu thích");
+      toast.success(
+        tour.isFavorited ? "Đã xóa khỏi yêu thích" : "Đã thêm vào yêu thích"
+      );
     },
-    onError: (error: any) => {
-      if (error.response?.status === 401) {
+    onError: (error: unknown) => {
+      const status = (error as { response?: { status?: number } }).response
+        ?.status;
+      if (status === 401) {
         toast.error("Vui lòng đăng nhập");
         navigate("/login");
-      } else {
-        toast.error("Lỗi: " + (error.response?.data?.message || error.message));
+        return;
       }
+      const message =
+        (error as { response?: { data?: { message?: string } } }).response?.data
+          ?.message ||
+        (error as Error | undefined)?.message ||
+        "Có lỗi xảy ra";
+      toast.error(`Lỗi: ${message}`);
     },
   });
 
@@ -55,9 +69,13 @@ const TourCard: React.FC<Props> = ({ tour }) => {
     toggleFavoriteMutation.mutate();
   };
 
-  const formattedStartDate = tour.startDate
-    ? new Date(tour.startDate).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })
-    : "Liên hệ";
+  const formattedStartDateRaw = formatDateYMD(tour.startDate, {
+    includeTime: false,
+  });
+  const formattedStartDate =
+    formattedStartDateRaw === "Không xác định"
+      ? "Liên hệ"
+      : formattedStartDateRaw;
 
   return (
     <Link
@@ -79,7 +97,9 @@ const TourCard: React.FC<Props> = ({ tour }) => {
           >
             <Heart
               className={`w-5 h-5 transition-all ${
-                tour.isFavorited ? "text-red-500 fill-red-500" : "text-indigo-600"
+                tour.isFavorited
+                  ? "text-red-500 fill-red-500"
+                  : "text-indigo-600"
               }`}
             />
           </button>
@@ -91,7 +111,7 @@ const TourCard: React.FC<Props> = ({ tour }) => {
         )}
       </div>
 
-      <div className="p-6 flex flex-col flex-grow md:w-2/3">
+      <div className="p-6 flex flex-col grow md:w-2/3">
         <div className="flex items-center text-sm text-gray-600 mb-2">
           <MapPin className="w-4 h-4 mr-1.5 text-indigo-600" />
           <span className="truncate">{tour.destination}</span>
@@ -101,17 +121,23 @@ const TourCard: React.FC<Props> = ({ tour }) => {
           {tour.title}
         </h3>
 
-        <p className="text-sm text-gray-600 mb-4 line-clamp-3">{tour.description}</p>
+        <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+          {tour.description}
+        </p>
 
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="flex items-center">
             <Star className="w-4 h-4 text-yellow-400 fill-current" />
-            <span className="ml-1.5 text-sm font-medium text-gray-800">{rating.toFixed(1)}</span>
+            <span className="ml-1.5 text-sm font-medium text-gray-800">
+              {rating.toFixed(1)}
+            </span>
             <span className="ml-1.5 text-sm text-gray-500">({reviews})</span>
           </div>
           <div className="flex items-center">
             <Heart className="w-4 h-4 text-red-500 fill-current" />
-            <span className="ml-1.5 text-sm font-medium text-gray-800">{tour.favoriteCount}</span>
+            <span className="ml-1.5 text-sm font-medium text-gray-800">
+              {tour.favoriteCount}
+            </span>
           </div>
         </div>
 

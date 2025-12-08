@@ -20,6 +20,7 @@ import {
 } from "../services/favorite.service";
 import { useAuthStore } from "../stores/useAuthStore";
 import toast from "react-hot-toast";
+import { formatDateYMD } from "../utils/date";
 
 const TourDetailPage: React.FC = () => {
   const { tourId } = useParams<{ tourId: string }>();
@@ -41,7 +42,13 @@ const TourDetailPage: React.FC = () => {
   });
 
   // CẬP NHẬT: Thêm logic tính toán giống TourCard
-  const rating = tour ? (tour.favoriteCount > 50 ? 4.9 : tour.favoriteCount > 20 ? 4.7 : 4.5) : 4.5;
+  const rating = tour
+    ? tour.favoriteCount > 50
+      ? 4.9
+      : tour.favoriteCount > 20
+      ? 4.7
+      : 4.5
+    : 4.5;
   const reviews = tour ? tour.totalBookings || 0 : 0;
 
   const toggleFavoriteMutation = useMutation({
@@ -61,13 +68,20 @@ const TourDetailPage: React.FC = () => {
         tour?.isFavorited ? "Đã xóa khỏi yêu thích" : "Đã thêm vào yêu thích"
       );
     },
-    onError: (error: any) => {
-      if (error.response?.status === 401) {
+    onError: (error: unknown) => {
+      const status = (error as { response?: { status?: number } }).response
+        ?.status;
+      if (status === 401) {
         toast.error("Vui lòng đăng nhập để thêm yêu thích");
         navigate("/login");
-      } else {
-        toast.error("Có lỗi xảy ra");
+        return;
       }
+      toast.error(
+        (error as { response?: { data?: { message?: string } } }).response?.data
+          ?.message ||
+          (error as Error | undefined)?.message ||
+          "Có lỗi xảy ra"
+      );
     },
   });
 
@@ -261,7 +275,7 @@ const TourDetailPage: React.FC = () => {
                     <div>
                       <p className="text-xs text-gray-500">Ngày khởi hành</p>
                       <p className="font-semibold text-gray-900">
-                        {new Date(tour.startDate).toLocaleDateString("vi-VN")}
+                        {formatDateYMD(tour.startDate, { includeTime: false })}
                       </p>
                     </div>
                   </div>
@@ -280,7 +294,9 @@ const TourDetailPage: React.FC = () => {
                   <Users className="w-6 h-6 text-yellow-600" />
                   <div>
                     <p className="text-xs text-gray-500">Số khách tối đa</p>
-                    <p className="font-semibold text-gray-900">{tour.initialQuantity} khách</p>
+                    <p className="font-semibold text-gray-900">
+                      {tour.initialQuantity} khách
+                    </p>
                   </div>
                 </div>
               </div>
@@ -301,7 +317,7 @@ const TourDetailPage: React.FC = () => {
                 <div className="space-y-4">
                   {tour.itinerary.map((item, index) => (
                     <div key={index} className="flex gap-4">
-                      <div className="flex-shrink-0 w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">
+                      <div className="shrink-0 w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">
                         {index + 1}
                       </div>
                       <div className="flex-1 pt-1">
@@ -349,7 +365,7 @@ const TourDetailPage: React.FC = () => {
               {tour.availability && tour.tourStatus === "OPEN_BOOKING" ? (
                 <button
                   onClick={() => navigate(`/booking/${tourId}`)}
-                  className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
+                  className="w-full bg-linear-to-r from-indigo-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
                 >
                   Đặt tour ngay
                 </button>

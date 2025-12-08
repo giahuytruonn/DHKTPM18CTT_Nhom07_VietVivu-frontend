@@ -37,6 +37,7 @@ import {
   type BookingRequestResponse,
 } from "../services/bookingRequest.services";
 import toast from "react-hot-toast";
+import { formatDateYMD } from "../utils/date";
 
 const BookingRequestDetailPage = () => {
   const { requestId } = useParams<{ requestId: string }>();
@@ -142,17 +143,8 @@ const BookingRequestDetailPage = () => {
     }
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("vi-VN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const formatDate = (dateString?: string | null) =>
+    formatDateYMD(dateString, { includeTime: true });
 
   const getStatusConfig = (status: string) => {
     switch (status) {
