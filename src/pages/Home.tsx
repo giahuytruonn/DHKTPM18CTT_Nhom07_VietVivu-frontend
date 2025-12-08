@@ -18,6 +18,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { getTours } from "../services/tour.service";
 import type { TourResponse } from "../types/tour";
+import ChatBox from "./ChatBox";
 
 const PEXELS_API_KEY = import.meta.env.VITE_PEXELS_API_KEY;
 
@@ -254,6 +255,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ChatBox/>
       {/* HERO */}
       <section
         className="relative h-[70vh] bg-cover bg-center bg-no-repeat flex items-center justify-center text-white"

@@ -49,6 +49,7 @@ import ChangeTourPage from "./pages/ChangeTourPage";
 import Header from "./components/layout/Header";
 import { useAuthStore } from "./stores/useAuthStore";
 import Footer from "./components/layout/Footer";
+import AdminStatisticsRevenuePage from "./pages/AdminStatisticsRevenuePage";
 
 const queryClient = new QueryClient();
 
@@ -230,7 +231,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 </div>
               }
             />
-            <Route path="reports" element={<AdminStatisticsPage />} />
+            <Route path="reports/others" element={<AdminStatisticsPage />} />
+            <Route path="reports/revenue" element={<AdminStatisticsRevenuePage />} />
             <Route path="bookings-request" element={<BookingRequestPage />} />
             <Route
               path="bookings-request/:requestId"
