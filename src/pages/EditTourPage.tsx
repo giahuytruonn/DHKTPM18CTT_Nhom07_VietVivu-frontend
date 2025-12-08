@@ -140,7 +140,6 @@ interface TourFormData {
     durationNights: number;
     selectedDestinations: string[];
     tourStatus: "OPEN_BOOKING" | "IN_PROGRESS" | "COMPLETED";
-    manualStatusOverride?: boolean;
 }
 
 const EditTourPage: React.FC = () => {
@@ -152,7 +151,7 @@ const EditTourPage: React.FC = () => {
         startDate: "", endDate: "", itinerary: [""], imageUrls: [],
         durationDays: 0, durationNights: 0, selectedDestinations: [],
         tourStatus: "OPEN_BOOKING",
-        manualStatusOverride: false,
+
     });
 
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -219,7 +218,7 @@ const EditTourPage: React.FC = () => {
                 durationNights: nights,
                 selectedDestinations: destinations,
                 tourStatus: tour.tourStatus,
-                manualStatusOverride: tour.manualStatusOverride === true
+
             });
             setExistingImages(tour.imageUrls || []);
         }
@@ -417,12 +416,10 @@ const EditTourPage: React.FC = () => {
                 endDate: data.endDate || null,
                 // ✅ THÊM 2 field này vào payload
                 tourStatus: data.tourStatus,
-                manualStatusOverride: data.manualStatusOverride,
             };
 
             console.log("📤 Sending to backend:", {
                 tourStatus: cleanData.tourStatus,
-                manualStatusOverride: cleanData.manualStatusOverride
             });
 
             const response = await api.put(`/tours/${tourId}`, cleanData);
@@ -552,7 +549,7 @@ const EditTourPage: React.FC = () => {
         const startDate = new Date(formData.startDate);
         const endDate = new Date(formData.endDate);
 
-        
+
         const lockDate = new Date(startDate);
         lockDate.setDate(lockDate.getDate() - 1);
 
@@ -565,7 +562,7 @@ const EditTourPage: React.FC = () => {
             };
         }
 
-        
+
         if (now > lockDate) {
             return {
                 type: 'in-progress',
@@ -619,7 +616,7 @@ const EditTourPage: React.FC = () => {
                                     Trạng thái tour
                                 </label>
 
-                                {/* ✅ THÔNG BÁO KHÓA - HIỂN thị TRƯỚC SELECT */}
+                                {/* THÔNG BÁO TRẠNG THÁI HIỆN TẠI */}
                                 {lockInfo && (
                                     <div className={`mb-3 p-4 rounded-lg border-2 ${lockInfo.color === 'gray'
                                         ? 'bg-gray-50 border-gray-300'
@@ -630,17 +627,14 @@ const EditTourPage: React.FC = () => {
                                         <div className="flex items-start gap-3">
                                             <span className="text-xl">{lockInfo.icon}</span>
                                             <div className="flex-1">
-                                                <p className={`font-semibold text-sm ${lockInfo.color === 'gray'
-                                                    ? 'text-gray-900'
-                                                    : lockInfo.color === 'yellow'
-                                                        ? 'text-yellow-800'
-                                                        : 'text-blue-800'
+                                                <p className={`font-semibold text-sm ${lockInfo.color === 'gray' ? 'text-gray-900' :
+                                                    lockInfo.color === 'yellow' ? 'text-yellow-800' : 'text-blue-800'
                                                     }`}>
                                                     {lockInfo.message}
                                                 </p>
                                                 {locked && (
                                                     <p className="text-xs text-gray-600 mt-1">
-                                                        Không thể thay đổi trạng thái tour sau khi đã khóa
+                                                        Trạng thái được tự động cập nhật theo lịch trình tour
                                                     </p>
                                                 )}
                                             </div>
@@ -650,46 +644,26 @@ const EditTourPage: React.FC = () => {
 
                                 <select
                                     value={formData.tourStatus}
-                                    onChange={(e) => handleChange("tourStatus", e.target.value)}
+                                    onChange={(e) => handleChange("tourStatus", e.target.value as TourStatus)}
                                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 ${locked
-                                        ? 'bg-gray-100 cursor-not-allowed border-gray-300'
+                                        ? 'bg-gray-100 cursor-not-allowed border-gray-300 text-gray-600'
                                         : 'border-gray-300'
                                         }`}
                                     disabled={locked || isPending}
                                 >
                                     <option value="OPEN_BOOKING">Đang mở booking</option>
                                     <option value="IN_PROGRESS">Đang thực hiện</option>
-                                    {locked && <option value="COMPLETED">Đã hoàn thành</option>}
+                                    {/* Chỉ hiện COMPLETED nếu đã bị khóa và là COMPLETED */}
+                                    {lockInfo?.type === 'completed' && (
+                                        <option value="COMPLETED">Đã hoàn thành</option>
+                                    )}
                                 </select>
 
-
-                                {!locked && (
-                                    <div className="mt-3 flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            id="manualOverride"
-                                            checked={formData.manualStatusOverride === true} // ✅ Strict check
-                                            onChange={(e) => {
-                                                const newValue = e.target.checked;
-                                                console.log("Checkbox changed to:", newValue); // ✅ Debug log
-                                                handleChange("manualStatusOverride", newValue);
-                                            }}
-                                            className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
-                                            disabled={isPending}
-                                        />
-                                        <label htmlFor="manualOverride" className="text-sm text-gray-600 cursor-pointer">
-                                            Giữ trạng thái này (không tự động cập nhật)
-                                        </label>
-                                    </div>
-                                )}
-
+                                {/* Ghi chú ngắn gọn, rõ ràng */}
                                 <p className="text-xs text-gray-500 mt-2">
                                     {locked
-                                        ? "🔒 Trạng thái đã bị khóa vĩnh viễn"
-                                        : formData.manualStatusOverride === true
-                                            ? "⚠️ Trạng thái sẽ KHÔNG tự động thay đổi (cho đến trước startDate 1 ngày)"
-                                            : "✅ Trạng thái sẽ tự động cập nhật theo lịch trình tour"
-                                    }
+                                        ? "Trạng thái đã bị khóa và sẽ tự động cập nhật theo ngày tour"
+                                        : `Bạn có thể thay đổi trạng thái đến hết ngày ${lockInfo?.message.match(/hết (.+)$/)?.[1] || '...'}`}
                                 </p>
                             </div>
                             <div>
