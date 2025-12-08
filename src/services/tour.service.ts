@@ -1,20 +1,34 @@
+// src/services/tour.service.ts
 import api from "./api";
 import type { ApiResponse } from "../types/apiresponse";
 import type { TourResponse, TourStatus } from "../types/tour";
 
-// Get all tours (public - chỉ OPEN_BOOKING)
-export const getTours = async (): Promise<TourResponse[]> => {
-  const res = await api.get<ApiResponse<TourResponse[]>>("/tours");
+// Response type cho phân trang
+export interface PaginatedToursResponse {
+  items: TourResponse[];
+  currentPage: number;
+  pageSizes: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+// Get all tours (public - chỉ OPEN_BOOKING) - PHÂN TRANG
+export const getTours = async (page: number = 0, size: number = 10): Promise<PaginatedToursResponse> => {
+  const res = await api.get<ApiResponse<PaginatedToursResponse>>("/tours", {
+    params: { page, size }
+  });
   return res.data.result;
 };
 
-// Get all tours for admin (tất cả tours)
-export const getAllToursAdmin = async (): Promise<TourResponse[]> => {
-  const res = await api.get<ApiResponse<TourResponse[]>>("/tours/admin/all");
+// Get all tours for admin (tất cả tours) - PHÂN TRANG
+export const getAllToursAdmin = async (page: number = 0, size: number = 10): Promise<PaginatedToursResponse> => {
+  const res = await api.get<ApiResponse<PaginatedToursResponse>>("/tours/admin/all", {
+    params: { page, size }
+  });
   return res.data.result;
 };
 
-// Get tour by ID
+// Get tour by ID (không đổi)
 export const getTourById = async (tourId: string): Promise<TourResponse> => {
   const res = await api.get<ApiResponse<TourResponse>>(`/tours/${tourId}`);
   return res.data.result;
@@ -32,67 +46,25 @@ export interface TourSearchParams {
   tourStatus?: TourStatus | null;
 }
 
-// Search tours
+// Search tours - PHÂN TRANG
 export const searchTours = async (
-  params: TourSearchParams
-): Promise<TourResponse[]> => {
+  params: TourSearchParams,
+  page: number = 0,
+  size: number = 10
+): Promise<PaginatedToursResponse> => {
   const cleanParams = Object.fromEntries(
     Object.entries(params).filter(
       ([_, v]) => v !== null && v !== undefined && v !== ""
     )
   );
-  const res = await api.get<ApiResponse<TourResponse[]>>("/tours/search", {
-    params: cleanParams,
+
+  const res = await api.get<ApiResponse<PaginatedToursResponse>>("/tours/search", {
+    params: { ...cleanParams, page, size }
   });
   return res.data.result;
 };
 
-
-/**
- * Xóa tour (chỉ Admin)
- */
+// Xóa tour (chỉ Admin)
 export const deleteTour = async (tourId: string): Promise<void> => {
   await api.delete(`/tours/${tourId}`);
-};
-
-// Paginated versions
-export const getToursPaginated = async (
-  page: number,
-  size: number
-): Promise<{ tours: TourResponse[]; total: number }> => {
-  const res = await api.get<ApiResponse<{ content: TourResponse[]; totalElements: number }>>("/tours", {
-    params: { page, size },
-  });
-  const result = res.data.result;
-  return { tours: result.content, total: result.totalElements };
-};
-
-export const getAllToursAdminPaginated = async (
-  page: number,
-  size: number
-): Promise<{ tours: TourResponse[]; total: number }> => {
-  const res = await api.get<ApiResponse<{ content: TourResponse[]; totalElements: number }>>("/tours/admin/all", {
-    params: { page, size },
-  });
-  const result = res.data.result;
-  return { tours: result.content, total: result.totalElements };
-};
-
-export const searchToursPaginated = async (
-  params: TourSearchParams,
-  page: number,
-  size: number
-): Promise<{ tours: TourResponse[]; total: number }> => {
-  const cleanParams = Object.fromEntries(
-    Object.entries(params).filter(
-      ([_, v]) => v !== null && v !== undefined && v !== ""
-    )
-  );
-  cleanParams.page = page;
-  cleanParams.size = size;
-  const res = await api.get<ApiResponse<{ content: TourResponse[]; totalElements: number }>>("/tours/search", {
-    params: cleanParams,
-  });
-  const result = res.data.result;
-  return { tours: result.content, total: result.totalElements };
 };
