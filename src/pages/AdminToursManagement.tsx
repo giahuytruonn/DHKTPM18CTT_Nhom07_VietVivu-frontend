@@ -8,33 +8,41 @@ import {
     Edit,
     Trash2,
     Eye,
-    Filter,
-    ChevronDown,
     Calendar,
     Users,
     DollarSign,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import type { TourResponse } from "../types/tour";
+
+const TOURS_PER_PAGE = 15;
 
 const AdminToursManagement: React.FC = () => {
     const [searchKeyword, setSearchKeyword] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("ALL");
     const [sortBy, setSortBy] = useState<"date" | "bookings" | "price">("date");
+    const [currentPage, setCurrentPage] = useState(0);
     const queryClient = useQueryClient();
 
-    const { data: tours = [], isLoading } = useQuery({
-        queryKey: ["adminToursManagement", statusFilter],
+    // Fetch tours với phân trang
+    const { data: toursResponse, isLoading } = useQuery({
+        queryKey: ["adminToursManagement", statusFilter, currentPage],
         queryFn: async () => {
             if (statusFilter === "ALL") {
-                return getAllToursAdmin();
+                return getAllToursAdmin(currentPage, TOURS_PER_PAGE);
             }
-            return searchTours({ tourStatus: statusFilter as any });
+            return searchTours({ tourStatus: statusFilter as any }, currentPage, TOURS_PER_PAGE);
         },
         staleTime: 1000 * 60 * 5,
+        keepPreviousData: true,
     });
 
-    // Filter and sort tours
+    const tours = toursResponse?.items || [];
+    const totalPages = toursResponse?.totalPages || 0;
+    const totalItems = toursResponse?.totalItems || 0;
+
+    // Filter và sort tours trong client
     const filteredTours = useMemo(() => {
         let result = [...tours];
 
@@ -51,7 +59,6 @@ const AdminToursManagement: React.FC = () => {
         result.sort((a, b) => {
             switch (sortBy) {
                 case "date":
-                    // Sửa logic sort: Cần parse ngày "dd/MM/yyyy"
                     const dateA = a.startDate ? a.startDate.split('/').reverse().join('-') : '1970-01-01';
                     const dateB = b.startDate ? b.startDate.split('/').reverse().join('-') : '1970-01-01';
                     return new Date(dateB).getTime() - new Date(dateA).getTime();
@@ -67,25 +74,18 @@ const AdminToursManagement: React.FC = () => {
         return result;
     }, [tours, searchKeyword, sortBy]);
 
-    
-    // Cập nhật mutationFn để gọi API deleteTour
     const deleteTourMutation = useMutation({
         mutationFn: async (tourId: string) => {
-            // SỬA Ở ĐÂY: Bỏ console.log và gọi API thật
             await deleteTour(tourId);
         },
         onSuccess: () => {
-            // Khi thành công, làm mới danh sách và báo toast
             queryClient.invalidateQueries({ queryKey: ["adminToursManagement"] });
             toast.success("Xóa tour thành công!");
         },
         onError: (error: any) => {
-            // Nếu có lỗi từ backend (ví dụ: lỗi 500)
             toast.error("Có lỗi xảy ra: " + (error.response?.data?.message || error.message));
         },
     });
-    
-
 
     const handleDeleteTour = (tourId: string, tourTitle: string) => {
         if (window.confirm(`Bạn có chắc muốn xóa tour "${tourTitle}"?`)) {
@@ -111,6 +111,16 @@ const AdminToursManagement: React.FC = () => {
         );
     };
 
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const handleStatusFilterChange = (newStatus: string) => {
+        setStatusFilter(newStatus);
+        setCurrentPage(0); // Reset về trang đầu
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-96">
@@ -128,7 +138,9 @@ const AdminToursManagement: React.FC = () => {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Quản Lý Tours</h1>
-                    <p className="text-gray-600 mt-1">Tổng cộng {filteredTours.length} tours</p>
+                    <p className="text-gray-600 mt-1">
+                        Hiển thị {filteredTours.length} tours (Tổng {totalItems} tours, trang {currentPage + 1}/{totalPages})
+                    </p>
                 </div>
                 <Link
                     to="/admin/tours/create"
@@ -157,7 +169,7 @@ const AdminToursManagement: React.FC = () => {
                     {/* Status Filter */}
                     <select
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
+                        onChange={(e) => handleStatusFilterChange(e.target.value)}
                         className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     >
                         <option value="ALL">Tất cả trạng thái</option>
@@ -227,13 +239,14 @@ const AdminToursManagement: React.FC = () => {
                                     <td className="px-6 py-4">
                                         <span className="text-sm text-gray-900">{tour.destination}</span>
                                     </td>
-                                    <td className="px-6 py-4">{getStatusBadge(tour.tourStatus)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {getStatusBadge(tour.tourStatus)}
+                                    </td>
+
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2 text-sm text-gray-900">
                                             <Calendar size={16} className="text-gray-400" />
-                                            
                                             {tour.startDate || "N/A"}
-                      
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -285,6 +298,77 @@ const AdminToursManagement: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between bg-white rounded-xl p-4 shadow-md">
+                    <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 0}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                        <ChevronLeft size={20} />
+                        Trang trước
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                        {/* First page */}
+                        {currentPage > 2 && (
+                            <>
+                                <button
+                                    onClick={() => handlePageChange(0)}
+                                    className="px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                >
+                                    1
+                                </button>
+                                <span className="text-gray-400">...</span>
+                            </>
+                        )}
+
+                        {/* Pages around current */}
+                        {Array.from({ length: totalPages }, (_, i) => i)
+                            .filter(page =>
+                                page === currentPage ||
+                                page === currentPage - 1 ||
+                                page === currentPage + 1
+                            )
+                            .map(page => (
+                                <button
+                                    key={page}
+                                    onClick={() => handlePageChange(page)}
+                                    className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${page === currentPage
+                                            ? "bg-indigo-600 text-white"
+                                            : "text-gray-700 hover:bg-gray-100"
+                                        }`}
+                                >
+                                    {page + 1}
+                                </button>
+                            ))}
+
+                        {/* Last page */}
+                        {currentPage < totalPages - 3 && (
+                            <>
+                                <span className="text-gray-400">...</span>
+                                <button
+                                    onClick={() => handlePageChange(totalPages - 1)}
+                                    className="px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                >
+                                    {totalPages}
+                                </button>
+                            </>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages - 1}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                        Trang sau
+                        <ChevronRight size={20} />
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

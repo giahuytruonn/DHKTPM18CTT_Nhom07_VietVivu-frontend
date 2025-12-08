@@ -23,11 +23,11 @@ const TOURS_PER_PAGE = 9;
 const AdminToursPage: React.FC = () => {
   const [filters, setFilters] = useState<TourSearchParams>(initialFilterState);
   const [appliedFilters, setAppliedFilters] = useState<TourSearchParams>(initialFilterState);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const hasActiveFilters = useMemo(() => {
-    return Object.entries(appliedFilters).some(([_, value]) => {
+    return Object.entries(appliedFilters).some(([, value]) => {
       return value !== null && value !== undefined && value !== '';
     });
   }, [appliedFilters]);
@@ -42,61 +42,47 @@ const AdminToursPage: React.FC = () => {
     appliedFilters.durationDays,
     appliedFilters.minQuantity,
     appliedFilters.tourStatus,
+    currentPage,
+    TOURS_PER_PAGE,
   ];
 
-  const { data: tours = [], isLoading } = useQuery({
-    queryKey: queryKey,
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey,
     queryFn: async () => {
-      console.log("Admin fetching tours with filters:", appliedFilters);
-      
       if (hasActiveFilters) {
-        console.log("Admin using searchTours");
-        return searchTours(appliedFilters);
+        return searchTours(appliedFilters, currentPage, TOURS_PER_PAGE);
       }
-      
-      console.log("Admin using getAllToursAdmin");
-      return getAllToursAdmin();
+      return getAllToursAdmin(currentPage, TOURS_PER_PAGE);
     },
     staleTime: 1000 * 60 * 5,
-    retry: 1,
+    keepPreviousData: true,
   });
 
-  const totalPages = useMemo(() => {
-    return Math.ceil(tours.length / TOURS_PER_PAGE);
-  }, [tours]);
-
-  const paginatedTours = useMemo(() => {
-    const startIndex = (currentPage - 1) * TOURS_PER_PAGE;
-    const endIndex = startIndex + TOURS_PER_PAGE;
-    return tours.slice(startIndex, endIndex);
-  }, [tours, currentPage]);
+  const tours = data?.items || [];
+  const totalPages = data?.totalPages || 0;
+  const totalItems = data?.totalItems || 0;
 
   const handleFilterChange = <K extends keyof TourSearchParams>(
     key: K,
     value: TourSearchParams[K]
   ) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleApplyFilters = () => {
-    console.log("Admin applying filters:", filters);
     setAppliedFilters({ ...filters });
-    setCurrentPage(1);
+    setCurrentPage(0);
     setShowMobileFilters(false);
   };
 
   const handleResetFilters = () => {
-    console.log("Admin resetting filters");
     setFilters(initialFilterState);
     setAppliedFilters(initialFilterState);
-    setCurrentPage(1);
+    setCurrentPage(0);
   };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    setCurrentPage(page - 1);
     window.scrollTo({ top: 300, behavior: "smooth" });
   };
 
@@ -104,7 +90,6 @@ const AdminToursPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         
-        {/* Admin Header */}
         <div className="mb-10">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold mb-4">
@@ -118,10 +103,9 @@ const AdminToursPage: React.FC = () => {
               Quản lý tất cả tours trong hệ thống, bao gồm cả tours đã đóng và hoàn thành
             </p>
             
-            {/* Stats */}
             <div className="flex items-center justify-center gap-8 mt-6">
               <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600">{tours.length}</div>
+                <div className="text-3xl font-bold text-purple-600">{totalItems}</div>
                 <div className="text-sm text-gray-500">Tổng Tours</div>
               </div>
               <div className="text-center">
@@ -132,7 +116,6 @@ const AdminToursPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Filter Toggle */}
         <div className="lg:hidden mb-6">
           <button
             onClick={() => setShowMobileFilters(!showMobileFilters)}
@@ -143,10 +126,8 @@ const AdminToursPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           
-          {/* Sidebar - Filters */}
           <div className={`lg:col-span-1 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
             <TourFilters
               filters={filters}
@@ -157,7 +138,6 @@ const AdminToursPage: React.FC = () => {
             />
           </div>
 
-          {/* Main Content */}
           <div className="lg:col-span-3">
             {hasActiveFilters && (
               <div className="mb-6 flex items-center gap-2 p-4 bg-purple-50 border border-purple-200 rounded-xl">
@@ -165,17 +145,17 @@ const AdminToursPage: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
                 <span className="text-purple-900 font-medium">
-                  Đang lọc: {tours.length} kết quả
+                  Đang lọc: {totalItems} kết quả
                 </span>
               </div>
             )}
 
-            <TourList tours={paginatedTours} isLoading={isLoading} />
+            <TourList tours={tours} isLoading={isLoading} isFetching={isFetching} />
 
             {!isLoading && tours.length > 0 && (
               <div className="mt-8">
                 <PaginationControls
-                  currentPage={currentPage}
+                  currentPage={currentPage + 1}
                   totalPages={totalPages}
                   onPageChange={handlePageChange}
                 />

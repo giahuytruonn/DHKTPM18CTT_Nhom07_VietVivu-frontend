@@ -38,3 +38,11 @@ export const getBookingStatusSummary = async (): Promise<{name: string; value: n
     value: Number(value),
   }));
 };
+
+// Tổng doanh thu
+export const getTotalRevenue = async (): Promise<number> => {
+  const res = await api.get<ApiResponse<number>>("/statistical/total-revenue");
+  return res.data.result ?? 0;
+};
+
+

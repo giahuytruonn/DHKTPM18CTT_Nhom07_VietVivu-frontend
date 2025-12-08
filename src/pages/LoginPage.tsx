@@ -14,8 +14,9 @@ const LoginPage: React.FC = () => {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const isAdmin = payload.scope?.includes('ROLE_ADMIN');
-        
-        // Redirect admin to dashboard, user to home
+
+        // ADMIN -> /admin/dashboard
+        // USER -> /
         if (isAdmin) {
           navigate("/admin/dashboard", { replace: true });
         } else {

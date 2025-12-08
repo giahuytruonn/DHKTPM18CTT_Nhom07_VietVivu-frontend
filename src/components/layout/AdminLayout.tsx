@@ -5,7 +5,6 @@ import {
   Package,
   PlusCircle,
   Users,
-  Settings,
   LogOut,
   Menu,
   X,
@@ -142,10 +141,9 @@ const AdminLayout: React.FC = () => {
                 className={`
                   flex items-center gap-3 px-4 py-3 rounded-lg
                   transition-all duration-200 whitespace-nowrap
-                  ${
-                    isActive
-                      ? "bg-white text-indigo-900 shadow-lg"
-                      : "hover:bg-white/10 text-white/80 hover:text-white"
+                  ${isActive
+                    ? "bg-white text-indigo-900 shadow-lg"
+                    : "hover:bg-white/10 text-white/80 hover:text-white"
                   }
                 `}
                 title={!sidebarOpen ? item.title : undefined}
@@ -170,14 +168,6 @@ const AdminLayout: React.FC = () => {
             {sidebarOpen && <span className="font-medium">Về trang chủ</span>}
           </Link>
 
-          <Link
-            to="/admin/settings"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-all whitespace-nowrap"
-            title={!sidebarOpen ? "Cài đặt" : undefined}
-          >
-            <Settings size={20} className="flex-shrink-0" />
-            {sidebarOpen && <span className="font-medium">Cài đặt</span>}
-          </Link>
 
           <button
             onClick={handleLogout}
@@ -227,9 +217,8 @@ const AdminLayout: React.FC = () => {
               </div>
               <ChevronDown
                 size={16}
-                className={`transition-transform flex-shrink-0 ${
-                  userDropdown ? "rotate-180" : ""
-                }`}
+                className={`transition-transform flex-shrink-0 ${userDropdown ? "rotate-180" : ""
+                  }`}
               />
             </button>
 

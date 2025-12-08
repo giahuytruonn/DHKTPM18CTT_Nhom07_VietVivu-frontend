@@ -2,7 +2,6 @@ import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getAllUsers,
-  searchUsers,
   updateUserStatus,
   createUser,
   updateUser,
@@ -13,7 +12,6 @@ import {
   Edit,
   UserCheck,
   UserX,
-  Filter,
   X,
   Save,
   Loader,
