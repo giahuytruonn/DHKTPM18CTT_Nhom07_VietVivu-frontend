@@ -210,7 +210,6 @@ const VideoFeedPage: React.FC = () => {
 
   return (
     <div className="relative w-full h-[calc(100vh-64px)] bg-[#121212] flex items-center justify-center overflow-hidden font-sans z-0">
-      <button onClick={() => navigate('/')} className="fixed top-6 left-6 z-50 bg-white/10 hover:bg-white/20 p-3 rounded-full text-white backdrop-blur-md transition-all hidden md:block" title="Quay lại"><LucideArrowLeft size={20} /></button>
       <div className="relative w-full h-full md:w-[420px] md:h-[95%] md:max-h-[850px] md:rounded-[20px] md:border-[2px] md:border-[#333] md:shadow-2xl bg-black overflow-hidden">
         <div ref={containerRef} className="w-full h-full overflow-y-scroll snap-y snap-mandatory hide-scrollbar scroll-smooth">
             {videos.map((v) => <div key={v.id} className="video-post-container w-full h-full snap-start border-b border-gray-900/50" data-id={v.id}><VideoPost video={v} isActive={activeVideoId === v.id} isMuted={isMuted} onToggleMute={() => setIsMuted(!isMuted)} /></div>)}
