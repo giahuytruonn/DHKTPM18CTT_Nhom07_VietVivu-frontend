@@ -17,6 +17,12 @@ export interface MonthlyRevenue {
   revenue: number;
 }
 
+export interface RevenueByTour {
+  name: string;
+  value: number;
+  [key: string]: any; // <-- thêm dòng này
+}
+
 /* ============================================================
     HÀM TIỆN ÍCH TẠO URL QUERY
    ============================================================ */
@@ -47,7 +53,6 @@ export const getTopBookedTours = async (
   }));
 };
 
-
 /* ============================================================
     2. TOP USERS
    ============================================================ */
@@ -68,7 +73,6 @@ export const getTopUsers = async (
   }));
 };
 
-
 /* ============================================================
     3. TỔNG BOOKING THEO TRẠNG THÁI
    ============================================================ */
@@ -79,7 +83,8 @@ export const getBookingStatusSummary = async (
 ): Promise<{ name: string; value: number }[]> => {
   const params: any = {};
 
-  if (status && status !== "" && status !== "ALL") params.bookingStatus = status;
+  if (status && status !== "" && status !== "ALL")
+    params.bookingStatus = status;
   if (startTime) params.startTime = startTime;
   if (endTime) params.endTime = endTime;
 
@@ -93,7 +98,6 @@ export const getBookingStatusSummary = async (
     value: Number(value),
   }));
 };
-
 
 /* ============================================================
     4. TỔNG DOANH THU
@@ -109,7 +113,6 @@ export const getTotalRevenue = async (): Promise<number> => {
 export const getMonthlyRevenue = async (
   year: number
 ): Promise<MonthlyRevenue[]> => {
-  
   const res = await api.get<ApiResponse<Record<string, number>>>(
     `/statistical/revenue-by-month?year=${year}`
   );
@@ -127,8 +130,26 @@ export const getRevenueByPaymentMethod = async () => {
 
   return Object.entries(res.data.result || {}).map(([name, value]) => ({
     name,
-    value: Number(value)
+    value: Number(value),
   }));
 };
 
+/**
+ * Lấy doanh thu theo từng tour trong khoảng thời gian
+ * @param startTime - YYYY-MM-DD
+ * @param endTime - YYYY-MM-DD
+ */
+export const getRevenueByTour = async (
+  startTime: string,
+  endTime: string
+): Promise<RevenueByTour[]> => {
+  const res = await api.get<ApiResponse<Record<string, number>>>(
+    "/statistical/revenue-by-tour",
+    { params: { startTime, endTime } }
+  );
 
+  return Object.entries(res.data.result || {}).map(([name, value]) => ({
+    name,
+    value: Number(value),
+  }));
+};

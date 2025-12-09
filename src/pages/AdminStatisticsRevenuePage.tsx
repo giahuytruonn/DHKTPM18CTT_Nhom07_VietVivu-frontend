@@ -5,6 +5,10 @@ import {
   getMonthlyRevenue,
   getRevenueByPaymentMethod,
 } from "../services/statistical.service";
+import {
+  getRevenueByTour,
+  type RevenueByTour,
+} from "../services/statistical.service"; // thêm hàm này
 
 import {
   LineChart,
@@ -24,6 +28,14 @@ const COLORS = ["#6366F1", "#22C55E", "#F97316", "#06B6D4", "#EF4444"];
 
 const AdminStatisticsRevenuePage = () => {
   const [year, setYear] = useState(2025);
+  const [tourStartTime, setTourStartTime] = useState(
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+      .toISOString()
+      .slice(0, 10)
+  ); // đầu tháng
+  const [tourEndTime, setTourEndTime] = useState(
+    new Date().toISOString().slice(0, 10)
+  ); // hôm nay
 
   const { data: totalRevenue = 0 } = useQuery({
     queryKey: ["totalRevenue"],
@@ -40,6 +52,12 @@ const AdminStatisticsRevenuePage = () => {
     queryFn: getRevenueByPaymentMethod,
   });
 
+  // --- Biểu đồ doanh thu theo tour ---
+  const { data: revenueByTour = [] } = useQuery<RevenueByTour[]>({
+    queryKey: ["revenueByTour", tourStartTime, tourEndTime],
+    queryFn: () => getRevenueByTour(tourStartTime, tourEndTime),
+  });
+
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold">Thống kê doanh thu</h1>
@@ -52,13 +70,12 @@ const AdminStatisticsRevenuePage = () => {
         </p>
       </div>
 
-      {/* Biểu đồ tròn DOANH THU THEO PHƯƠNG THỨC THANH TOÁN */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Doanh thu theo phương thức thanh toán */}
         <div className="bg-white p-6 rounded-xl shadow-md">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
             Doanh thu theo phương thức thanh toán
           </h2>
-
           <div className="w-full h-80 flex justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -76,12 +93,10 @@ const AdminStatisticsRevenuePage = () => {
                   ))}
                 </Pie>
                 <Tooltip />
-
-                {/* Thêm Legend mặc định */}
                 <Legend
                   verticalAlign="bottom"
                   height={36}
-                  formatter={(value, entry) => (
+                  formatter={(value) => (
                     <span className="text-sm">{value}</span>
                   )}
                 />
@@ -96,7 +111,6 @@ const AdminStatisticsRevenuePage = () => {
             <h2 className="text-xl font-bold text-gray-900">
               Doanh thu theo tháng
             </h2>
-
             <select
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
@@ -107,7 +121,6 @@ const AdminStatisticsRevenuePage = () => {
               ))}
             </select>
           </div>
-
           <div className="w-full h-72">
             <ResponsiveContainer>
               <LineChart data={monthlyRevenue}>
@@ -121,7 +134,50 @@ const AdminStatisticsRevenuePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Doanh thu theo Tour - dạng bảng xếp hạng có scroll */}
+<div className="bg-white p-6 rounded-xl shadow-md mt-6">
+  <div className="flex justify-between items-center mb-4">
+    <h2 className="text-xl font-bold text-gray-900">
+      Top tour theo doanh thu
+    </h2>
+    <div className="flex gap-2 items-center">
+      <input
+        type="date"
+        value={tourStartTime}
+        onChange={(e) => setTourStartTime(e.target.value)}
+        className="border px-2 py-1 rounded"
+      />
+      <span>→</span>
+      <input
+        type="date"
+        value={tourEndTime}
+        onChange={(e) => setTourEndTime(e.target.value)}
+        className="border px-2 py-1 rounded"
+      />
     </div>
+  </div>
+
+  {/* Thêm max-h và scroll */}
+  <div className="space-y-2 max-h-96 overflow-y-auto">
+    {revenueByTour.map((tour, index) => (
+      <div
+        key={tour.name}
+        className="flex justify-between items-center bg-gray-50 px-4 py-2 rounded-lg shadow-sm"
+      >
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-gray-700">{index + 1}.</span>
+          <span className="truncate max-w-xs">{tour.name}</span>
+        </div>
+        <span className="font-bold text-indigo-600">
+          {tour.value.toLocaleString()} ₫
+        </span>
+      </div>
+    ))}
+  </div>
+</div>
+
+</div>
   );
 };
 
