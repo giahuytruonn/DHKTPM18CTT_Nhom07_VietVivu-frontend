@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { formatDateYMD, parseDateSafely } from "../utils/date";
+import TourBookingsModal from "../components/modal/TourBookingsModal";
 
 const TOURS_PER_PAGE = 15;
 
@@ -37,9 +38,15 @@ interface TourRowProps {
     tour: any;
     getStatusBadge: (status: string) => JSX.Element;
     handleDeleteClick: (id: string, title: string, bookings: number) => void;
+    handleViewBookings: (id: string, title: string) => void; // Thêm prop mới
 }
 
-const TourRow = React.memo<TourRowProps>(({ tour, getStatusBadge, handleDeleteClick }) => {
+const TourRow = React.memo<TourRowProps>(({
+    tour,
+    getStatusBadge,
+    handleDeleteClick,
+    handleViewBookings // Thêm prop
+}) => {
     const handleEditClick = useCallback((e: React.MouseEvent) => {
         if (tour.tourStatus === 'COMPLETED') {
             e.preventDefault();
@@ -55,6 +62,10 @@ const TourRow = React.memo<TourRowProps>(({ tour, getStatusBadge, handleDeleteCl
         const formatted = formatDateYMD(tour.startDate, { includeTime: false });
         return formatted === "Không xác định" ? "N/A" : formatted;
     }, [tour.startDate]);
+
+    const onViewBookingsClick = useCallback(() => {
+        handleViewBookings(tour.tourId, tour.title);
+    }, [tour.tourId, tour.title, handleViewBookings]);
 
     return (
         <tr className="hover:bg-gray-50 transition-colors">
@@ -97,6 +108,14 @@ const TourRow = React.memo<TourRowProps>(({ tour, getStatusBadge, handleDeleteCl
             </td>
             <td className="px-6 py-4">
                 <div className="flex items-center justify-end gap-2">
+                    <button
+                        onClick={onViewBookingsClick}
+                        className="p-2 hover:bg-purple-50 text-purple-600 rounded-lg transition-colors"
+                        title="Xem danh sách đặt tour"
+                    >
+                        <Users size={18} />
+                    </button>
+
                     <Link
                         to={`/tours/${tour.tourId}`}
                         className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
@@ -280,6 +299,21 @@ const DeleteModal = React.memo<DeleteModalProps>(({ tourToDelete, isDeleting, on
 DeleteModal.displayName = 'DeleteModal';
 
 const AdminToursManagement: React.FC = () => {
+
+    const [showBookingsModal, setShowBookingsModal] = useState(false);
+    const [selectedTour, setSelectedTour] = useState<{ id: string; title: string } | null>(null);
+
+    // Thêm handler
+    const handleViewBookings = useCallback((tourId: string, tourTitle: string) => {
+        setSelectedTour({ id: tourId, title: tourTitle });
+        setShowBookingsModal(true);
+    }, []);
+
+    const closeBookingsModal = useCallback(() => {
+        setShowBookingsModal(false);
+        setSelectedTour(null);
+    }, []);
+
     const [searchKeyword, setSearchKeyword] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("ALL");
     const [sortBy, setSortBy] = useState<"date" | "bookings" | "price">("date");
@@ -505,6 +539,7 @@ const AdminToursManagement: React.FC = () => {
                                     tour={tour}
                                     getStatusBadge={getStatusBadge}
                                     handleDeleteClick={handleDeleteClick}
+                                    handleViewBookings={handleViewBookings}
                                 />
                             ))}
                         </tbody>
@@ -534,6 +569,14 @@ const AdminToursManagement: React.FC = () => {
                     isDeleting={deleteTourMutation.isPending}
                     onConfirm={confirmDelete}
                     onCancel={cancelDelete}
+                />
+            )}
+            {/* Bookings Modal - THÊM MỚI */}
+            {showBookingsModal && selectedTour && (
+                <TourBookingsModal
+                    tourId={selectedTour.id}
+                    tourTitle={selectedTour.title}
+                    onClose={closeBookingsModal}
                 />
             )}
         </div>
