@@ -40,14 +40,16 @@ import {
   X,
   Sparkles,
   CreditCard,
+  MessageSquare,
 } from "lucide-react";
 import { getBookings } from "../services/booking.services";
 import type { BookingResponse } from "../services/booking.services";
-import { getTourById } from "../services/tour.services";
+import { getTourById } from "../services/tour.service";
 import type { TourResponse } from "../types/tour";
 import { formatDateYMD } from "../utils/date";
 
 import ConfirmationModal from "../components/ui/ConfirmationModal";
+import ReviewModal from "../components/review/ReviewModal";
 
 const BookingPage = () => {
   const navigate = useNavigate();
@@ -56,7 +58,8 @@ const BookingPage = () => {
     null
   );
   const [selectedBooking, setSelectedBooking] =
-    useState<BookingResponse | null>(null);
+  useState<BookingResponse | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailBooking, setDetailBooking] = useState<BookingResponse | null>(
     null
@@ -1323,7 +1326,56 @@ const BookingPage = () => {
                       </Box>
                     </Box>
                   </Box>
+                  {/* --- BẮT ĐẦU PHẦN NÚT ĐÁNH GIÁ (CHÈN VÀO ĐÂY) --- */}
+                  {detailBooking.bookingStatus === "COMPLETED" && (
+                    <Box
+                      sx={{
+                        mt: 3,
+                        pt: 3,
+                        borderTop: "1px solid rgba(226, 232, 240, 0.8)",
+                        display: "flex",
+                        justifyContent: "flex-start", // Căn phải cho chuyên nghiệp
+                        alignItems: "center",
+                      }}
+                    >
+                      <Button
+                        variant="contained"
+                        startIcon={<MessageSquare size={18} />}
+                        onClick={() => setReviewModalOpen(true)}
+                        sx={{
+                          borderRadius: "12px",
+                          textTransform: "none",
+                          px: 4,
+                          py: 1.2,
+                          fontWeight: 600,
+                          fontSize: "0.95rem",
+                          background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+                          boxShadow: "0 4px 14px rgba(139, 92, 246, 0.4)",
+                          transition: "all 0.3s ease",
+                          "&:hover": {
+                            background: "linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)",
+                            transform: "translateY(-2px)",
+                            boxShadow: "0 6px 20px rgba(139, 92, 246, 0.6)",
+                          },
+                          "&:active": {
+                            transform: "translateY(0)",
+                          }
+                        }}
+                      >
+                        Viết đánh giá trải nghiệm
+                      </Button>
+                    </Box>
+                  )}
+                  {/* --- KẾT THÚC PHẦN NÚT ĐÁNH GIÁ --- */}
                 </Box>
+                {detailBooking && (
+        <ReviewModal
+          open={reviewModalOpen}
+          onClose={() => setReviewModalOpen(false)}
+          bookingId={detailBooking.bookingId}
+          tourTitle={detailBooking.tourTitle}
+        />
+      )}
               </Box>
             </Box>
           </DialogContent>

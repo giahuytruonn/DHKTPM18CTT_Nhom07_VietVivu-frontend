@@ -13,6 +13,7 @@ import {
   BarChart3,
   Globe,
   TicketCheck,
+  LucideVideo,
 } from "lucide-react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useUser } from "../../hooks/useUser";
@@ -62,9 +63,9 @@ const AdminLayout: React.FC = () => {
       path: "/admin/bookings-request",
     },
     {
-      title: "Đánh giá",
-      icon: Heart,
-      path: "/admin/reviews",
+      title: "Quản lý Video", // Mục mới
+      icon: LucideVideo,      // Dùng icon Video
+      path: "/admin/videos",
     },
   ];
 

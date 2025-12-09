@@ -3,7 +3,7 @@ import { Star, Send } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { createReview, updateReview } from "../../services/review.services";
-import { QUERY_KEYS } from "../../utiils/queryKeys";
+import { QUERY_KEYS } from "../../utils/queryKeys";
 import type { ReviewRequest, ReviewResponse } from "../../types/review";
 
 interface ReviewFormProps {
