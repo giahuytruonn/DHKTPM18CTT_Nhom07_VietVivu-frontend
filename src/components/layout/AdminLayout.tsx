@@ -13,6 +13,9 @@ import {
   BarChart3,
   Globe,
   TicketCheck,
+  Gift,
+  DollarSign,
+  FileText
 } from "lucide-react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useUser } from "../../hooks/useUser";
@@ -43,7 +46,7 @@ const AdminLayout: React.FC = () => {
     },
     {
       title: "Quản lý Khuyến mãi",
-      icon: Package,
+      icon: Gift,
       path: "/admin/promotions",
     },
     {
@@ -195,7 +198,8 @@ const AdminLayout: React.FC = () => {
           }
         `}
               >
-                Doanh thu
+                <DollarSign size={16} className="inline-block mr-2" />
+                Báo cáo doanh thu
               </Link>
 
               <Link
@@ -208,6 +212,7 @@ const AdminLayout: React.FC = () => {
           }
         `}
               >
+                <FileText size={16} className="inline-block mr-2" />
                 Báo cáo khác
               </Link>
             </div>

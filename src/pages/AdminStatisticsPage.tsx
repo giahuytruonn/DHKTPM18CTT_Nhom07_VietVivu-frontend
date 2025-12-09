@@ -53,8 +53,18 @@ const AdminStatisticsPage: React.FC = () => {
   const [filterUserTable, setFilterUserTable] = useState<
     "BOOKED" | "CANCELLED"
   >("BOOKED");
-  const [startTime, setStartTime] = useState<string>("");
-  const [endTime, setEndTime] = useState<string>("");
+
+  const firstDayOfMonth = new Date();
+  firstDayOfMonth.setDate(1);
+  const startOfMonthStr = firstDayOfMonth.toISOString().split("T")[0]; // YYYY-MM-DD
+
+  // Lấy ngày cuối cùng tháng
+  const lastDayOfMonth = new Date();
+  lastDayOfMonth.setMonth(lastDayOfMonth.getMonth() + 1);
+  lastDayOfMonth.setDate(0); // ngày 0 của tháng sau = ngày cuối của tháng hiện tại
+  const endOfMonthStr = lastDayOfMonth.toISOString().split("T")[0]; // YYYY-MM-DD
+  const [startTime, setStartTime] = useState<string>(startOfMonthStr);
+  const [endTime, setEndTime] = useState<string>(endOfMonthStr);
 
   // Booking status summary
   const {
@@ -64,11 +74,11 @@ const AdminStatisticsPage: React.FC = () => {
   } = useQuery({
     queryKey: ["bookingStatusSummary"],
     queryFn: () =>
-  getBookingStatusSummary(
-    filterStatusSummary === "ALL" ? "" : filterStatusSummary,
-    startTime || undefined,
-    endTime || undefined
-  ),
+      getBookingStatusSummary(
+        filterStatusSummary === "ALL" ? "" : filterStatusSummary,
+        startTime || undefined,
+        endTime || undefined
+      ),
 
     staleTime: 1000 * 60 * 5,
   });
