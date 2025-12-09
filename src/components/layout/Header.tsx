@@ -1,23 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
-import {
-  Globe,
-  Menu,
-  X,
-  ChevronDown,
-  User,
-  Heart,
-  LogOut,
-  Shield,
-  TicketCheck,
-  Key,
-  Star,
-} from "lucide-react";
+import { Menu, X, ChevronDown, User, Heart, LogOut, Shield, TicketCheck, Key, Star } from "lucide-react";
 import { useState } from "react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useUser } from "../../hooks/useUser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { logout as logoutService } from "../../services/auth.service";
 import toast from "react-hot-toast";
+import logo from "../../assets/logo-vietvivu.png";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -71,9 +60,11 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center group">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mr-3 shadow-md group-hover:scale-110 transition-transform duration-300">
-              <Globe className="text-white" size={22} />
-            </div>
+            <img
+              src={logo}
+              alt="VietVivu logo"
+              className="w-10 h-10 rounded-full object-cover mr-3 shadow-md group-hover:scale-110 transition-transform duration-300"
+            />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">
               VietVivu
             </h1>

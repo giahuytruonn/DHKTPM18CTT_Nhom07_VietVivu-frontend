@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { Facebook, Instagram, Youtube, Globe, Mail, Phone, MapPin, ChevronRight } from "lucide-react";
+import { Facebook, Instagram, Youtube, Mail, Phone, MapPin, ChevronRight } from "lucide-react";
+import logo from "../../assets/logo-vietvivu.png";
 
 export default function Footer() {
   return (
@@ -9,9 +10,11 @@ export default function Footer() {
           {/* Cột 1: Logo & Giới thiệu */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
-                <Globe className="text-white" size={22} />
-              </div>
+              <img
+                src={logo}
+                alt="VietVivu logo"
+                className="w-10 h-10 rounded-full object-cover shadow-lg"
+              />
               <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-blue-400 bg-clip-text text-transparent">
                 VietVivu
               </h3>
