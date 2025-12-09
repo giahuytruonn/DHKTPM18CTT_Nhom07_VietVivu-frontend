@@ -15,7 +15,7 @@ import {
   TicketCheck,
   Gift,
   DollarSign,
-  FileText
+  FileText,
   LucideVideo,
 } from "lucide-react";
 import { useAuthStore } from "../../stores/useAuthStore";
