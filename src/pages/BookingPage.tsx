@@ -53,12 +53,13 @@ import ReviewModal from "../components/review/ReviewModal";
 
 const BookingPage = () => {
   const navigate = useNavigate();
+  const detailFont = "'Inter', 'Segoe UI', Tahoma, sans-serif";
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
     null
   );
   const [selectedBooking, setSelectedBooking] =
-  useState<BookingResponse | null>(null);
+    useState<BookingResponse | null>(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailBooking, setDetailBooking] = useState<BookingResponse | null>(
@@ -283,6 +284,33 @@ const BookingPage = () => {
     (page - 1) * itemsPerPage,
     page * itemsPerPage
   );
+
+  const priceInfo = useMemo(() => {
+    if (!detailBooking) return null;
+    const adults = detailBooking.totalPriceAdults ?? 0;
+    const children = detailBooking.totalPriceChildren ?? 0;
+    const subtotal = adults + children;
+    const discount = detailBooking.discountAmount ?? 0;
+    const computedTotal = Math.max(0, subtotal - discount);
+
+    const isBackendSubtotal =
+      discount > 0 && detailBooking.totalPrice === subtotal;
+    const isRemainingSubtotal =
+      discount > 0 && detailBooking.remainingAmount === subtotal;
+
+    return {
+      subtotal,
+      discount,
+      computedTotal,
+      displayTotal: isBackendSubtotal
+        ? computedTotal
+        : detailBooking.totalPrice,
+      displayRemaining: isRemainingSubtotal
+        ? computedTotal
+        : detailBooking.remainingAmount,
+    };
+  }, [detailBooking]);
+
   const detailHeroImage =
     tourDetail?.imageUrls?.[0] ||
     detailBooking?.imageUrl ||
@@ -968,7 +996,7 @@ const BookingPage = () => {
         }}
       >
         {detailBooking && (
-          <DialogContent sx={{ p: 0 }}>
+          <DialogContent sx={{ p: 0, fontFamily: detailFont }}>
             <Box>
               <Box
                 sx={{
@@ -1114,7 +1142,9 @@ const BookingPage = () => {
                         variant="h5"
                         sx={{ fontWeight: 800, color: "#10B981" }}
                       >
-                        {formatCurrency(detailBooking.totalPrice)}
+                        {formatCurrency(
+                          priceInfo?.displayTotal ?? detailBooking.totalPrice
+                        )}
                       </Typography>
                     </Box>
                     <Divider orientation="vertical" flexItem />
@@ -1129,7 +1159,10 @@ const BookingPage = () => {
                         variant="h6"
                         sx={{ fontWeight: 700, color: "#2563EB" }}
                       >
-                        {formatCurrency(detailBooking.remainingAmount)}
+                        {formatCurrency(
+                          priceInfo?.displayRemaining ??
+                            detailBooking.remainingAmount
+                        )}
                       </Typography>
                     </Box>
                   </Stack>
@@ -1349,17 +1382,19 @@ const BookingPage = () => {
                           py: 1.2,
                           fontWeight: 600,
                           fontSize: "0.95rem",
-                          background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+                          background:
+                            "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
                           boxShadow: "0 4px 14px rgba(139, 92, 246, 0.4)",
                           transition: "all 0.3s ease",
                           "&:hover": {
-                            background: "linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)",
+                            background:
+                              "linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)",
                             transform: "translateY(-2px)",
                             boxShadow: "0 6px 20px rgba(139, 92, 246, 0.6)",
                           },
                           "&:active": {
                             transform: "translateY(0)",
-                          }
+                          },
                         }}
                       >
                         Viết đánh giá trải nghiệm
@@ -1369,13 +1404,13 @@ const BookingPage = () => {
                   {/* --- KẾT THÚC PHẦN NÚT ĐÁNH GIÁ --- */}
                 </Box>
                 {detailBooking && (
-        <ReviewModal
-          open={reviewModalOpen}
-          onClose={() => setReviewModalOpen(false)}
-          bookingId={detailBooking.bookingId}
-          tourTitle={detailBooking.tourTitle}
-        />
-      )}
+                  <ReviewModal
+                    open={reviewModalOpen}
+                    onClose={() => setReviewModalOpen(false)}
+                    bookingId={detailBooking.bookingId}
+                    tourTitle={detailBooking.tourTitle}
+                  />
+                )}
               </Box>
             </Box>
           </DialogContent>

@@ -56,7 +56,7 @@ import ChangeTourPage from "./pages/ChangeTourPage";
 import AdminStatisticsRevenuePage from "./pages/AdminStatisticsRevenuePage";
 import AdminPromotionsPage from "./pages/AdminPromotionPage";
 import AddPromotionsPage from "./pages/AddPromotionPage";
-import ContactPage from './pages/ContactPage';
+import ContactPage from "./pages/ContactPage";
 import MyReviewsPage from "./pages/MyReviewsPage";
 
 const queryClient = new QueryClient();
@@ -87,7 +87,6 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
   return <>{children}</>;
 };
-
 
 const FAQPage = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -129,67 +128,76 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <div className="min-h-screen flex flex-col">
                 <Header />
                 <main className="flex-1 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
-  <Routes>
-    {/* Public Routes */}
-    <Route path="/" element={<Home />} />
-    <Route path="/login" element={<LoginPage />} />
-    <Route path="/register" element={<RegisterPage />} />
-    <Route path="/get-otp-page" element={<GetOtpPage />} />
-    <Route path="/confirm-otp" element={<ConfirmOtpPage />} />
-    <Route path="/reset-password" element={<ResetPasswordPage />} />
-    <Route path="/authenticate" element={<Authenticate />} />
-    
-    <Route path="/tours" element={<AllToursPage />} />
-    <Route path="/tours/:tourId" element={<TourDetailPage />} />
-    <Route path="/change-tour" element={<ChangeTourPage />} />
-    
-    <Route path="/booking/:tourId" element={<BookingStepper />} />
-    <Route path="/payment-later/:bookingId" element={<PaymentLaterStepper />} />
-    
-    <Route path="/feed" element={<VideoFeedPage />} />
-    <Route path="/contact" element={<ContactPage />} />
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path="/" element={<Home />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/get-otp-page" element={<GetOtpPage />} />
+                    <Route path="/confirm-otp" element={<ConfirmOtpPage />} />
+                    <Route
+                      path="/reset-password"
+                      element={<ResetPasswordPage />}
+                    />
+                    <Route path="/authenticate" element={<Authenticate />} />
 
-    {/* Protected User Routes */}
-    <Route
-      path="/favorite-tours"
-      element={
-        <ProtectedRoute>
-          <FavoriteToursPage />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/bookings"
-      element={
-        <ProtectedRoute>
-          <BookingPage />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/bookings/:bookingId"
-      element={
-        <ProtectedRoute>
-          <BookingDetailPage />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/request-booking"
-      element={
-        <ProtectedRoute>
-          <RequestBookingPage />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/review" // Đã đổi /review thành /my-reviews cho đúng ngữ nghĩa
-      element={
-        <ProtectedRoute>
-          <MyReviewsPage />
-        </ProtectedRoute>
-      }
-    />
+                    <Route path="/tours" element={<AllToursPage />} />
+                    <Route path="/tours/:tourId" element={<TourDetailPage />} />
+                    <Route path="/change-tour" element={<ChangeTourPage />} />
+
+                    <Route
+                      path="/booking/:tourId"
+                      element={<BookingStepper />}
+                    />
+                    <Route
+                      path="/payment-later/:bookingId"
+                      element={<PaymentLaterStepper />}
+                    />
+
+                    <Route path="/feed" element={<VideoFeedPage />} />
+                    <Route path="/contact" element={<ContactPage />} />
+
+                    {/* Protected User Routes */}
+                    <Route
+                      path="/favorite-tours"
+                      element={
+                        <ProtectedRoute>
+                          <FavoriteToursPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/bookings"
+                      element={
+                        <ProtectedRoute>
+                          <BookingPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/bookings/:bookingId"
+                      element={
+                        <ProtectedRoute>
+                          <BookingDetailPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/request-booking"
+                      element={
+                        <ProtectedRoute>
+                          <RequestBookingPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/review" // Đã đổi /review thành /my-reviews cho đúng ngữ nghĩa
+                      element={
+                        <ProtectedRoute>
+                          <MyReviewsPage />
+                        </ProtectedRoute>
+                      }
+                    />
 
                     {/* Protected User Routes */}
                     <Route
@@ -260,10 +268,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="promotions/create" element={<AddPromotionsPage />} />
             <Route path="tours/edit/:tourId" element={<EditTourPage />} />
             <Route path="videos" element={<AdminVideoManagement />} />
-            <Route
-              path="users"
-              element={<AdminUsersPage />}
-            />
+            <Route path="users" element={<AdminUsersPage />} />
 
             <Route
               path="reviews"

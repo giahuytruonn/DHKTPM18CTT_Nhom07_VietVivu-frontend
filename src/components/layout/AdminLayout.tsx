@@ -9,9 +9,7 @@ import {
   Menu,
   X,
   ChevronDown,
-  Heart,
   BarChart3,
-  Globe,
   TicketCheck,
   Gift,
   DollarSign,
@@ -23,6 +21,7 @@ import { useUser } from "../../hooks/useUser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { logout as logoutService } from "../../services/auth.service";
 import toast from "react-hot-toast";
+import logo from "../../assets/logo-vietvivu.png";
 
 const AdminLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -67,7 +66,7 @@ const AdminLayout: React.FC = () => {
     },
     {
       title: "Quản lý Video", // Mục mới
-      icon: LucideVideo,      // Dùng icon Video
+      icon: LucideVideo, // Dùng icon Video
       path: "/admin/videos",
     },
   ];
@@ -111,9 +110,11 @@ const AdminLayout: React.FC = () => {
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 flex-shrink-0">
           <Link to="/admin/dashboard" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-              <Globe className="text-white" size={24} />
-            </div>
+            <img
+              src={logo}
+              alt="VietVivu logo"
+              className="w-10 h-10 rounded-lg object-cover shadow-md"
+            />
             {sidebarOpen && (
               <span className="font-bold text-xl whitespace-nowrap">
                 Admin Panel
@@ -227,7 +228,11 @@ const AdminLayout: React.FC = () => {
             className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-all whitespace-nowrap"
             title={!sidebarOpen ? "Về trang chủ" : undefined}
           >
-            <Globe size={20} className="flex-shrink-0" />
+            <img
+              src={logo}
+              alt="VietVivu logo"
+              className="w-8 h-8 rounded-md object-cover flex-shrink-0"
+            />
             {sidebarOpen && <span className="font-medium">Về trang chủ</span>}
           </Link>
 
