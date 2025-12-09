@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -10,6 +10,7 @@ import {
   Stack,
   Card,
   CardContent,
+  Chip,
 } from "@mui/material";
 import {
   ArrowLeft,
@@ -19,9 +20,94 @@ import {
   Calendar,
   Tag,
   CheckCircle2,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import type { BookingResponse } from "../services/booking.services";
 import { cancelBooking } from "../services/bookingRequest.services";
+import { getTourById } from "../services/tour.service";
+import type { TourResponse } from "../types/tour";
+import CancellationPolicyNotice from "../components/ui/CancellationPolicyNotice";
+import { formatDateYMD } from "../utils/date";
+
+const getStatusConfig = (status: string) => {
+  switch (status) {
+    case "PENDING":
+      return {
+        label: "Chưa thanh toán",
+        color: "#F59E0B",
+        bgGradient: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
+        icon: <AlertCircle size={16} />,
+      };
+    case "CONFIRMED":
+      return {
+        label: "Đã thanh toán",
+        color: "#10B981",
+        bgGradient: "linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)",
+        icon: <CheckCircle size={16} />,
+      };
+    case "CANCELLED":
+    case "CONFIRMED_CANCELLATION":
+      return {
+        label: "Đã hủy",
+        color: "#EF4444",
+        bgGradient: "linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)",
+        icon: <XCircle size={16} />,
+      };
+    case "DENIED_CANCELLATION":
+      return {
+        label: "Từ chối hủy",
+        color: "#F59E0B",
+        bgGradient: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
+        icon: <AlertCircle size={16} />,
+      };
+    case "COMPLETED":
+      return {
+        label: "Hoàn thành",
+        color: "#3B82F6",
+        bgGradient: "linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)",
+        icon: <CheckCircle size={16} />,
+      };
+    case "PENDING_CANCELLATION":
+      return {
+        label: "Chờ xử lý hủy",
+        color: "#F59E0B",
+        bgGradient: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
+        icon: <AlertCircle size={16} />,
+      };
+    case "PENDING_CHANGE":
+      return {
+        label: "Chờ xử lý đổi",
+        color: "#F59E0B",
+        bgGradient: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
+        icon: <AlertCircle size={16} />,
+      };
+    case "CONFIRMED_CHANGE":
+      return {
+        label: "Đã đổi tour",
+        color: "#3B82F6",
+        bgGradient: "linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)",
+        icon: <CheckCircle size={16} />,
+      };
+    case "DENIED_CHANGE":
+      return {
+        label: "Từ chối đổi",
+        color: "#F59E0B",
+        bgGradient: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
+        icon: <AlertCircle size={16} />,
+      };
+    default:
+      return {
+        label: status,
+        color: "#6B7280",
+        bgGradient: "linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)",
+        icon: <AlertCircle size={16} />,
+      };
+  }
+};
+
+const formatDateTime = (dateString?: string | null) =>
+  formatDateYMD(dateString, { includeTime: true });
 
 const RequestBookingPage = () => {
   const navigate = useNavigate();
@@ -36,6 +122,30 @@ const RequestBookingPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [tourDetail, setTourDetail] = useState<TourResponse | null>(null);
+  const [policyLoading, setPolicyLoading] = useState(false);
+  const statusConfig = state?.booking
+    ? getStatusConfig(state.booking.bookingStatus)
+    : null;
+
+  useEffect(() => {
+    const fetchTourDetail = async () => {
+      if (!state?.booking?.tourId) {
+        return;
+      }
+      try {
+        setPolicyLoading(true);
+        const detail = await getTourById(state.booking.tourId);
+        setTourDetail(detail);
+      } catch (fetchError) {
+        console.error("Không thể tải thông tin tour để tính chính sách hoàn phí", fetchError);
+      } finally {
+        setPolicyLoading(false);
+      }
+    };
+
+    fetchTourDetail();
+  }, [state?.booking?.tourId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +189,8 @@ const RequestBookingPage = () => {
       <Box
         sx={{
           minHeight: "100vh",
-          background: "linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)",
+          background:
+            "linear-gradient(180deg, #f5f7ff 0%, #fef2ff 45%, #fef9f5 100%)",
           py: 5,
           px: { xs: 2, md: 3 },
         }}
@@ -88,10 +199,10 @@ const RequestBookingPage = () => {
           <Card
             sx={{
               borderRadius: "24px",
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(10px)",
-              border: "1px solid rgba(255, 255, 255, 0.3)",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+              background: "linear-gradient(145deg, #ffffff 0%, #f8fbff 100%)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid rgba(226, 232, 240, 0.8)",
+              boxShadow: "0 25px 60px rgba(15, 23, 42, 0.12)",
             }}
           >
             <CardContent sx={{ p: 4 }}>
@@ -138,52 +249,162 @@ const RequestBookingPage = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)",
+        background:
+          "linear-gradient(180deg, #f5f7ff 0%, #fef2ff 45%, #fef9f5 100%)",
         py: { xs: 3, md: 5 },
         px: { xs: 2, md: 3 },
       }}
     >
       <Box sx={{ maxWidth: "900px", mx: "auto" }}>
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Button
-            startIcon={<ArrowLeft size={20} />}
-            onClick={() => navigate("/bookings")}
+        {/* Hero Section */}
+        <Box
+          sx={{
+            mb: 5,
+            borderRadius: "32px",
+            background:
+              "linear-gradient(120deg, #1d4ed8 0%, #2563eb 45%, #7c3aed 100%)",
+            px: { xs: 3, md: 5 },
+            py: { xs: 4, md: 5 },
+            color: "white",
+            boxShadow: "0 35px 65px rgba(30, 64, 175, 0.35)",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <Box
             sx={{
-              mb: 2,
-              borderRadius: "12px",
-              textTransform: "none",
-              background: "rgba(255, 255, 255, 0.2)",
-              backdropFilter: "blur(10px)",
-              color: "white",
-              "&:hover": {
-                background: "rgba(255, 255, 255, 0.3)",
-              },
+              position: "absolute",
+              inset: 0,
+              background:
+                "radial-gradient(circle at top left, rgba(255,255,255,0.35), transparent 50%)",
+              opacity: 0.8,
             }}
-          >
-            Quay lại
-          </Button>
-          <Typography
-            variant="h3"
-            component="h1"
+          />
+          <Box
             sx={{
-              fontWeight: 800,
-              background: "linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-              mb: 1,
+              position: "absolute",
+              inset: 0,
+              background:
+                "radial-gradient(circle at bottom right, rgba(255,255,255,0.2), transparent 55%)",
+              opacity: 0.6,
             }}
+          />
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            alignItems={{ xs: "flex-start", md: "center" }}
+            justifyContent="space-between"
+            spacing={4}
+            sx={{ position: "relative", zIndex: 1 }}
           >
-            Yêu cầu hủy tour
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{ color: "rgba(255, 255, 255, 0.9)", fontSize: "1.1rem" }}
-          >
-            Vui lòng điền thông tin để chúng tôi có thể xử lý yêu cầu của bạn
-          </Typography>
+            <Box>
+              <Button
+                startIcon={<ArrowLeft size={20} />}
+                onClick={() => navigate("/bookings")}
+                sx={{
+                  mb: 3,
+                  borderRadius: "14px",
+                  textTransform: "none",
+                  background: "rgba(15, 23, 42, 0.25)",
+                  color: "white",
+                  px: 3,
+                  "&:hover": {
+                    background: "rgba(15, 23, 42, 0.4)",
+                  },
+                }}
+              >
+                Quay lại
+              </Button>
+              {statusConfig && (
+                <Chip
+                  icon={statusConfig.icon}
+                  label={statusConfig.label}
+                  sx={{
+                    background: statusConfig.bgGradient,
+                    color: statusConfig.color,
+                    fontWeight: 600,
+                    mb: 2,
+                    borderRadius: "12px",
+                    "& .MuiChip-icon": { color: statusConfig.color },
+                  }}
+                />
+              )}
+              <Typography
+                variant="h3"
+                component="h1"
+                sx={{
+                  fontWeight: 800,
+                  mb: 1,
+                  fontSize: { xs: "2rem", md: "2.75rem" },
+                }}
+              >
+                Yêu cầu hủy tour
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{ color: "rgba(255, 255, 255, 0.9)", fontSize: "1.05rem" }}
+              >
+                Vui lòng chia sẻ lý do để chúng tôi hỗ trợ bạn tốt nhất
+              </Typography>
+            </Box>
+            {state.booking && (
+              <Box
+                sx={{
+                  px: { xs: 3, md: 4 },
+                  py: { xs: 3, md: 4 },
+                  borderRadius: "24px",
+                  background: "rgba(15, 23, 42, 0.35)",
+                  border: "1px solid rgba(255, 255, 255, 0.25)",
+                  color: "white",
+                  minWidth: { md: 300 },
+                  backdropFilter: "blur(6px)",
+                }}
+              >
+                <Typography
+                  variant="overline"
+                  sx={{
+                    letterSpacing: "0.2em",
+                    color: "rgba(255, 255, 255, 0.75)",
+                  }}
+                >
+                  Mã booking
+                </Typography>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 800,
+                    mt: 1,
+                    fontSize: { xs: "1.9rem", md: "2.2rem" },
+                  }}
+                >
+                  {state.booking.bookingId.substring(0, 8)}...
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ color: "rgba(255, 255, 255, 0.9)", mt: 1 }}
+                >
+                  {state.booking.tourTitle}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ color: "rgba(255, 255, 255, 0.7)", mt: 0.5 }}
+                >
+                  Đặt lúc: {formatDateTime(state.booking.bookingDate)}
+                </Typography>
+              </Box>
+            )}
+          </Stack>
         </Box>
+
+        {state.booking && (
+          <Box sx={{ mb: 4 }}>
+            <CancellationPolicyNotice
+              totalPrice={state.booking.totalPrice}
+              startDate={tourDetail?.startDate ?? null}
+              loading={policyLoading}
+              variant="cancel"
+            />
+          </Box>
+        )}
 
         {/* Booking Info Card */}
         {state.booking && (
@@ -191,10 +412,10 @@ const RequestBookingPage = () => {
             sx={{
               mb: 3,
               borderRadius: "24px",
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(10px)",
-              border: "1px solid rgba(255, 255, 255, 0.3)",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+              background: "linear-gradient(145deg, #ffffff 0%, #f8fbff 100%)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid rgba(226, 232, 240, 0.8)",
+              boxShadow: "0 25px 60px rgba(15, 23, 42, 0.08)",
               overflow: "hidden",
             }}
           >
@@ -226,6 +447,7 @@ const RequestBookingPage = () => {
                     display: "flex",
                     alignItems: "center",
                     gap: 2,
+                    flexWrap: "wrap",
                     p: 2,
                     borderRadius: "12px",
                     background:
@@ -326,9 +548,23 @@ const RequestBookingPage = () => {
                     <Typography variant="caption" color="text.secondary">
                       Trạng thái
                     </Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                      {state.booking.bookingStatus}
-                    </Typography>
+                    {statusConfig ? (
+                      <Chip
+                        icon={statusConfig.icon}
+                        label={statusConfig.label}
+                        sx={{
+                          background: statusConfig.bgGradient,
+                          color: statusConfig.color,
+                          fontWeight: 600,
+                          borderRadius: "10px",
+                          "& .MuiChip-icon": { color: statusConfig.color },
+                        }}
+                      />
+                    ) : (
+                      <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                        {state.booking.bookingStatus}
+                      </Typography>
+                    )}
                   </Box>
                 </Box>
               </Stack>
@@ -341,10 +577,10 @@ const RequestBookingPage = () => {
           <Card
             sx={{
               borderRadius: "24px",
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(10px)",
-              border: "1px solid rgba(255, 255, 255, 0.3)",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+              background: "linear-gradient(145deg, #ffffff 0%, #f8fbff 100%)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid rgba(226, 232, 240, 0.8)",
+              boxShadow: "0 25px 60px rgba(15, 23, 42, 0.08)",
             }}
           >
             <CardContent sx={{ p: 4, textAlign: "center" }}>
@@ -379,10 +615,10 @@ const RequestBookingPage = () => {
           <Card
             sx={{
               borderRadius: "24px",
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(10px)",
-              border: "1px solid rgba(255, 255, 255, 0.3)",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+              background: "linear-gradient(145deg, #ffffff 0%, #f8fbff 100%)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid rgba(226, 232, 240, 0.8)",
+              boxShadow: "0 25px 60px rgba(15, 23, 42, 0.08)",
             }}
           >
             <Box

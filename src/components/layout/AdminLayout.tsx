@@ -16,6 +16,7 @@ import {
   Gift,
   DollarSign,
   FileText
+  LucideVideo,
 } from "lucide-react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useUser } from "../../hooks/useUser";
@@ -60,14 +61,14 @@ const AdminLayout: React.FC = () => {
       path: "/admin/users",
     },
     {
-      title: "Booking Request",
+      title: "Xử lý Booking",
       icon: TicketCheck,
       path: "/admin/bookings-request",
     },
     {
-      title: "Đánh giá",
-      icon: Heart,
-      path: "/admin/reviews",
+      title: "Quản lý Video", // Mục mới
+      icon: LucideVideo,      // Dùng icon Video
+      path: "/admin/videos",
     },
   ];
 

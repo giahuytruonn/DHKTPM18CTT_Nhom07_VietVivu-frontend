@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getAllToursAdmin } from "../services/tour.service";
 import {
@@ -30,6 +30,12 @@ import {
   YAxis,
 } from "recharts";
 
+import StatCard from '../components/admin/StatCard';
+import TourStatusBar from '../components/admin/TourStatusBar';
+import PopularTourItem from '../components/admin/PopularTourItem';
+import RecentTourItem from '../components/admin/RecentTourItem';
+import DestinationCard from '../components/admin/DestinationCard';
+
 const AdminDashboard: React.FC = () => {
   const { data: toursResponse, isLoading } = useQuery({
     queryKey: ["adminDashboard"],
@@ -48,21 +54,25 @@ const AdminDashboard: React.FC = () => {
     queryFn: () => getMonthlyRevenue(new Date().getFullYear()),
   });
 
-  const tours = toursResponse?.items || [];
+  const tours = useMemo(() => {
+    return toursResponse?.items || [];
+  }, [toursResponse]);
 
   // Calculate statistics
-  const stats = {
-    totalTours: tours.length,
-    openTours: tours.filter((t) => t.tourStatus === "OPEN_BOOKING").length,
-    inProgressTours: tours.filter((t) => t.tourStatus === "IN_PROGRESS").length,
-    completedTours: tours.filter((t) => t.tourStatus === "COMPLETED").length,
-    totalBookings: tours.reduce((sum, t) => sum + (t.totalBookings || 0), 0),
-    totalFavorites: tours.reduce((sum, t) => sum + (t.favoriteCount || 0), 0),
-    totalRevenue: totalRevenue || 0,
-    availableSpots: tours.reduce((sum, t) => sum + (t.quantity || 0), 0),
-  };
+  const stats = useMemo(() => {
+    return {
+      totalTours: tours.length,
+      openTours: tours.filter((t) => t.tourStatus === "OPEN_BOOKING").length,
+      inProgressTours: tours.filter((t) => t.tourStatus === "IN_PROGRESS").length,
+      completedTours: tours.filter((t) => t.tourStatus === "COMPLETED").length,
+      totalBookings: tours.reduce((sum, t) => sum + (t.totalBookings || 0), 0),
+      totalFavorites: tours.reduce((sum, t) => sum + (t.favoriteCount || 0), 0),
+      totalRevenue: totalRevenue || 0,
+      availableSpots: tours.reduce((sum, t) => sum + (t.quantity || 0), 0),
+    };
+  }, [tours, totalRevenue]);
 
-  const statCards = [
+  const statCards = useMemo(() => [
     {
       title: "Tổng Tours",
       value: stats.totalTours,
@@ -103,37 +113,43 @@ const AdminDashboard: React.FC = () => {
       bgColor: "bg-orange-50",
       textColor: "text-orange-600",
     },
-  ];
+  ], [stats]);
 
   // Recent tours (5 newest by startDate)
-  const recentTours = [...tours]
-    .sort((a, b) => {
-      const dateA = a.startDate
-        ? a.startDate.split("/").reverse().join("-")
-        : "1970-01-01";
-      const dateB = b.startDate
-        ? b.startDate.split("/").reverse().join("-")
-        : "1970-01-01";
-      return new Date(dateB).getTime() - new Date(dateA).getTime();
-    })
-    .slice(0, 5);
+  const recentTours = useMemo(() => {
+    return [...tours]
+      .sort((a, b) => {
+        const dateA = a.startDate
+          ? a.startDate.split("/").reverse().join("-")
+          : "1970-01-01";
+        const dateB = b.startDate
+          ? b.startDate.split("/").reverse().join("-")
+          : "1970-01-01";
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      })
+      .slice(0, 5);
+  }, [tours]);
 
   // Popular tours (5 most booked)
-  const popularTours = [...tours]
-    .sort((a, b) => (b.totalBookings || 0) - (a.totalBookings || 0))
-    .slice(0, 5);
+  const popularTours = useMemo(() => {
+    return [...tours]
+      .sort((a, b) => (b.totalBookings || 0) - (a.totalBookings || 0))
+      .slice(0, 5);
+  }, [tours]);
 
   // Top destinations
-  const destinationStats = tours.reduce((acc: Record<string, number>, tour) => {
-    const dest = tour.destination || "Khác";
-    acc[dest] = (acc[dest] || 0) + (tour.totalBookings || 0);
-    return acc;
-  }, {});
+  const topDestinations = useMemo(() => {
+    const destinationStats = tours.reduce((acc: Record<string, number>, tour) => {
+      const dest = tour.destination || "Khác";
+      acc[dest] = (acc[dest] || 0) + (tour.totalBookings || 0);
+      return acc;
+    }, {});
 
-  const topDestinations = Object.entries(destinationStats)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5)
-    .map(([name, bookings]) => ({ name, bookings }));
+    return Object.entries(destinationStats)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([name, bookings]) => ({ name, bookings }));
+  }, [tours]);
 
   if (isLoading) {
     return (
@@ -164,37 +180,18 @@ const AdminDashboard: React.FC = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={index}
-              className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 ${stat.bgColor} rounded-xl`}>
-                  <Icon className={stat.textColor} size={24} />
-                </div>
-                <div
-                  className={`flex items-center gap-1 text-sm font-semibold ${
-                    stat.isIncrease ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {stat.isIncrease ? (
-                    <ArrowUp size={16} />
-                  ) : (
-                    <TrendingDown size={16} />
-                  )}
-                  <span>{stat.change}</span>
-                </div>
-              </div>
-              <h3 className="text-gray-600 text-sm font-medium mb-1">
-                {stat.title}
-              </h3>
-              <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-            </div>
-          );
-        })}
+        {statCards.map((stat, index) => (
+          <StatCard
+            key={index}
+            title={stat.title}
+            value={stat.value}
+            change={stat.change}
+            isIncrease={stat.isIncrease}
+            icon={stat.icon}
+            bgColor={stat.bgColor}
+            textColor={stat.textColor}
+          />
+        ))}
       </div>
 
       {/* Charts Row */}
@@ -208,74 +205,27 @@ const AdminDashboard: React.FC = () => {
             </h2>
           </div>
           <div className="space-y-4">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">
-                  Đang mở booking
-                </span>
-                <span className="text-sm font-semibold text-green-600">
-                  {stats.openTours}
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-500"
-                  style={{
-                    width: `${
-                      stats.totalTours > 0
-                        ? (stats.openTours / stats.totalTours) * 100
-                        : 0
-                    }%`,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">
-                  Đang thực hiện
-                </span>
-                <span className="text-sm font-semibold text-blue-600">
-                  {stats.inProgressTours}
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-blue-400 to-blue-600 h-3 rounded-full transition-all duration-500"
-                  style={{
-                    width: `${
-                      stats.totalTours > 0
-                        ? (stats.inProgressTours / stats.totalTours) * 100
-                        : 0
-                    }%`,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">
-                  Đã hoàn thành
-                </span>
-                <span className="text-sm font-semibold text-gray-600">
-                  {stats.completedTours}
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-gray-400 to-gray-600 h-3 rounded-full transition-all duration-500"
-                  style={{
-                    width: `${
-                      stats.totalTours > 0
-                        ? (stats.completedTours / stats.totalTours) * 100
-                        : 0
-                    }%`,
-                  }}
-                />
-              </div>
-            </div>
+            <TourStatusBar
+              label="Đang mở booking"
+              value={stats.openTours}
+              total={stats.totalTours}
+              color="bg-gradient-to-r from-green-400 to-green-600"
+              textColor="text-green-600"
+            />
+            <TourStatusBar
+              label="Đang thực hiện"
+              value={stats.inProgressTours}
+              total={stats.totalTours}
+              color="bg-gradient-to-r from-blue-400 to-blue-600"
+              textColor="text-blue-600"
+            />
+            <TourStatusBar
+              label="Đã hoàn thành"
+              value={stats.completedTours}
+              total={stats.totalTours}
+              color="bg-gradient-to-r from-gray-400 to-gray-600"
+              textColor="text-gray-600"
+            />
           </div>
         </div>
 
@@ -345,33 +295,16 @@ const AdminDashboard: React.FC = () => {
           </div>
           <div className="space-y-3">
             {popularTours.map((tour, index) => (
-              <div
+              <PopularTourItem
                 key={tour.tourId}
-                className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl transition-colors"
-              >
-                <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-orange-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold shadow-md">
-                  {index + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">
-                    {tour.title}
-                  </p>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <MapPin className="w-3 h-3" />
-                    <span className="truncate">{tour.destination}</span>
-                  </div>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="font-bold text-indigo-600">
-                    {tour.totalBookings}
-                  </p>
-                  <p className="text-xs text-gray-500">bookings</p>
-                </div>
-              </div>
+                tour={tour}
+                index={index}
+              />
             ))}
           </div>
         </div>
 
+        {/* Recent Tours */}
         {/* Recent Tours */}
         <div className="bg-white rounded-xl p-6 shadow-md">
           <div className="flex items-center justify-between mb-6">
@@ -388,47 +321,15 @@ const AdminDashboard: React.FC = () => {
           </div>
           <div className="space-y-3">
             {recentTours.map((tour) => (
-              <div
+              <RecentTourItem
                 key={tour.tourId}
-                className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl transition-colors"
-              >
-                <div
-                  className={`
-                  flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold
-                  ${
-                    tour.tourStatus === "OPEN_BOOKING"
-                      ? "bg-green-100 text-green-700"
-                      : tour.tourStatus === "IN_PROGRESS"
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-gray-100 text-gray-700"
-                  }
-                `}
-                >
-                  {tour.tourStatus === "OPEN_BOOKING"
-                    ? "Mở"
-                    : tour.tourStatus === "IN_PROGRESS"
-                    ? "Đang chạy"
-                    : "Hoàn thành"}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">
-                    {tour.title}
-                  </p>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <MapPin className="w-3 h-3" />
-                    <span className="truncate">{tour.destination}</span>
-                  </div>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {tour.priceAdult.toLocaleString()}₫
-                  </p>
-                </div>
-              </div>
+                tour={tour}
+              />
             ))}
           </div>
         </div>
       </div>
+
 
       {/* Top Destinations */}
       <div className="bg-white rounded-xl p-6 shadow-md">
@@ -438,21 +339,11 @@ const AdminDashboard: React.FC = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {topDestinations.map((dest, index) => (
-            <div
+            <DestinationCard
               key={dest.name}
-              className="p-4 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl border border-indigo-100 hover:shadow-md transition-all"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl font-bold text-indigo-600">
-                  #{index + 1}
-                </span>
-                <Clock className="text-indigo-400" size={16} />
-              </div>
-              <p className="font-semibold text-gray-900 truncate">
-                {dest.name}
-              </p>
-              <p className="text-sm text-gray-600">{dest.bookings} bookings</p>
-            </div>
+              destination={dest}
+              index={index}
+            />
           ))}
         </div>
       </div>

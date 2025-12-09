@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -12,12 +12,12 @@ import {
   Chip,
   Card,
   CardContent,
-  Grid,
   IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Skeleton,
 } from "@mui/material";
 import {
   ArrowLeft,
@@ -30,13 +30,21 @@ import {
   FileText,
   Package,
   RefreshCw,
+  MapPin,
+  Image as ImageIcon,
+  DollarSign,
+  Sparkles,
+  Users,
 } from "lucide-react";
 import {
   getBookingRequestById,
   updateBookingRequestStatus,
   type BookingRequestResponse,
 } from "../services/bookingRequest.services";
+import { getTourById } from "../services/tour.service";
+import type { TourResponse } from "../types/tour";
 import toast from "react-hot-toast";
+import { formatDateYMD } from "../utils/date";
 
 const BookingRequestDetailPage = () => {
   const { requestId } = useParams<{ requestId: string }>();
@@ -46,8 +54,12 @@ const BookingRequestDetailPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [oldTour, setOldTour] = useState<TourResponse | null>(null);
+  const [newTour, setNewTour] = useState<TourResponse | null>(null);
+  const [tourLoading, setTourLoading] = useState(false);
+  const [tourError, setTourError] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!requestId) {
       setError("Không tìm thấy request ID");
       setLoading(false);
@@ -70,11 +82,60 @@ const BookingRequestDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [requestId]);
 
   useEffect(() => {
     fetchData();
-  }, [requestId]);
+  }, [fetchData]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchTours = async () => {
+      if (!request) {
+        setOldTour(null);
+        setNewTour(null);
+        return;
+      }
+      if (!request.oldTourId && !request.newTourId) {
+        setOldTour(null);
+        setNewTour(null);
+        return;
+      }
+      try {
+        setTourLoading(true);
+        setTourError(null);
+        const [oldData, newData] = await Promise.all([
+          request.oldTourId
+            ? getTourById(request.oldTourId).catch(() => null)
+            : Promise.resolve(null),
+          request.newTourId
+            ? getTourById(request.newTourId).catch(() => null)
+            : Promise.resolve(null),
+        ]);
+        if (cancelled) return;
+        setOldTour(oldData);
+        setNewTour(newData);
+      } catch (err) {
+        if (cancelled) return;
+        console.error("Error fetching tour detail:", err);
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : (err as { response?: { data?: { message?: string } } }).response
+                ?.data?.message || "Không thể tải thông tin tour";
+        setTourError(errorMessage);
+      } finally {
+        if (!cancelled) {
+          setTourLoading(false);
+        }
+      }
+    };
+
+    fetchTours();
+    return () => {
+      cancelled = true;
+    };
+  }, [request]);
 
   const handleAccept = async () => {
     if (!requestId || !request) return;
@@ -142,17 +203,17 @@ const BookingRequestDetailPage = () => {
     }
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("vi-VN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const formatDate = (dateString?: string | null) =>
+    formatDateYMD(dateString, { includeTime: true });
+  const formatDateCompact = (dateString?: string | null) =>
+    formatDateYMD(dateString, { includeTime: false });
+  const formatCurrency = (value?: number | null) =>
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value ?? 0);
+  const heroFallbackImage =
+    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80";
 
   const getStatusConfig = (status: string) => {
     switch (status) {
@@ -217,6 +278,260 @@ const BookingRequestDetailPage = () => {
           textColor: "#0C5460",
           icon: RefreshCw,
         };
+  };
+
+  const renderTourCard = (
+    tour: TourResponse | null,
+    variant: "old" | "new"
+  ) => {
+    const variantConfig = {
+      old: {
+        label: "Tour hiện tại",
+        color: "#fb923c",
+        gradient: "linear-gradient(135deg, #f97316 0%, #fb923c 100%)",
+      },
+      new: {
+        label: "Tour đề xuất",
+        color: "#38bdf8",
+        gradient: "linear-gradient(135deg, #2563eb 0%, #38bdf8 100%)",
+      },
+    }[variant];
+
+    if (tourLoading && !tour) {
+      return (
+        <Card
+          sx={{
+            borderRadius: 3,
+            overflow: "hidden",
+            boxShadow: "0 18px 45px rgba(15, 23, 42, 0.15)",
+          }}
+        >
+          <Skeleton variant="rectangular" height={220} animation="wave" />
+          <CardContent>
+            <Skeleton variant="text" height={36} width="80%" sx={{ mb: 1.5 }} />
+            <Skeleton variant="text" width="60%" />
+            <Skeleton variant="rounded" height={80} sx={{ mt: 2 }} />
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (!tour) {
+      return (
+        <Card
+          sx={{
+            borderRadius: 3,
+            border: "1px dashed rgba(148, 163, 184, 0.6)",
+            background: "linear-gradient(135deg, #f8fafc, #f1f5f9)",
+            minHeight: 220,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+          }}
+        >
+          <CardContent>
+            <ImageIcon size={32} color="#94a3b8" />
+            <Typography variant="subtitle1" sx={{ mt: 2, fontWeight: 600 }}>
+              Chưa có dữ liệu tour
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Không tìm thấy thông tin tour tương ứng
+            </Typography>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    const coverImage =
+      tour.imageUrls?.[0] ||
+      `https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80&sig=${tour.tourId}`;
+
+    return (
+      <Card
+        sx={{
+          borderRadius: 3,
+          overflow: "hidden",
+          boxShadow: "0 18px 45px rgba(15, 23, 42, 0.15)",
+          position: "relative",
+        }}
+      >
+        <Box
+          sx={{
+            position: "relative",
+            height: 220,
+            overflow: "hidden",
+          }}
+        >
+          <Box
+            component="img"
+            src={coverImage}
+            alt={tour.title}
+            sx={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              filter: "brightness(0.85)",
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.65) 100%)",
+            }}
+          />
+          <Chip
+            label={variantConfig.label}
+            sx={{
+              position: "absolute",
+              top: 16,
+              left: 16,
+              background: variantConfig.gradient,
+              color: "#fff",
+              fontWeight: 600,
+            }}
+          />
+          <Chip
+            icon={<Sparkles size={14} />}
+            label={tour.tourStatus}
+            sx={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              bgcolor: "rgba(255,255,255,0.15)",
+              color: "white",
+              border: "1px solid rgba(255,255,255,0.3)",
+              textTransform: "uppercase",
+              letterSpacing: 1,
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: 16,
+              left: 16,
+              right: 16,
+              color: "white",
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 700, lineHeight: 1.3, mb: 1 }}
+            >
+              {tour.title}
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <MapPin size={16} />
+              <Typography variant="body2">{tour.destination}</Typography>
+            </Stack>
+          </Box>
+        </Box>
+        <CardContent sx={{ p: 3 }}>
+          <Stack spacing={2}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ lineHeight: 1.6 }}
+            >
+              {tour.description}
+            </Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, minmax(0, 1fr))",
+                },
+                gap: 2,
+              }}
+            >
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid rgba(99, 102, 241, 0.2)",
+                }}
+              >
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Calendar size={18} color="#6366f1" />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Ngày khởi hành
+                    </Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      {formatDateCompact(tour.startDate)}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid rgba(16, 185, 129, 0.2)",
+                }}
+              >
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Calendar size={18} color="#10b981" />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Ngày kết thúc
+                    </Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      {formatDateCompact(tour.endDate)}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid rgba(14, 165, 233, 0.2)",
+                }}
+              >
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <DollarSign size={18} color="#0ea5e9" />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Giá người lớn
+                    </Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      {formatCurrency(tour.priceAdult)}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  border: "1px solid rgba(249, 115, 22, 0.2)",
+                }}
+              >
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Users size={18} color="#f97316" />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Số chỗ còn lại
+                    </Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      {tour.quantity}/{tour.initialQuantity}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
+    );
   };
 
   if (loading) {
@@ -327,6 +642,22 @@ const BookingRequestDetailPage = () => {
   const typeConfig = getRequestTypeConfig(request.requestType);
   const StatusIcon = statusConfig.icon;
   const TypeIcon = typeConfig.icon;
+  const heroTour =
+    request.requestType === "CHANGE"
+      ? newTour ?? oldTour ?? newTour
+      : oldTour ?? newTour;
+  const heroImage =
+    heroTour?.imageUrls?.[0] ??
+    newTour?.imageUrls?.[0] ??
+    oldTour?.imageUrls?.[0] ??
+    heroFallbackImage;
+  const heroSubtitle = heroTour?.destination ?? "Điểm đến đang cập nhật";
+  const heroDuration = heroTour?.duration ?? "Thời lượng cập nhật sau";
+  const heroSlots = heroTour
+    ? `${heroTour.quantity}/${heroTour.initialQuantity}`
+    : "N/A";
+  const shouldShowTourGrid =
+    Boolean(request.oldTourId) || Boolean(request.newTourId) || tourLoading;
 
   return (
     <Box sx={{ width: "100%", maxWidth: 1200, margin: "0 auto" }}>
@@ -395,6 +726,222 @@ const BookingRequestDetailPage = () => {
         </Alert>
       )}
 
+      {tourError && (
+        <Alert
+          severity="warning"
+          sx={{ mb: 3 }}
+          action={
+            <IconButton
+              aria-label="close"
+              color="inherit"
+              size="small"
+              onClick={() => setTourError(null)}
+            >
+              <XCircle size={18} />
+            </IconButton>
+          }
+        >
+          {tourError}
+        </Alert>
+      )}
+
+      <Box sx={{ mb: 4 }}>
+        <Box
+          sx={{
+            borderRadius: 4,
+            overflow: "hidden",
+            position: "relative",
+            minHeight: { xs: 260, md: 360 },
+            boxShadow: "0 30px 60px rgba(15, 23, 42, 0.35)",
+            backgroundColor: "#0f172a",
+          }}
+        >
+          {heroTour ? (
+            <>
+              <Box
+                component="img"
+                src={heroImage}
+                alt={heroTour.title}
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  filter: "brightness(0.75)",
+                }}
+              />
+              <Box
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "linear-gradient(120deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 64, 175, 0.25) 60%, rgba(59, 130, 246, 0.4) 100%)",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  p: { xs: 3, md: 5 },
+                  color: "white",
+                }}
+              >
+                <Stack
+                  direction="row"
+                  spacing={1.5}
+                  alignItems="center"
+                  flexWrap="wrap"
+                  useFlexGap
+                >
+                  <Chip
+                    icon={<TypeIcon size={16} />}
+                    label={typeConfig.label}
+                    sx={{
+                      color: typeConfig.textColor,
+                      backgroundColor: "rgba(255,255,255,0.95)",
+                      fontWeight: 700,
+                    }}
+                  />
+                  <Chip
+                    icon={<StatusIcon size={16} />}
+                    label={statusConfig.label}
+                    sx={{
+                      color: statusConfig.textColor,
+                      backgroundColor: "rgba(255,255,255,0.95)",
+                      fontWeight: 700,
+                    }}
+                  />
+                  <Chip
+                    label={request.requestId.slice(0, 8)}
+                    sx={{
+                      color: "white",
+                      backgroundColor: "rgba(255,255,255,0.15)",
+                      border: "1px solid rgba(255,255,255,0.25)",
+                      fontFamily: "monospace",
+                    }}
+                  />
+                  {request.promotionId && (
+                    <Chip
+                      icon={<DollarSign size={16} />}
+                      label={`Promotion • ${request.promotionId}`}
+                      sx={{
+                        color: "white",
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        backgroundColor: "transparent",
+                        fontWeight: 600,
+                      }}
+                    />
+                  )}
+                </Stack>
+                <Box>
+                  <Typography
+                    variant="overline"
+                    sx={{ letterSpacing: 4, opacity: 0.8 }}
+                  >
+                    THÔNG TIN YÊU CẦU
+                  </Typography>
+                  <Typography
+                    variant="h3"
+                    sx={{
+                      fontWeight: 800,
+                      lineHeight: 1.2,
+                      mt: 1,
+                    }}
+                  >
+                    {heroTour.title}
+                  </Typography>
+                  <Stack
+                    direction={{ xs: "column", md: "row" }}
+                    spacing={3}
+                    mt={3}
+                    divider={
+                      <Divider
+                        orientation="vertical"
+                        flexItem
+                        sx={{
+                          borderColor: "rgba(255,255,255,0.2)",
+                          display: { xs: "none", md: "block" },
+                        }}
+                      />
+                    }
+                  >
+                    <Stack spacing={0.5}>
+                      <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                        Điểm đến
+                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <MapPin size={16} />
+                        <Typography variant="h6">{heroSubtitle}</Typography>
+                      </Stack>
+                    </Stack>
+                    <Stack spacing={0.5}>
+                      <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                        Thời lượng
+                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Clock size={16} />
+                        <Typography variant="h6">{heroDuration}</Typography>
+                      </Stack>
+                    </Stack>
+                    <Stack spacing={0.5}>
+                      <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                        Số chỗ còn
+                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Users size={16} />
+                        <Typography variant="h6">{heroSlots}</Typography>
+                      </Stack>
+                    </Stack>
+                  </Stack>
+                </Box>
+                <Stack
+                  direction={{ xs: "column", md: "row" }}
+                  spacing={2}
+                  justifyContent="space-between"
+                  alignItems={{ xs: "flex-start", md: "center" }}
+                >
+                  <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+                    <Box>
+                      <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                        Ngày tạo yêu cầu
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {formatDate(request.createdAt)}
+                      </Typography>
+                    </Box>
+                    {request.reviewedAt && (
+                      <Box>
+                        <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                          Ngày xử lý gần nhất
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                          {formatDate(request.reviewedAt)}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Stack>
+                </Stack>
+              </Box>
+            </>
+          ) : (
+            <Skeleton variant="rectangular" height="100%" width="100%" />
+          )}
+        </Box>
+      </Box>
+
+      {shouldShowTourGrid && (
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              md: request.newTourId ? "repeat(2, minmax(0, 1fr))" : "1fr",
+            },
+            gap: { xs: 3, md: 4 },
+            mb: 4,
+          }}
+        >
+          <Box>{renderTourCard(oldTour, "old")}</Box>
+          {request.newTourId && <Box>{renderTourCard(newTour, "new")}</Box>}
+        </Box>
+      )}
+
       {/* Status Banner */}
       <Card
         sx={{
@@ -436,9 +983,15 @@ const BookingRequestDetailPage = () => {
         </CardContent>
       </Card>
 
-      <Grid container spacing={3}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+          gap: 3,
+        }}
+      >
         {/* Request Info */}
-        <Grid item xs={12} md={6}>
+        <Box>
           <Card
             sx={{
               height: "100%",
@@ -580,10 +1133,10 @@ const BookingRequestDetailPage = () => {
               </Stack>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Booking Info */}
-        <Grid item xs={12} md={6}>
+        <Box>
           <Card
             sx={{
               height: "100%",
@@ -633,16 +1186,36 @@ const BookingRequestDetailPage = () => {
                   >
                     Tour cũ
                   </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      fontFamily: "monospace",
-                      fontWeight: 500,
-                      mt: 0.5,
-                    }}
+                  <Stack
+                    direction="row"
+                    spacing={2}
+                    alignItems="center"
+                    sx={{ mt: 0.75 }}
                   >
-                    {request.oldTourId}
-                  </Typography>
+                    <Box
+                      component="img"
+                      src={oldTour?.imageUrls?.[0] ?? heroFallbackImage}
+                      alt={oldTour?.title ?? "Old tour"}
+                      sx={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: 2,
+                        objectFit: "cover",
+                        boxShadow: "0 8px 18px rgba(15,23,42,0.25)",
+                      }}
+                    />
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                        {oldTour?.title ?? "Chưa có dữ liệu"}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Mã tour: {request.oldTourId}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Khởi hành: {formatDateCompact(oldTour?.startDate)}
+                      </Typography>
+                    </Box>
+                  </Stack>
                 </Box>
                 {request.newTourId && (
                   <Box>
@@ -653,17 +1226,39 @@ const BookingRequestDetailPage = () => {
                     >
                       Tour mới
                     </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        fontFamily: "monospace",
-                        fontWeight: 500,
-                        color: "#667eea",
-                        mt: 0.5,
-                      }}
+                    <Stack
+                      direction="row"
+                      spacing={2}
+                      alignItems="center"
+                      sx={{ mt: 0.75 }}
                     >
-                      {request.newTourId}
-                    </Typography>
+                      <Box
+                        component="img"
+                        src={newTour?.imageUrls?.[0] ?? heroFallbackImage}
+                        alt={newTour?.title ?? "New tour"}
+                        sx={{
+                          width: 56,
+                          height: 56,
+                          borderRadius: 2,
+                          objectFit: "cover",
+                          boxShadow: "0 8px 18px rgba(37,99,235,0.3)",
+                        }}
+                      />
+                      <Box>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ fontWeight: 700, color: "#2563eb" }}
+                        >
+                          {newTour?.title ?? "Chưa có dữ liệu"}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Mã tour: {request.newTourId}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Khởi hành: {formatDateCompact(newTour?.startDate)}
+                        </Typography>
+                      </Box>
+                    </Stack>
                   </Box>
                 )}
                 <Box>
@@ -692,11 +1287,11 @@ const BookingRequestDetailPage = () => {
               </Stack>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Actions */}
         {canAcceptDeny && (
-          <Grid item xs={12}>
+          <Box>
             <Card
               sx={{
                 boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
@@ -788,11 +1383,11 @@ const BookingRequestDetailPage = () => {
                 </Stack>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
         )}
 
         {!canAcceptDeny && (
-          <Grid item xs={12}>
+          <Box>
             <Alert
               severity="info"
               icon={<AlertCircle size={24} />}
@@ -810,10 +1405,10 @@ const BookingRequestDetailPage = () => {
                 Trạng thái hiện tại: <strong>{statusConfig.label}</strong>
               </Typography>
             </Alert>
-          </Grid>
+          </Box>
         )}
-      </Grid>
-          
+      </Box>
+
       {/* Custom Confirmation Dialog */}
       <Dialog
         open={confirmDialogOpen}

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import SearchBar from "../components/layout/SearchBar";
 import {
   Users,
@@ -19,6 +19,10 @@ import { useQuery } from "@tanstack/react-query";
 import { getTours } from "../services/tour.service";
 import type { TourResponse } from "../types/tour";
 import ChatBox from "./ChatBox";
+import DestinationCard from "../components/home/DestinationCard";
+import TourCard from "../components/home/TourCard";
+import GuideCard from "../components/home/GuideCard";
+import { searchPexelsImage } from "../services/pexels.service";
 
 const PEXELS_API_KEY = import.meta.env.VITE_PEXELS_API_KEY;
 
@@ -131,27 +135,7 @@ const blogPosts = [
 ];
 
 // === FETCH ẢNH TỪ PEXELS ===
-const fetchDestinationImage = async (query: string): Promise<{ url: string; id: string }> => {
-  const searchQuery = `${query} Vietnam travel landmark`;
-  try {
-    const res = await fetch(
-      `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchQuery)}&per_page=1&orientation=landscape`,
-      {
-        headers: { Authorization: PEXELS_API_KEY! },
-      }
-    );
-    if (!res.ok) throw new Error(`Pexels API error: ${res.status}`);
-    const data = await res.json();
-    const photo = data.photos?.[0];
-    if (photo) {
-      return { url: photo.src.large || photo.src.medium || photo.src.small, id: photo.id.toString() };
-    }
-  } catch (error) {
-    console.warn(`[Pexels] Không tìm thấy ảnh cho: ${query}`, error);
-  }
-  const fallbackUrl = `https://picsum.photos/seed/${encodeURIComponent(query)}/800/600`;
-  return { url: fallbackUrl, id: `fallback-${query}` };
-};
+const fetchDestinationImage = searchPexelsImage;
 
 const imageCache = new Map<string, { url: string; id: string }>();
 
@@ -186,11 +170,74 @@ const SkeletonTour = () => (
 );
 
 export default function Home() {
+
   const navigate = useNavigate();
 
+  const skeletonDestinations = useMemo(() =>
+    Array(12).fill(0).map((_, i) => <SkeletonDestination key={i} />),
+    []
+  );
+
+  const skeletonTours = useMemo(() =>
+    Array(3).fill(0).map((_, i) => <SkeletonTour key={i} />),
+    []
+  );
+
+
+  const featuresData = useMemo(() => [
+    {
+      icon: Users,
+      title: "Hướng dẫn viên địa phương",
+      desc: "Người bản địa am hiểu, nhiệt tình",
+    },
+    {
+      icon: Shield,
+      title: "Tour riêng tư",
+      desc: "Chỉ bạn và nhóm của bạn",
+    },
+    {
+      icon: Clock,
+      title: "Linh hoạt hủy",
+      desc: "Hủy miễn phí trước 24h",
+    },
+    {
+      icon: Star,
+      title: "Hỗ trợ 24/7",
+      desc: "Luôn sẵn sàng giúp bạn",
+    },
+  ], []);
+
+  const statsData = useMemo(() => [
+    { value: "500+", label: "Tour đã tổ chức" },
+    { value: "4.9★", label: "Đánh giá trung bình" },
+    { value: "10k+", label: "Du khách hài lòng" },
+    { value: "24/7", label: "Hỗ trợ khách hàng" },
+  ], []);
+
+  const handleNavigateToTours = useCallback(() => {
+    navigate('/tours');
+  }, [navigate]);
+
+  const handleNavigateToGuides = useCallback(() => {
+    navigate('/guides');
+  }, [navigate]);
+
+  const handleToggleFavorite = useCallback((e: React.MouseEvent, itemId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Implement favorite logic here
+    console.log('Toggle favorite:', itemId);
+  }, []);
+
+  const handleDestinationClick = useCallback((destination: string) => {
+    navigate(`/tours?destination=${encodeURIComponent(destination)}`);
+  }, [navigate]);
+
+
+
   const { data: toursResponse, isLoading } = useQuery({
-    queryKey: ["tours-home", 0, 15],
-    queryFn: () => getTours(0, 15),
+    queryKey: ["tours-home", 0, 6],
+    queryFn: () => getTours(0, 6),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -211,24 +258,48 @@ export default function Home() {
 
   const [destinationImages, setDestinationImages] = useState<Record<string, { url: string; id: string }>>({});
 
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+
   useEffect(() => {
     if (!uniqueDestinations.length || !PEXELS_API_KEY) return;
+
     const loadImages = async () => {
-      const promises = uniqueDestinations.map(async (dest) => {
-        if (imageCache.has(dest)) {
-          return { dest, ...imageCache.get(dest)! };
+      // Load từng batch 4 ảnh
+      const batchSize = 4;
+      const batches = [];
+
+      for (let i = 0; i < uniqueDestinations.length; i += batchSize) {
+        batches.push(uniqueDestinations.slice(i, i + batchSize));
+      }
+
+      for (const batch of batches) {
+        const promises = batch.map(async (dest) => {
+          if (imageCache.has(dest)) {
+            return { dest, ...imageCache.get(dest)! };
+          }
+          const result = await fetchDestinationImage(dest);
+          imageCache.set(dest, result);
+          return { dest, ...result };
+        });
+
+        const results = await Promise.all(promises);
+
+        setDestinationImages(prev => {
+          const map = { ...prev };
+          results.forEach((r) => {
+            map[r.dest] = { url: r.url, id: r.id };
+          });
+          return map;
+        });
+
+        if (batches.indexOf(batch) < batches.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
-        const result = await fetchDestinationImage(dest);
-        imageCache.set(dest, result);
-        return { dest, ...result };
-      });
-      const results = await Promise.all(promises);
-      const map: Record<string, { url: string; id: string }> = {};
-      results.forEach((r) => {
-        map[r.dest] = { url: r.url, id: r.id };
-      });
-      setDestinationImages(map);
+      }
+
+      setImagesLoaded(true);
     };
+
     loadImages();
   }, [uniqueDestinations]);
 
@@ -255,7 +326,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ChatBox/>
+      <ChatBox />
       {/* HERO */}
       <section
         className="relative h-[70vh] bg-cover bg-center bg-no-repeat flex items-center justify-center text-white"
@@ -283,25 +354,14 @@ export default function Home() {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
             {isLoading || Object.keys(destinationImages).length === 0 ? (
-              Array(12).fill(0).map((_, i) => <SkeletonDestination key={i} />)
+              skeletonDestinations
             ) : (
               destinations.map((dest) => (
-                <Link
+                <DestinationCard
                   key={dest.id}
-                  to={`/tours?destination=${encodeURIComponent(dest.name)}`}
-                  className="group relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-                >
-                  <img
-                    src={dest.image}
-                    alt={dest.name}
-                    className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/70 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300"></div>
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                    <p className="font-bold text-lg drop-shadow-md">{dest.name}</p>
-                  </div>
-                </Link>
+                  dest={dest}
+                  onClick={handleDestinationClick}
+                />
               ))
             )}
           </div>
@@ -320,67 +380,12 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             {localGuides.map((guide, index) => (
-              <div
+              <GuideCard
                 key={guide.id}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-2xl transition-all duration-300 group animate-fade-in-up flex flex-col"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="relative">
-                  <img
-                    src={guide.avatar}
-                    alt={guide.name}
-                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                  <button className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-all shadow-md">
-                    <Heart className="w-5 h-5 text-indigo-600" />
-                  </button>
-                </div>
-
-                <div className="p-6 flex flex-col flex-grow">
-                  <h3 className="text-xl font-bold text-indigo-900 mb-1 group-hover:text-indigo-700 transition-colors">
-                    {guide.name}
-                  </h3>
-
-                  <div className="flex items-center text-sm text-gray-600 mb-3">
-                    <MapPin className="w-4 h-4 mr-1 text-indigo-600" />
-                    <span className="truncate">{guide.location}</span>
-                  </div>
-
-                  <div className="flex items-center mb-3">
-                    <span className="text-lg font-bold text-indigo-900 mr-1">{guide.rating}</span>
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
-                    ))}
-                    <span className="ml-2 text-sm text-gray-600">({guide.reviews})</span>
-                  </div>
-
-                  <div className="flex items-center text-sm text-gray-600 mb-2">
-                    <Globe className="w-4 h-4 mr-2 text-indigo-600" />
-                    <span className="line-clamp-1">{guide.languages.join(", ")}</span>
-                  </div>
-
-                  {/* Thông tin liên hệ */}
-                  <div className="space-y-1 mb-4 text-xs text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <Mail className="w-3 h-3 text-indigo-600" />
-                      <span className="truncate">{guide.email}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Phone className="w-3 h-3 text-indigo-600" />
-                      <span>{guide.phone}</span>
-                    </div>
-                  </div>
-
-                  <Link
-                    to={`/guides/${guide.id}`}
-                    className="w-full bg-indigo-600 text-white py-2 rounded-full hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5 mt-auto"
-                  >
-                    Xem hồ sơ
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Link>
-                </div>
-              </div>
+                guide={guide}
+                index={index}
+                onToggleFavorite={handleToggleFavorite}
+              />
             ))}
           </div>
 
@@ -411,70 +416,15 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {isLoading ? (
-              Array(3).fill(0).map((_, i) => <SkeletonTour key={i} />)
+              skeletonTours
             ) : (
               featuredTours.map((tour, i) => (
-                <Link
+                <TourCard
                   key={tour.tourId}
-                  to={`/tours/${tour.tourId}`}
-                  className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in-up flex flex-col"
-                  style={{ animationDelay: `${i * 100}ms` }}
-                >
-                  <div className="relative">
-                    <img
-                      src={tour.imageUrls[0]}
-                      alt={tour.title}
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                    <button className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-all shadow-md z-10">
-                      <Heart className="w-5 h-5 text-indigo-600" />
-                    </button>
-
-                    {tour.rating === 4.9 && (
-                      <div className="absolute top-4 left-4 bg-cyan-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
-                        Best Seller
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="p-6 flex flex-col flex-grow">
-                    <div className="flex items-center text-sm text-gray-600 mb-2">
-                      <MapPin className="w-4 h-4 mr-1 text-indigo-600" />
-                      <span className="truncate">{tour.destination}</span>
-                    </div>
-
-                    <h3 className="text-lg font-bold text-indigo-900 mb-2 group-hover:text-indigo-700 transition-colors line-clamp-2">
-                      {tour.title}
-                    </h3>
-
-                    <div className="flex items-center gap-4 mb-3">
-                      <div className="flex items-center">
-                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        <span className="ml-1 text-sm font-bold">{tour.rating}</span>
-                        <span className="ml-1 text-sm text-gray-600">({tour.reviews})</span>
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Clock className="w-4 h-4 mr-1 text-indigo-600" />
-                        {tour.duration}
-                      </div>
-                    </div>
-
-                    <div className="border-t border-gray-100 pt-4 mt-auto">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <span className="text-xs text-gray-500 block">Giá từ</span>
-                          <span className="text-2xl font-bold text-indigo-600">
-                            {tour.priceAdult.toLocaleString("vi-VN")}₫
-                          </span>
-                        </div>
-                        <span className="text-indigo-600 font-semibold group-hover:translate-x-1 transition-transform">
-                          →
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
+                  tour={tour}
+                  index={i}
+                  onToggleFavorite={handleToggleFavorite}
+                />
               ))
             )}
           </div>
@@ -623,7 +573,7 @@ export default function Home() {
                   <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors line-clamp-2">
                     {post.title}
                   </h3>
-                  
+
                   <p className="text-gray-600 mb-4 line-clamp-3">
                     {post.excerpt}
                   </p>
