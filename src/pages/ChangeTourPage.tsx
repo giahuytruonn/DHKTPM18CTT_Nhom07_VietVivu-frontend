@@ -14,6 +14,7 @@ import {
   Container,
   Divider,
   Stack,
+  Alert,
 } from "@mui/material";
 import {
   ArrowLeft,
@@ -83,6 +84,7 @@ const ChangeTourPage = () => {
   const [promotionLoading, setPromotionLoading] = useState(false);
   const [promotionError, setPromotionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<
     "pending" | "success" | "failed"
   >("pending");
@@ -226,6 +228,7 @@ const ChangeTourPage = () => {
     setSelectedTour(tourToConfirm);
     setActiveStep(1);
     setIsConfirmModalOpen(false);
+    setSubmitError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -264,6 +267,7 @@ const ChangeTourPage = () => {
 
   const submitChangeRequest = async () => {
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
       await requestChangeTour(
         oldBooking!.bookingId,
@@ -274,7 +278,13 @@ const ChangeTourPage = () => {
       setActiveStep(3);
     } catch (error) {
       console.error(error);
-      toast.error("Gửi yêu cầu thất bại");
+      const errorMessage =
+        (error as { response?: { data?: { message?: string } } }).response
+          ?.data?.message ||
+        (error as Error)?.message ||
+        "Gửi yêu cầu thất bại";
+      setSubmitError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -285,6 +295,7 @@ const ChangeTourPage = () => {
       toast.error("Vui lòng nhập lý do đổi tour");
       return;
     }
+    setSubmitError(null);
 
     const priceDiff = calculatePriceDiff();
 
@@ -684,13 +695,21 @@ const ChangeTourPage = () => {
                   <Typography variant="h6" fontWeight={700} mb={2}>
                     Lý do đổi tour
                   </Typography>
+                  {submitError && (
+                    <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitError(null)}>
+                      {submitError}
+                    </Alert>
+                  )}
                   <TextField
                     fullWidth
                     multiline
                     rows={4}
                     placeholder="Vui lòng cho biết lý do bạn muốn đổi tour..."
                     value={reason}
-                    onChange={(e) => setReason(e.target.value)}
+                    onChange={(e) => {
+                      setReason(e.target.value);
+                      setSubmitError(null);
+                    }}
                     sx={{ mb: 2 }}
                   />
                   <Stack
@@ -793,7 +812,10 @@ const ChangeTourPage = () => {
                   <Button
                     fullWidth
                     variant="text"
-                    onClick={() => setActiveStep(0)}
+                    onClick={() => {
+                      setActiveStep(0);
+                      setSubmitError(null);
+                    }}
                     sx={{ mt: 1, borderRadius: 3 }}
                   >
                     Chọn lại tour

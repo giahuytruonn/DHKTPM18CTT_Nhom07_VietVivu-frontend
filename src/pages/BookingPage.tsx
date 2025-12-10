@@ -190,7 +190,7 @@ const BookingPage = () => {
   const formattedTotalAmount = formatCurrency(bookingStats.totalAmount);
   const heroCaption =
     bookingStats.totalAmount > 0
-      ? "Bao gồm tất cả booking đang hoạt động"
+      ? "Bao gồm tất cả booking"
       : "Chưa có booking nào - đặt tour để bắt đầu hành trình mới";
 
   const overviewCards = [
@@ -520,7 +520,7 @@ const BookingPage = () => {
                   color: "rgba(255, 255, 255, 0.75)",
                 }}
               >
-                Giá trị booking còn lại
+                Giá trị booking
               </Typography>
               <Typography
                 variant="h3"
