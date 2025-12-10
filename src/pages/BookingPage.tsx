@@ -699,7 +699,6 @@ const BookingPage = () => {
                     }}
                   >
                     <TableRow>
-                      <TableCell sx={tableHeadCellSx}>Mã Booking</TableCell>
                       <TableCell sx={tableHeadCellSx}>Tour</TableCell>
                       <TableCell sx={tableHeadCellSx}>Địa điểm</TableCell>
                       <TableCell sx={tableHeadCellSx}>Ngày đặt</TableCell>
@@ -737,19 +736,6 @@ const BookingPage = () => {
                             transition: "all 0.25s ease",
                           }}
                         >
-                          <TableCell sx={tableBodyCellSx}>
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontFamily:
-                                  '"JetBrains Mono", "Fira Code", monospace',
-                                fontWeight: 600,
-                                color: "#3B82F6",
-                              }}
-                            >
-                              {booking.bookingId.substring(0, 8)}...
-                            </Typography>
-                          </TableCell>
                           <TableCell sx={tableBodyCellSx}>
                             <Typography
                               variant="body2"
