@@ -13,17 +13,22 @@ export interface TourSummary {
   };
 }
 
+export interface TourSummaryArray {
+  summaryId: string;
+  summaries: TourSummary[];
+}
+
 // ChatResponse cho các tool hướng dẫn (text)
 export interface ChatResponse {
   answer: string;
 }
 
 /**
- * Gửi message đến backend và nhận về TourSummary hoặc ChatResponse
+ * Gửi message đến backend và nhận về TourSummary hoặc ChatResponse hoặc TourSummaryArray
  */
 export const sendChatMessage = async (
   message: string
-): Promise<TourSummary | ChatResponse> => {
+): Promise<TourSummary | ChatResponse | TourSummaryArray> => {
   const res = await api.post<ApiResponse<any>>("/ai/chat", { message });
   let result = res.data.result;
 
@@ -34,22 +39,34 @@ export const sendChatMessage = async (
     try {
       parsed = JSON.parse(result);
     } catch {
-      // Không parse được → giữ nguyên string
       parsed = result;
     }
   } else {
-    // result đã là object từ backend
     parsed = result;
   }
 
-  // --- Nếu là TourSummary ---
-  if (parsed && typeof parsed === "object" && "tourId" in parsed) {
+  // --- 1) Nếu là TourSummary ---
+  if (
+    parsed &&
+    typeof parsed === "object" &&
+    "tourId" in parsed &&
+    "summary" in parsed
+  ) {
     return parsed as TourSummary;
   }
 
-  // --- Nếu là ChatResponse ---
+  // --- 2) Nếu là TourSummaryArray (summaryId + summaries[]) ---
+  if (
+    parsed &&
+    typeof parsed === "object" &&
+    "summaryId" in parsed &&
+    Array.isArray(parsed.summaries)
+  ) {
+    return parsed as TourSummaryArray;
+  }
+
+  // --- 3) Nếu là ChatResponse (answer: string) ---
   if (parsed && typeof parsed === "object" && "answer" in parsed) {
-    // Nếu answer là object hoặc array → stringify để hiển thị an toàn
     const answer =
       typeof parsed.answer === "string"
         ? parsed.answer
@@ -57,6 +74,6 @@ export const sendChatMessage = async (
     return { answer };
   }
 
-  // --- Nếu backend trả về plain string ---
+  // --- 4) Nếu backend trả về plain string ---
   return { answer: String(parsed) };
 };

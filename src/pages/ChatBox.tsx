@@ -3,7 +3,11 @@ import { MessageCircle, Send, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import TourCard from "../components/ui/TourCard";
 import TourImageCarousel from "../components/ui/TourImageCarousel";
-import { sendChatMessage, type TourSummary, type ChatResponse } from "../services/chat.service";
+import {
+  sendChatMessage,
+  type TourSummary,
+  type ChatResponse,
+} from "../services/chat.service";
 
 interface ChatMessage {
   sender: "user" | "bot";
@@ -115,25 +119,50 @@ const ChatBox: React.FC = () => {
       const reply = await sendChatMessage(input);
       let botMsg: ChatMessage;
 
-      if ("tourId" in reply) {
+      // 1) TourSummary (1 tour)
+      if ("tourId" in reply && reply.summary) {
         botMsg = {
           sender: "bot",
-          text: "Đây là tour phù hợp:",
+          text: "Đây là tour phù hợp nhất dành cho bạn:",
           tours: [
             {
               title: reply.summary.name,
               link: `/tours/${reply.tourId}`,
-              description: `Giá người lớn: ${reply.summary.priceAdult}\nGiá trẻ em: ${reply.summary.priceChild}\nSố ngày: ${reply.summary.days}`,
+              description: `Giá người lớn: ${reply.summary.priceAdult}
+Giá trẻ em: ${reply.summary.priceChild}
+Số ngày: ${reply.summary.days}`,
               imageUrls: reply.summary.imageUrls,
             },
           ],
         };
-      } else if ("answer" in reply) {
-        botMsg = { sender: "bot", text: reply.answer };
-      } else {
+      }
+
+      // 2) TourSummaryArray (NHIỀU TOUR)
+      else if ("summaryId" in reply && Array.isArray(reply.summaries)) {
         botMsg = {
           sender: "bot",
-          text: "Xin lỗi, tôi không hiểu phản hồi này.",
+          text: "Dưới đây là những tour nổi bật mà bạn có thể quan tâm:",
+          tours: reply.summaries.map((t) => ({
+            title: t.summary.name,
+            link: `/tours/${t.tourId}`,
+            description: `Giá người lớn: ${t.summary.priceAdult}
+Giá trẻ em: ${t.summary.priceChild}
+Số ngày: ${t.summary.days}`,
+            imageUrls: t.summary.imageUrls,
+          })),
+        };
+      }
+
+      // 3) ChatResponse (tin nhắn text)
+      else if ("answer" in reply) {
+        botMsg = { sender: "bot", text: reply.answer };
+      }
+
+      // 4) fallback
+      else {
+        botMsg = {
+          sender: "bot",
+          text: "Xin lỗi, tôi không hiểu phản hồi từ hệ thống.",
         };
       }
 
