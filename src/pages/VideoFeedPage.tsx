@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   LucideRotateCw, LucideVolume2, LucideVolumeX, LucideHeart, LucideShare2, 
-  LucideMoreHorizontal, LucidePlay, LucideMusic, LucideMapPin, LucideArrowLeft, LucideShoppingBag 
+  LucidePlay, LucideMusic, LucideMapPin, LucideShoppingBag 
 } from "lucide-react";
 import { getApprovedVideos, toggleVideoLike } from "../services/exploreVideoApi";
 import type { IExploreVideo } from "../types/IExploreVideo";
@@ -123,7 +123,6 @@ const VideoPost: React.FC<{
 
   return (
     <div className="w-full h-full snap-start relative bg-black flex items-center justify-center select-none overflow-hidden group">
-      
       {/* 1. LAYER VIDEO */}
       <div className="relative w-full h-full cursor-pointer bg-gray-900" onClick={togglePlay} onDoubleClick={handleDoubleTap}>
         <video ref={videoRef} src={optimizedVideoUrl} poster={posterUrl} className="w-full h-full object-contain" loop playsInline muted={isMuted} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleTimeUpdate} />
@@ -136,20 +135,14 @@ const VideoPost: React.FC<{
 
       {/* 3. RIGHT SIDEBAR */}
       <div className="absolute bottom-32 right-3 flex flex-col items-center gap-5 z-40">
-<div className="relative group cursor-pointer transition-transform hover:scale-110">
-  <div className="w-10 h-10 rounded-full border border-white p-[1px] overflow-hidden">
-    <img
-      src="https://res.cloudinary.com/dpyshymwv/image/upload/v1765191105/ac5a28bd-fae8-49ae-84bb-b9698acf1bf6.png"
-      alt="Avatar"
-      className="w-full h-full rounded-full object-cover shadow-md"
-    />
-  </div>
-</div>        
+        <div className="relative group cursor-pointer transition-transform hover:scale-110">
+          <div className="w-10 h-10 rounded-full border border-white p-[1px] overflow-hidden">
+            <img src="https://res.cloudinary.com/dpyshymwv/image/upload/v1765191105/ac5a28bd-fae8-49ae-84bb-b9698acf1bf6.png" alt="Avatar" className="w-full h-full rounded-full object-cover shadow-md" />
+          </div>
+        </div>        
         <div className="flex flex-col items-center gap-1 cursor-pointer group" onClick={handleLike}><LucideHeart className={`w-8 h-8 drop-shadow-lg transition-all duration-200 ${isLiked ? 'text-red-500 fill-red-500 scale-110' : 'text-white group-hover:scale-110'}`} /><span className="text-white text-[12px] font-semibold drop-shadow-md">{likeCount}</span></div>
-        
         <div className="flex flex-col items-center gap-1 cursor-pointer group" onClick={handleShare}><LucideShare2 className="w-8 h-8 text-white drop-shadow-lg transition-transform group-hover:scale-110" /><span className="text-white text-[12px] font-semibold drop-shadow-md">Share</span></div>
-
-          <button onClick={(e) => { e.stopPropagation(); onToggleMute(); }} className="w-9 h-9 rounded-full bg-gray-800/60 backdrop-blur-md flex items-center justify-center text-white mt-2 border border-white/20 hover:bg-gray-700 transition-colors shadow-lg">{isMuted ? <LucideVolumeX size={16} /> : <LucideVolume2 size={16} />}</button>
+        <button onClick={(e) => { e.stopPropagation(); onToggleMute(); }} className="w-9 h-9 rounded-full bg-gray-800/60 backdrop-blur-md flex items-center justify-center text-white mt-2 border border-white/20 hover:bg-gray-700 transition-colors shadow-lg">{isMuted ? <LucideVolumeX size={16} /> : <LucideVolume2 size={16} />}</button>
       </div>
 
       {/* 4. BOTTOM INFO */}
@@ -158,16 +151,13 @@ const VideoPost: React.FC<{
         
         <div className="mb-4 pr-14 cursor-pointer" onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}><div className="transition-all duration-300 relative"><p className={`text-[13px] leading-snug drop-shadow-sm opacity-95 ${!isExpanded ? 'line-clamp-2' : ''}`}><span className="font-semibold mr-1">{video.title}</span><span className="font-light opacity-80">{video.description}</span></p>{(video.description && video.description.length > 50 && !isExpanded) && <span className="text-[12px] font-bold text-gray-300 ml-1">xem thêm</span>}</div><div className="flex items-center gap-2 mt-2 opacity-70"><LucideMusic size={12} /><div className="text-[11px] w-40 overflow-hidden"><p className="whitespace-nowrap">Nhạc nền gốc - VietVivu Official</p></div></div></div>
         
-        {/* --- THANH THỜI GIAN (ĐÃ SỬA THẲNG HÀNG) --- */}
+        {/* TIME BAR */}
         <div className="flex items-center gap-3 w-full pr-1 select-none py-2" onClick={(e) => e.stopPropagation()}>
-            {/* Thanh Progress Bar: Dùng flex-1 để chiếm hết khoảng trống còn lại */}
             <div className="relative flex-1 h-6 flex items-center group cursor-pointer">
                 <div className="absolute w-full h-[3px] bg-white/20 rounded-full group-hover:h-[5px] transition-all" />
                 <div className="absolute h-[3px] bg-white rounded-full group-hover:h-[5px] transition-all shadow-[0_0_10px_rgba(255,255,255,0.5)]" style={{ width: `${progress}%` }} />
                 <input type="range" min="0" max="100" step="0.1" value={progress} onChange={handleSeek} className="absolute w-full h-full opacity-0 cursor-pointer z-20" />
             </div>
-            
-            {/* Thời gian: Dùng whitespace-nowrap để không xuống dòng */}
             <span className="text-[10px] font-medium text-right opacity-80 font-mono tracking-wider whitespace-nowrap shrink-0">
               {currentTime} / {duration}
             </span>
@@ -186,11 +176,24 @@ const VideoFeedPage: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+  // 1. Fetch data
   useEffect(() => {
     getApprovedVideos().then(res => { setVideos(res); if (res.length > 0) setActiveVideoId(res[0].id); })
       .catch(console.error).finally(() => setLoading(false));
   }, []);
 
+  // 2. Logic Scroll To Top (FIXED)
+  useEffect(() => {
+    // Chỉ chạy khi đã tải xong (loading = false) thì containerRef mới tồn tại trên DOM
+    if (!loading) {
+      window.scrollTo(0, 0);
+      if (containerRef.current) {
+        containerRef.current.scrollTop = 0;
+      }
+    }
+  }, [loading]); // Thêm loading vào dependency
+
+  // 3. Logic Intersection Observer
   useEffect(() => {
     const container = containerRef.current; if (!container) return;
     const observer = new IntersectionObserver((entries) => {
@@ -200,6 +203,7 @@ const VideoFeedPage: React.FC = () => {
     return () => observer.disconnect();
   }, [videos]);
 
+  // 4. Styles Global
   useEffect(() => {
     const style = document.createElement('style');
     style.innerHTML = `.hide-scrollbar::-webkit-scrollbar { display: none; } .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; } @keyframes bounceIn { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 0; } } .animate-bounce-in { animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }`;
