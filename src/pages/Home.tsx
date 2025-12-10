@@ -326,7 +326,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ChatBox />
+      {/* <ChatBox /> */}
       {/* HERO */}
       <section
         className="relative h-[70vh] bg-cover bg-center bg-no-repeat flex items-center justify-center text-white"

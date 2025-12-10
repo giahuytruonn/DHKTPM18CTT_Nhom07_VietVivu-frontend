@@ -13,28 +13,23 @@ export interface TourSummary {
   };
 }
 
-export interface TourSummaryArray {
-  summaryId: string;
-  summaries: TourSummary[];
-}
-
-// ChatResponse cho các tool hướng dẫn (text)
+// ChatResponse cho text
 export interface ChatResponse {
   answer: string;
 }
 
 /**
- * Gửi message đến backend và nhận về TourSummary hoặc ChatResponse hoặc TourSummaryArray
+ * Gửi message đến backend và nhận về TourSummary hoặc ChatResponse
  */
 export const sendChatMessage = async (
   message: string
-): Promise<TourSummary | ChatResponse | TourSummaryArray> => {
+): Promise<TourSummary | ChatResponse> => {
   const res = await api.post<ApiResponse<any>>("/ai/chat", { message });
   let result = res.data.result;
 
   let parsed: any;
 
-  // Nếu result là string → thử JSON.parse
+  // Nếu backend trả string → thử parse JSON
   if (typeof result === "string") {
     try {
       parsed = JSON.parse(result);
@@ -45,7 +40,7 @@ export const sendChatMessage = async (
     parsed = result;
   }
 
-  // --- 1) Nếu là TourSummary ---
+  // --- 1) TourSummary ---
   if (
     parsed &&
     typeof parsed === "object" &&
@@ -55,25 +50,16 @@ export const sendChatMessage = async (
     return parsed as TourSummary;
   }
 
-  // --- 2) Nếu là TourSummaryArray (summaryId + summaries[]) ---
-  if (
-    parsed &&
-    typeof parsed === "object" &&
-    "summaryId" in parsed &&
-    Array.isArray(parsed.summaries)
-  ) {
-    return parsed as TourSummaryArray;
-  }
-
-  // --- 3) Nếu là ChatResponse (answer: string) ---
+  // --- 2) ChatResponse ---
   if (parsed && typeof parsed === "object" && "answer" in parsed) {
-    const answer =
-      typeof parsed.answer === "string"
-        ? parsed.answer
-        : JSON.stringify(parsed.answer, null, 2);
-    return { answer };
+    return {
+      answer:
+        typeof parsed.answer === "string"
+          ? parsed.answer
+          : JSON.stringify(parsed.answer, null, 2),
+    };
   }
 
-  // --- 4) Nếu backend trả về plain string ---
+  // --- fallback text ---
   return { answer: String(parsed) };
 };

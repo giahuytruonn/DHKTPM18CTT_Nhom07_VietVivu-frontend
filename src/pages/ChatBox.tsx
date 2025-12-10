@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { MessageCircle, Send, X } from "lucide-react";
+import { MessageCircle, Send, X, Minimize2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import TourCard from "../components/ui/TourCard";
+import TourCard from "../components/ui/TourCard"; // Đảm bảo bạn đã cập nhật file này như bước trước
 import TourImageCarousel from "../components/ui/TourImageCarousel";
 import {
   sendChatMessage,
@@ -17,13 +17,16 @@ interface ChatMessage {
     link: string;
     description?: string;
     imageUrls?: string[];
+    price?: string; // Thêm trường giá nếu API có trả về
   }[];
 }
 
 const ChatBox: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  if (location.pathname === "/login") return null;
+  
+  // Ẩn chatbox ở trang login/register nếu cần
+  if (["/login", "/register"].includes(location.pathname)) return null;
 
   const [isOpen, setIsOpen] = useState(false);
   const [hasGreeted, setHasGreeted] = useState(false);
@@ -32,81 +35,98 @@ const ChatBox: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // --- DRAG CHATBOX ---
-  const [position, setPosition] = useState({ x: 1450, y: 300 });
-  const dragOffset = useRef({ x: 0, y: 0 });
-  const dragging = useRef(false);
+  // --- STATE VỊ TRÍ CHAT WINDOW ---
+  // Mặc định là {0,0} -> sẽ dùng CSS bottom/right. Khi kéo sẽ cập nhật giá trị này.
+  const [windowPos, setWindowPos] = useState({ x: 0, y: 0 });
+  const windowDragOffset = useRef({ x: 0, y: 0 });
+  const isWindowDragging = useRef(false);
 
-  // --- DRAG CHAT ICON ---
-  const [iconPos, setIconPos] = useState({ x: 1840, y: 780 });
-  const iconDrag = useRef(false);
-  const iconOffset = useRef({ x: 0, y: 0 });
+  // --- STATE VỊ TRÍ ICON ---
+  // Mặc định là null -> dùng CSS bottom/right.
+  const [iconPos, setIconPos] = useState<{ x: number; y: number } | null>(null);
+  const iconDragOffset = useRef({ x: 0, y: 0 });
+  const isIconDragging = useRef(false);
 
-  // Scroll xuống cuối khi có message mới
+  // Auto scroll xuống cuối
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (isOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isOpen, loading]);
 
-  // --- DRAG CHATBOX EVENTS ---
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    dragging.current = true;
-    dragOffset.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
+  // --- LOGIC KÉO THẢ CỬA SỔ CHAT ---
+  const handleWindowMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    isWindowDragging.current = true;
+    
+    // Nếu cửa sổ chưa từng bị kéo (đang ở vị trí mặc định), lấy tọa độ hiện tại của nó
+    const currentX = windowPos.x !== 0 ? windowPos.x : e.currentTarget.parentElement?.getBoundingClientRect().left || 0;
+    const currentY = windowPos.y !== 0 ? windowPos.y : e.currentTarget.parentElement?.getBoundingClientRect().top || 0;
+
+    windowDragOffset.current = {
+      x: e.clientX - currentX,
+      y: e.clientY - currentY,
     };
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!dragging.current) return;
-    setPosition({
-      x: e.clientX - dragOffset.current.x,
-      y: e.clientY - dragOffset.current.y,
+  const handleWindowMouseMove = (e: MouseEvent) => {
+    if (!isWindowDragging.current) return;
+    setWindowPos({
+      x: e.clientX - windowDragOffset.current.x,
+      y: e.clientY - windowDragOffset.current.y,
     });
   };
 
-  const handleMouseUp = () => {
-    dragging.current = false;
+  const handleWindowMouseUp = () => {
+    isWindowDragging.current = false;
   };
 
-  // --- DRAG ICON EVENTS ---
-  const handleIconDown = (e: React.MouseEvent) => {
-    iconDrag.current = true;
-    iconOffset.current = {
-      x: e.clientX - iconPos.x,
-      y: e.clientY - iconPos.y,
+  // --- LOGIC KÉO THẢ ICON ---
+  const handleIconMouseDown = (e: React.MouseEvent) => {
+    // Chỉ bắt đầu kéo nếu không phải là click mở/đóng (chống rung)
+    isIconDragging.current = true;
+    
+    const target = e.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    
+    // Nếu iconPos là null (vị trí mặc định), lấy tọa độ thực tế từ DOM
+    const currentX = iconPos ? iconPos.x : rect.left;
+    const currentY = iconPos ? iconPos.y : rect.top;
+
+    iconDragOffset.current = {
+      x: e.clientX - currentX,
+      y: e.clientY - currentY,
     };
   };
 
-  const onIconMove = (e: MouseEvent) => {
-    if (!iconDrag.current) return;
+  const handleIconMouseMove = (e: MouseEvent) => {
+    if (!isIconDragging.current) return;
+    e.preventDefault(); // Ngăn chọn text khi kéo
     setIconPos({
-      x: e.clientX - iconOffset.current.x,
-      y: e.clientY - iconOffset.current.y,
+      x: e.clientX - iconDragOffset.current.x,
+      y: e.clientY - iconDragOffset.current.y,
     });
   };
 
-  const onIconUp = () => {
-    iconDrag.current = false;
+  const handleIconMouseUp = () => {
+    isIconDragging.current = false;
   };
 
   // --- GLOBAL LISTENERS ---
   useEffect(() => {
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-
-    window.addEventListener("mousemove", onIconMove);
-    window.addEventListener("mouseup", onIconUp);
+    window.addEventListener("mousemove", handleWindowMouseMove);
+    window.addEventListener("mouseup", handleWindowMouseUp);
+    window.addEventListener("mousemove", handleIconMouseMove);
+    window.addEventListener("mouseup", handleIconMouseUp);
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-
-      window.removeEventListener("mousemove", onIconMove);
-      window.removeEventListener("mouseup", onIconUp);
+      window.removeEventListener("mousemove", handleWindowMouseMove);
+      window.removeEventListener("mouseup", handleWindowMouseUp);
+      window.removeEventListener("mousemove", handleIconMouseMove);
+      window.removeEventListener("mouseup", handleIconMouseUp);
     };
-  }, []);
+  }, [iconPos, windowPos]); // Re-bind nếu state thay đổi (thực ra không cần thiết lắm với ref nhưng an toàn)
 
-  // --- SEND MESSAGE ---
+  // --- XỬ LÝ TIN NHẮN ---
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -117,69 +137,59 @@ const ChatBox: React.FC = () => {
 
     try {
       const reply = await sendChatMessage(input);
-      let botMsg: ChatMessage;
+let botMsg: ChatMessage;
 
-      // 1) TourSummary (1 tour)
-      if ("tourId" in reply && reply.summary) {
-        botMsg = {
-          sender: "bot",
-          text: "Đây là tour phù hợp nhất dành cho bạn:",
-          tours: [
-            {
-              title: reply.summary.name,
-              link: `/tours/${reply.tourId}`,
-              description: `Giá người lớn: ${reply.summary.priceAdult}
-Giá trẻ em: ${reply.summary.priceChild}
-Số ngày: ${reply.summary.days}`,
-              imageUrls: reply.summary.imageUrls,
-            },
-          ],
-        };
-      }
+// 1) TourSummary (1 tour)
+if ("tourId" in reply && reply.summary) {
+  botMsg = {
+    sender: "bot",
+    text: "Mình tìm thấy tour này hợp với bạn:",
+    tours: [
+      {
+        title: reply.summary.name,
+        link: `/tours/${reply.tourId}`,
+        description: `Thời gian: ${reply.summary.days} ngày`,
+        price: reply.summary.priceAdult.toString(),
+        imageUrls: reply.summary.imageUrls,
+      },
+    ],
+  };
+}
+// 2) ChatResponse
+else if ("answer" in reply) {
+  botMsg = { sender: "bot", text: reply.answer };
+}
+// fallback
+else {
+  botMsg = {
+    sender: "bot",
+    text: "Xin lỗi, mình chưa hiểu ý bạn lắm.",
+  };
+}
 
-      // 2) TourSummaryArray (NHIỀU TOUR)
-      else if ("summaryId" in reply && Array.isArray(reply.summaries)) {
-        botMsg = {
-          sender: "bot",
-          text: "Dưới đây là những tour nổi bật mà bạn có thể quan tâm:",
-          tours: reply.summaries.map((t) => ({
-            title: t.summary.name,
-            link: `/tours/${t.tourId}`,
-            description: `Giá người lớn: ${t.summary.priceAdult}
-Giá trẻ em: ${t.summary.priceChild}
-Số ngày: ${t.summary.days}`,
-            imageUrls: t.summary.imageUrls,
-          })),
-        };
-      }
+setMessages((prev) => [...prev, botMsg]);
 
-      // 3) ChatResponse (tin nhắn text)
-      else if ("answer" in reply) {
-        botMsg = { sender: "bot", text: reply.answer };
-      }
-
-      // 4) fallback
-      else {
-        botMsg = {
-          sender: "bot",
-          text: "Xin lỗi, tôi không hiểu phản hồi từ hệ thống.",
-        };
-      }
-
-      setMessages((prev) => [...prev, botMsg]);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        { sender: "bot", text: "Hệ thống đang bận, vui lòng thử lại sau." },
+      ]);
     } finally {
       setLoading(false);
     }
   };
 
   const toggleChat = () => {
+    // Check xem có phải đang kéo không để tránh click nhầm
+    if (isIconDragging.current) return;
+    
     setIsOpen((prev) => !prev);
-    if (!hasGreeted) {
+    if (!hasGreeted && !isOpen) {
       setMessages((prev) => [
         ...prev,
         {
           sender: "bot",
-          text: "Xin chào! 👋 Tôi là VietViVu Assistant.\nBạn muốn tôi giúp gì hôm nay?",
+          text: "Xin chào! 👋 Mình là trợ lý ảo VietViVu.\nMình có thể giúp bạn tìm tour du lịch nha!",
         },
       ]);
       setHasGreeted(true);
@@ -188,112 +198,138 @@ Số ngày: ${t.summary.days}`,
 
   return (
     <>
-      {/* Nút mở chat (drag được) */}
-      <button
-        onMouseDown={handleIconDown}
+      {/* --- NÚT ICON CHAT --- */}
+      <div
+        onMouseDown={handleIconMouseDown}
         onClick={toggleChat}
-        className="fixed bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl z-50 transition-transform hover:scale-110"
-        style={{
-          left: iconPos.x,
-          top: iconPos.y,
-          position: "fixed",
-        }}
+        className="fixed z-[9999] cursor-pointer touch-none"
+        style={
+          iconPos
+            ? { left: iconPos.x, top: iconPos.y } // Vị trí theo chuột (khi đã kéo)
+            : { bottom: "30px", right: "30px" }   // Vị trí mặc định (Góc phải dưới)
+        }
       >
-        {isOpen ? <X size={22} /> : <MessageCircle size={22} />}
-      </button>
+        <div className="bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white p-4 rounded-full shadow-lg shadow-blue-500/30 transition-transform hover:scale-105 active:scale-95 flex items-center justify-center">
+          {isOpen ? <Minimize2 size={24} /> : <MessageCircle size={28} />}
+        </div>
+        
+        {/* Badge thông báo giả lập (nếu chưa mở) */}
+        {!isOpen && !hasGreeted && (
+          <span className="absolute -top-1 -right-1 flex h-4 w-4">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white"></span>
+          </span>
+        )}
+      </div>
 
-      {/* Cửa sổ chat */}
+      {/* --- CỬA SỔ CHAT --- */}
       {isOpen && (
         <div
-          className="fixed bg-white shadow-2xl rounded-3xl border border-gray-200 flex flex-col z-50 select-none"
+          className="fixed flex flex-col z-[9998] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden font-sans"
           style={{
-            width: "380px",
-            height: "520px",
-            left: position.x,
-            top: position.y,
+            width: "350px",
+            height: "550px",
+            maxHeight: "80vh",
+            // Nếu windowPos = {0,0} thì neo theo vị trí mặc định (trên icon), ngược lại theo tọa độ
+            ...(windowPos.x === 0 && windowPos.y === 0
+              ? { bottom: "100px", right: "30px" }
+              : { left: windowPos.x, top: windowPos.y }),
           }}
         >
           {/* Header */}
           <div
-            onMouseDown={handleMouseDown}
-            className="p-3 border-b font-bold text-blue-600 bg-gradient-to-r from-blue-100 to-blue-50 rounded-t-3xl cursor-move flex justify-between items-center shadow-inner"
+            onMouseDown={handleWindowMouseDown}
+            className="p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex justify-between items-center cursor-move select-none"
           >
-            VietViVu Assistant 🧭
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="font-bold text-sm tracking-wide">VietViVu Support</span>
+            </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-gray-500 hover:text-red-500 transition-colors"
+              className="text-white/80 hover:text-white transition-colors"
             >
-              <X size={18} />
+              <X size={20} />
             </button>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
             {messages.map((msg, idx) => (
-              <div key={idx} className="flex flex-col">
+              <div
+                key={idx}
+                className={`flex flex-col ${
+                  msg.sender === "user" ? "items-end" : "items-start"
+                }`}
+              >
                 <div
-                  className={`p-3 rounded-2xl max-w-[80%] break-words shadow-sm ${
+                  className={`px-4 py-2.5 max-w-[85%] rounded-2xl text-sm leading-relaxed shadow-sm ${
                     msg.sender === "user"
-                      ? "ml-auto bg-blue-600 text-white"
-                      : "mr-auto bg-gray-200 text-gray-800"
+                      ? "bg-blue-600 text-white rounded-br-none"
+                      : "bg-white text-gray-800 border border-gray-100 rounded-tl-none"
                   }`}
                 >
-                  {msg.text && (
-                    <p className="whitespace-pre-line">{msg.text}</p>
-                  )}
+                  {msg.text && <p className="whitespace-pre-line">{msg.text}</p>}
+                </div>
 
-                  {/* TOUR + hình dạng carousel */}
-                  {msg.tours?.map((tour, i) => (
-                    <div key={i}>
+                {/* Hiển thị danh sách Tour (Nếu có) */}
+                {msg.tours && msg.tours.length > 0 && (
+                  <div className="mt-2 w-full pl-2 space-y-3">
+                    {msg.tours.map((tour, i) => (
                       <TourCard
+                        key={i}
                         title={tour.title}
                         description={tour.description}
                         link={tour.link}
-                        onClick={() => navigate(tour.link)}
+                        imageUrls={tour.imageUrls}
+                        // Nếu API chưa có rating/price thì component TourCard sẽ dùng default hoặc placeholder
+                        price={tour.price} 
+                        onClick={() => {
+                            // Đóng chat hoặc minimize khi click link
+                            navigate(tour.link);
+                        }}
                       />
-
-                      {tour.imageUrls && (
-                        <TourImageCarousel
-                          images={tour.imageUrls}
-                          onClick={() => navigate(tour.link)}
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
 
             {loading && (
-              <p className="text-gray-400 text-sm italic animate-pulse">
-                AI đang trả lời...
-              </p>
+              <div className="flex items-center gap-2 text-gray-400 text-xs ml-2">
+                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}/>
+                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}/>
+                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}/>
+              </div>
             )}
-
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <div className="p-3 border-t flex items-center gap-2 bg-white">
-            <input
-              className="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-              placeholder="Nhập yêu cầu..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-            />
-            <button
-              onClick={handleSend}
-              disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full"
-            >
-              <Send size={18} />
-            </button>
+          {/* Input Area */}
+          <div className="p-3 bg-white border-t border-gray-100">
+            <div className="flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2 border border-transparent focus-within:border-blue-300 focus-within:bg-white transition-all">
+              <input
+                className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400"
+                placeholder="Hỏi về tour Đà Lạt..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              />
+              <button
+                onClick={handleSend}
+                disabled={loading || !input.trim()}
+                className={`p-2 rounded-full transition-all ${
+                    input.trim() 
+                    ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md" 
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                <Send size={16} />
+              </button>
+            </div>
+            <div className="text-[10px] text-center text-gray-400 mt-2">
+                Được hỗ trợ bởi AI • Thông tin có thể cần kiểm chứng
+            </div>
           </div>
         </div>
       )}

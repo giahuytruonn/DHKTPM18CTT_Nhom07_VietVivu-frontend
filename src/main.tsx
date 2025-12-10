@@ -58,6 +58,7 @@ import AdminPromotionsPage from "./pages/AdminPromotionPage";
 import AddPromotionsPage from "./pages/AddPromotionPage";
 import ContactPage from "./pages/ContactPage";
 import MyReviewsPage from "./pages/MyReviewsPage";
+import ChatBox from "./pages/ChatBox";
 
 const queryClient = new QueryClient();
 
@@ -128,6 +129,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <div className="min-h-screen flex flex-col">
                 <Header />
                 <main className="flex-1 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+                  <ChatBox />
+                  
                   <Routes>
                     {/* Public Routes */}
                     <Route path="/" element={<Home />} />
