@@ -4,7 +4,7 @@ import {
   createPaymentLink,
   savePaymentSuccess,
 } from "../../services/payments.services";
-import { toast } from "sonner";
+import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
 type Booking = {
@@ -67,7 +67,7 @@ export default function PaymentStep({ booking, onPaid, onBack }: Props) {
         ...prev,
         CHECKOUT_URL: data.checkoutUrl,
         onSuccess: handleSuccess,
-        onCancel: () => toast.info("Hủy thanh toán!"),
+        onCancel: () => toast.error("Thanh toán bị hủy!"),
       }));
 
       setTimeout(() => setShowQR(true), 400);

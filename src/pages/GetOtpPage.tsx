@@ -14,8 +14,8 @@ const GetOtpPage: React.FC = () => {
       await forgotPassword({ email });
       toast.success("Đã gửi OTP");
       navigate("/confirm-otp", { state: { email } });
-    } catch {
-      toast.error("Không gửi được OTP");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message);
     }
   };
 

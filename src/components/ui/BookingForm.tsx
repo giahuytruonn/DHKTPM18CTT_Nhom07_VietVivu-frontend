@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { bookTour, type BookingRequest } from "../../services/booking.services";
-import { toast } from "sonner";
+import { toast } from "react-hot-toast";
 
 interface BookingFormProps {
   tourId: string;
@@ -45,9 +45,11 @@ export default function BookingForm({
       const res = await bookTour(form);
       toast.success("Đặt tour thành công!");
       onBooked(res);
-    } catch (err) {
-      toast.error("Lỗi khi đặt tour!");
-      console.error(err);
+    } catch (err: any) {
+      console.error("Error booking tour:", err);
+      toast.error(
+        err?.response?.data?.message || "Đặt tour thất bại. Vui lòng thử lại!"
+      );
     }
   };
 

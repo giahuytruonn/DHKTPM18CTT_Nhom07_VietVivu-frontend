@@ -78,8 +78,7 @@ const ChangePasswordPage: React.FC = () => {
       logout();
       navigate("/login", { replace: true });
     } catch (err: any) {
-      const srvMsg = err?.response?.data?.message;
-      toast.error(srvMsg || "Lỗi khi đổi mật khẩu. Vui lòng thử lại.");
+      toast.error(err?.response?.data?.message);
     } finally {
       setLoading(false);
     }
