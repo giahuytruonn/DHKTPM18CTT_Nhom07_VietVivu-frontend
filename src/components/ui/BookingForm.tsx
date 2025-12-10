@@ -9,6 +9,10 @@ interface BookingFormProps {
   onBooked: (data: any) => void;
 }
 
+// Regex patterns
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+const PHONE_REGEX = /^(0[3|5|7|8|9])+([0-9]{8})$/; // Định dạng SĐT Việt Nam 10 số
+
 export default function BookingForm({
   tourId,
   userId,
@@ -28,18 +32,64 @@ export default function BookingForm({
     promotionId: "",
   });
 
+  // State lưu lỗi validation
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
   const handleChange = (key: keyof BookingRequest, value: any) => {
     setForm({ ...form, [key]: value });
+    // Xóa lỗi khi người dùng bắt đầu nhập lại
+    if (errors[key]) {
+      setErrors({ ...errors, [key]: "" });
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+    let isValid = true;
+
+    // 1. Validate Số người lớn (Luôn bắt buộc)
+    if (form.numOfAdults < 1) {
+      newErrors.numOfAdults = "Cần ít nhất 1 người lớn";
+      isValid = false;
+    }
+
+    // 2. Validate thông tin cá nhân (Nếu chưa đăng nhập)
+    if (!authenticated) {
+      if (!form.name.trim()) {
+        newErrors.name = "Vui lòng nhập họ tên";
+        isValid = false;
+      }
+
+      if (!form.email.trim()) {
+        newErrors.email = "Vui lòng nhập email";
+        isValid = false;
+      } else if (!EMAIL_REGEX.test(form.email)) {
+        newErrors.email = "Email không đúng định dạng";
+        isValid = false;
+      }
+
+      if (!form.phone.trim()) {
+        newErrors.phone = "Vui lòng nhập số điện thoại";
+        isValid = false;
+      } else if (!PHONE_REGEX.test(form.phone)) {
+        newErrors.phone = "Số điện thoại không hợp lệ (10 số, đầu số VN)";
+        isValid = false;
+      }
+    }
+
+    setErrors(newErrors);
+    return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log("Submitting booking form:", form);
     e.preventDefault();
 
-    if (!authenticated && (!form.name || !form.email || !form.phone)) {
-      toast.error("Vui lòng nhập đầy đủ thông tin!");
+    if (!validateForm()) {
+      toast.error("Vui lòng kiểm tra lại thông tin!");
       return;
     }
+
+    console.log("Submitting booking form:", form);
 
     try {
       const res = await bookTour(form);
@@ -54,38 +104,74 @@ export default function BookingForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 ">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {!authenticated && (
         <>
-          <input
-            type="text"
-            placeholder="Họ tên"
-            value={form.name}
-            onChange={(e) => handleChange("name", e.target.value)}
-            className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500"
-          />
+          {/* Họ tên */}
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Họ tên <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Nguyễn Văn A"
+              value={form.name}
+              onChange={(e) => handleChange("name", e.target.value)}
+              className={`w-full border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 ${
+                errors.name ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {errors.name && (
+              <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+            )}
+          </div>
 
-          <input
-            type="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={(e) => handleChange("email", e.target.value)}
-            className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500"
-          />
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Email <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              placeholder="example@email.com"
+              value={form.email}
+              onChange={(e) => handleChange("email", e.target.value)}
+              className={`w-full border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 ${
+                errors.email ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {errors.email && (
+              <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+            )}
+          </div>
 
-          <input
-            type="tel"
-            placeholder="Số điện thoại"
-            value={form.phone}
-            onChange={(e) => handleChange("phone", e.target.value)}
-            className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500"
-          />
+          {/* Số điện thoại */}
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Số điện thoại <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              placeholder="0912345678"
+              value={form.phone}
+              onChange={(e) => handleChange("phone", e.target.value)}
+              className={`w-full border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 ${
+                errors.phone ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {errors.phone && (
+              <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+            )}
+          </div>
         </>
       )}
 
       <div className="grid grid-cols-2 gap-4">
+        {/* Số người lớn */}
         <div>
-          <label className="text-sm font-medium">Người lớn</label>
+          <label className="block text-sm font-medium mb-1">
+            Người lớn <span className="text-red-500">*</span>
+          </label>
           <input
             type="number"
             min={1}
@@ -93,12 +179,18 @@ export default function BookingForm({
             onChange={(e) =>
               handleChange("numOfAdults", Number(e.target.value))
             }
-            className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 w-full"
+            className={`w-full border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 ${
+              errors.numOfAdults ? "border-red-500" : "border-gray-300"
+            }`}
           />
+          {errors.numOfAdults && (
+            <p className="text-red-500 text-xs mt-1">{errors.numOfAdults}</p>
+          )}
         </div>
 
+        {/* Trẻ em */}
         <div>
-          <label className="text-sm font-medium">Trẻ em</label>
+          <label className="block text-sm font-medium mb-1">Trẻ em</label>
           <input
             type="number"
             min={0}
@@ -106,31 +198,38 @@ export default function BookingForm({
             onChange={(e) =>
               handleChange("numOfChildren", Number(e.target.value))
             }
-            className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 w-full"
+            className="w-full border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 border-gray-300"
           />
         </div>
       </div>
 
-      <input
-        type="text"
-        placeholder="Địa chỉ"
-        value={form.address}
-        onChange={(e) => handleChange("address", e.target.value)}
-        className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500"
-      />
+      {/* Địa chỉ */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Địa chỉ</label>
+        <input
+          type="text"
+          placeholder="Số nhà, đường, phường/xã..."
+          value={form.address}
+          onChange={(e) => handleChange("address", e.target.value)}
+          className="w-full border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 border-gray-300"
+        />
+      </div>
 
-      {/* ⭐ Thêm field mã giảm giá */}
-      <input
-        type="text"
-        placeholder="Mã khuyến mãi (nếu có)"
-        value={form.promotionId}
-        onChange={(e) => handleChange("promotionId", e.target.value)}
-        className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500"
-      />
+      {/* Mã giảm giá */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Mã khuyến mãi</label>
+        <input
+          type="text"
+          placeholder="Nhập mã nếu có"
+          value={form.promotionId}
+          onChange={(e) => handleChange("promotionId", e.target.value)}
+          className="w-full border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 border-gray-300"
+        />
+      </div>
 
       <button
         type="submit"
-        className="bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 shadow-md mt-2"
+        className="bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 shadow-md mt-2 transition-all"
       >
         Tiếp tục
       </button>

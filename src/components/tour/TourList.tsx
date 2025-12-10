@@ -5,7 +5,7 @@ import TourCard from "./TourCard";
 interface Props {
   tours: TourResponse[];
   isLoading: boolean;
-  isFetching?: boolean; // Thêm để xử lý khi đang fetch trang mới
+  isFetching?: boolean; 
 }
 
 const SkeletonItem = () => (

@@ -126,7 +126,7 @@ const CreateTourPage: React.FC = () => {
   const destinationRef = useRef<HTMLDivElement>(null);
   // Tính toán ngày tối thiểu (ngày mai)
   const minDate = new Date();
-  minDate.setDate(minDate.getDate() + 1);
+  minDate.setDate(minDate.getDate() + 4);
   const minDateString = minDate.toISOString().split('T')[0];
   // Helper function: Convert yyyy-mm-dd to dd/mm/yyyy for display
   const formatDateForDisplay = (dateStr: string) => {
@@ -324,7 +324,7 @@ const CreateTourPage: React.FC = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
   const handleChange = (field: keyof TourFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -620,7 +620,7 @@ const CreateTourPage: React.FC = () => {
                   )}
                 </div>
                 {errors.startDate && <p className="text-red-500 text-sm mt-1">{errors.startDate}</p>}
-                <p className="text-xs text-gray-500 mt-1">Tối thiểu từ ngày mai</p>
+                <p className="text-xs text-gray-500 mt-1">Tối thiểu sau 3 ngày từ ngày hiện tại</p>
               </div>
 
               <div>

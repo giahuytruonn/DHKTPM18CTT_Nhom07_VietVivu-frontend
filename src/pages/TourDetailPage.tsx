@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -23,7 +23,7 @@ import toast from "react-hot-toast";
 import { formatDateYMD } from "../utils/date";
 
 // --- IMPORT COMPONENT REVIEW MỚI ---
-import ReviewList from "../components/review/ReviewList"; 
+import ReviewList from "../components/review/ReviewList";
 
 const TourDetailPage: React.FC = () => {
   const { tourId } = useParams<{ tourId: string }>();
@@ -44,46 +44,128 @@ const TourDetailPage: React.FC = () => {
     enabled: !!tourId,
   });
 
-  // CẬP NHẬT: Thêm logic tính toán giống TourCard
+  // ⚡ LOCAL STATE - khởi tạo từ tour data
+  const [localIsFavorited, setLocalIsFavorited] = useState(tour?.isFavorited || false);
+  const [localFavoriteCount, setLocalFavoriteCount] = useState(tour?.favoriteCount || 0);
+  const [localTotalBookings, setLocalTotalBookings] = useState(tour?.totalBookings || 0);
+
+  // ⚡ Đồng bộ local state khi tour data thay đổi
+  useEffect(() => {
+    if (tour) {
+      setLocalIsFavorited(tour.isFavorited);
+      setLocalFavoriteCount(tour.favoriteCount);
+      setLocalTotalBookings(tour.totalBookings || 0);
+    }
+  }, [tour]);
+
+  // CẬP NHẬT: Thêm logic tính toán rating
   const rating = tour
     ? tour.favoriteCount > 50
       ? 4.9
       : tour.favoriteCount > 20
-      ? 4.7
-      : 4.5
+        ? 4.7
+        : 4.5
     : 4.5;
-  const reviews = tour ? tour.totalBookings || 0 : 0;
 
   const toggleFavoriteMutation = useMutation({
     mutationFn: async () => {
       if (!tourId) return;
-      if (tour?.isFavorited) {
+      if (localIsFavorited) {
         await removeFromFavorites(tourId);
       } else {
         await addToFavorites(tourId);
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tour", tourId] });
-      queryClient.invalidateQueries({ queryKey: ["allTours"] });
-      queryClient.invalidateQueries({ queryKey: ["favoriteTours"] });
-      toast.success(
-        tour?.isFavorited ? "Đã xóa khỏi yêu thích" : "Đã thêm vào yêu thích"
-      );
+    onMutate: async () => {
+      // ⚡ CẬP NHẬT LOCAL STATE NGAY LẬP TỨC
+      setLocalIsFavorited(!localIsFavorited);
+      setLocalFavoriteCount(prev => localIsFavorited ? prev - 1 : prev + 1);
+
+      // Cancel queries
+      await queryClient.cancelQueries({ queryKey: ["tour", tourId] });
+      await queryClient.cancelQueries({ queryKey: ["allTours"] });
+      await queryClient.cancelQueries({ queryKey: ["favoriteTours"] });
+
+      // Lưu snapshot
+      const previousTour = queryClient.getQueryData(["tour", tourId]);
+      const previousAllTours = queryClient.getQueryData(["allTours"]);
+      const previousFavorites = queryClient.getQueryData(["favoriteTours"]);
+
+      // Cập nhật cache cho tour detail
+      queryClient.setQueryData(["tour", tourId], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          isFavorited: !localIsFavorited,
+          favoriteCount: localIsFavorited ? old.favoriteCount - 1 : old.favoriteCount + 1,
+        };
+      });
+
+      // Cập nhật cache cho allTours (structure PageResponse)
+      queryClient.setQueryData(["allTours"], (old: any) => {
+        if (!old) return old;
+
+        // Nếu có items trực tiếp (PageResponse)
+        if (old.items) {
+          return {
+            ...old,
+            items: old.items.map((t: any) =>
+              t.tourId === tourId
+                ? {
+                  ...t,
+                  isFavorited: !localIsFavorited,
+                  favoriteCount: localIsFavorited
+                    ? t.favoriteCount - 1
+                    : t.favoriteCount + 1,
+                }
+                : t
+            ),
+          };
+        }
+
+        return old;
+      });
+
+      return { previousTour, previousAllTours, previousFavorites };
     },
-    onError: (error: unknown) => {
-      const status = (error as { response?: { status?: number } }).response
-        ?.status;
+    onError: (error: unknown, _, context) => {
+      // ⚡ ROLLBACK LOCAL STATE
+      if (tour) {
+        setLocalIsFavorited(tour.isFavorited);
+        setLocalFavoriteCount(tour.favoriteCount);
+      }
+
+      // Rollback cache
+      if (context?.previousTour) {
+        queryClient.setQueryData(["tour", tourId], context.previousTour);
+      }
+      if (context?.previousAllTours) {
+        queryClient.setQueryData(["allTours"], context.previousAllTours);
+      }
+      if (context?.previousFavorites) {
+        queryClient.setQueryData(["favoriteTours"], context.previousFavorites);
+      }
+
+      const status = (error as { response?: { status?: number } }).response?.status;
       if (status === 401) {
         toast.error("Vui lòng đăng nhập để thêm yêu thích");
         navigate("/login");
         return;
       }
-      toast.error(
-        (error as { response?: { data?: { message?: string } } }).response?.data
-          ?.message ||
-          (error as Error | undefined)?.message ||
-          "Có lỗi xảy ra"
+      const message =
+        (error as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        (error as Error | undefined)?.message ||
+        "Có lỗi xảy ra";
+      toast.error(`Lỗi: ${message}`);
+    },
+    onSuccess: () => {
+      // Refetch để đảm bảo đồng bộ
+      queryClient.invalidateQueries({ queryKey: ["tour", tourId] });
+      queryClient.invalidateQueries({ queryKey: ["allTours"] });
+      queryClient.invalidateQueries({ queryKey: ["favoriteTours"] });
+
+      toast.success(
+        localIsFavorited ? "Đã thêm vào yêu thích" : "Đã xóa khỏi yêu thích"
       );
     },
   });
@@ -154,7 +236,7 @@ const TourDetailPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Container chính */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
         {/* Nút Back */}
         <button
           onClick={() => navigate(-1)}
@@ -186,16 +268,15 @@ const TourDetailPage: React.FC = () => {
               >
                 <ChevronRight className="text-gray-800" size={24} />
               </button>
-              
+
               {/* Dots Indicator */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                 {tour.imageUrls.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setCurrentImageIndex(idx)}
-                    className={`w-2.5 h-2.5 rounded-full transition-all ${
-                      idx === currentImageIndex ? "bg-white w-8" : "bg-white/50 hover:bg-white/80"
-                    }`}
+                    className={`w-2.5 h-2.5 rounded-full transition-all ${idx === currentImageIndex ? "bg-white w-8" : "bg-white/50 hover:bg-white/80"
+                      }`}
                   />
                 ))}
               </div>
@@ -209,11 +290,10 @@ const TourDetailPage: React.FC = () => {
               className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-full hover:bg-white transition-all shadow-lg disabled:opacity-50 z-10"
             >
               <Heart
-                className={`w-6 h-6 transition-colors ${
-                  tour.isFavorited
+                className={`w-6 h-6 transition-colors ${localIsFavorited
                     ? "text-red-500 fill-red-500"
                     : "text-indigo-600"
-                }`}
+                  }`}
               />
             </button>
           )}
@@ -221,10 +301,10 @@ const TourDetailPage: React.FC = () => {
 
         {/* Layout Chính: 2 Cột */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Cột Trái: Thông tin chi tiết */}
           <div className="lg:col-span-2 space-y-8">
-            
+
             {/* Header Info */}
             <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-4 gap-4">
@@ -232,36 +312,32 @@ const TourDetailPage: React.FC = () => {
                   {tour.title}
                 </h1>
                 <span
-                  className={`px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap ${
-                    tour.tourStatus === "OPEN_BOOKING"
+                  className={`px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap ${tour.tourStatus === "OPEN_BOOKING"
                       ? "bg-green-100 text-green-700"
                       : tour.tourStatus === "IN_PROGRESS"
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
                 >
                   {tour.tourStatus === "OPEN_BOOKING"
                     ? "Đang mở booking"
                     : tour.tourStatus === "IN_PROGRESS"
-                    ? "Đang thực hiện"
-                    : "Đã hoàn thành"}
+                      ? "Đang thực hiện"
+                      : "Đã hoàn thành"}
                 </span>
               </div>
 
-              {/* Stats Bar */}
+              {/* Stats Bar - HIỂN THỊ LOCAL STATE */}
               <div className="flex flex-wrap items-center gap-6 text-gray-600 mb-8 pb-6 border-b border-gray-100">
                 <div className="flex items-center gap-2">
-                  <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                  <span className="font-bold text-gray-900">{rating.toFixed(1)}</span>
-                  <span className="text-sm">({rating} đánh giá)</span>
+                  <Users className="w-5 h-5 text-indigo-600" />
+                  <span className="font-bold text-gray-900">{localTotalBookings}</span>
+                  <span className="text-sm">lượt đặt</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Heart className="w-5 h-5 text-red-500" />
-                  <span>{tour.favoriteCount} yêu thích</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-indigo-600" />
-                  <span>{tour.totalBookings} lượt đặt</span>
+                  <span className="font-bold text-gray-900">{localFavoriteCount}</span>
+                  <span className="text-sm">yêu thích</span>
                 </div>
               </div>
 
@@ -301,15 +377,14 @@ const TourDetailPage: React.FC = () => {
                   <div>
                     <p className="text-xs text-gray-500 uppercase font-semibold">Chỗ còn nhận</p>
                     <p className="font-semibold text-gray-900">
-                      {tour.quantity} / {tour.initialQuantity}
+                      {tour.quantity}
                     </p>
                   </div>
                 </div>
-                {/* THÊM MỚI: Thêm số khách tối đa */}
                 <div className="flex items-center gap-3 p-4 bg-yellow-50 rounded-xl">
                   <Users className="w-6 h-6 text-yellow-600" />
                   <div>
-                    <p className="text-xs text-gray-500">Số khách tối đa</p>
+                    <p className="text-xs text-gray-500 uppercase font-semibold">Số khách tối đa</p>
                     <p className="font-semibold text-gray-900">
                       {tour.initialQuantity} khách
                     </p>
@@ -334,7 +409,7 @@ const TourDetailPage: React.FC = () => {
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
                   Lịch trình tour
                 </h2>
-                <div className="space-y-6 relative before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-0.5 before:bg-indigo-100">
+                <div className="space-y-6">
                   {tour.itinerary.map((item, index) => (
                     <div key={index} className="flex gap-4">
                       <div className="shrink-0 w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">
@@ -349,15 +424,12 @@ const TourDetailPage: React.FC = () => {
               </div>
             )}
 
-            {/* ============================================================ */}
-            {/* === PHẦN REVIEW (ĐÁNH GIÁ) === */}
-            {/* ============================================================ */}
+            {/* Review Section */}
             <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                    Đánh giá từ khách hàng
-                </h2>
-                {/* Gọi Component ReviewList tại đây */}
-                <ReviewList tourId={tourId!} />
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                Đánh giá từ khách hàng
+              </h2>
+              <ReviewList tourId={tourId!} />
             </div>
 
           </div>
@@ -399,7 +471,7 @@ const TourDetailPage: React.FC = () => {
               {tour.availability && tour.tourStatus === "OPEN_BOOKING" ? (
                 <button
                   onClick={() => navigate(`/booking/${tourId}`)}
-                  className="w-full bg-linear-to-r from-indigo-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
+                  className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
                 >
                   Đặt Tour Ngay
                 </button>
@@ -408,7 +480,7 @@ const TourDetailPage: React.FC = () => {
                   disabled
                   className="w-full bg-gray-300 text-gray-500 py-4 rounded-xl font-bold text-lg cursor-not-allowed"
                 >
-                  {tour.tourStatus === "IN_PROGRESS" ? "Đang diễn ra" : "Tạm ngưng nhận khách"}
+                  {tour.tourStatus === "IN_PROGRESS" ? "Đang diễn ra" : "Đã hoàn thành"}
                 </button>
               )}
 

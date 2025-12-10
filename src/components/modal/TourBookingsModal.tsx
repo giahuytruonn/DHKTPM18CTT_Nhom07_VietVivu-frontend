@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getTourBookings } from "../../services/booking.services";
-import { X, User, Mail, Phone, MapPin, Calendar, DollarSign, Users } from "lucide-react";
+import { X, User, Mail, Phone, MapPin, Calendar, DollarSign, Users, Filter } from "lucide-react";
 import { formatDateYMD } from "../../utils/date";
 
 interface TourBookingsModalProps {
@@ -11,35 +11,50 @@ interface TourBookingsModalProps {
 }
 
 const TourBookingsModal: React.FC<TourBookingsModalProps> = ({ tourId, tourTitle, onClose }) => {
+    const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
+
     const { data: bookings, isLoading } = useQuery({
         queryKey: ["tourBookings", tourId],
         queryFn: () => getTourBookings(tourId),
     });
 
+    const statusOptions = [
+        { value: "ALL", label: "Tất cả", color: "bg-gray-100 text-gray-800" },
+        { value: "PENDING", label: "Chưa thanh toán", color: "bg-yellow-100 text-yellow-800" },
+        { value: "CONFIRMED", label: "Đã thanh toán", color: "bg-green-100 text-green-800" },
+        { value: "CANCELLED", label: "Đã hủy", color: "bg-red-100 text-red-800" },
+        { value: "COMPLETED", label: "Hoàn thành", color: "bg-blue-100 text-blue-800" },
+        { value: "CONFIRMED_CHANGE", label: "Đã đổi tour", color: "bg-purple-100 text-purple-800" },
+        { value: "DENIED_CANCELLATION", label: "Từ chối hủy", color: "bg-orange-100 text-orange-800" },
+        { value: "DENIED_CHANGE", label: "Từ chối đổi", color: "bg-pink-100 text-pink-800" },
+        { value: "PENDING_CANCELLATION", label: "Chờ xử lý hủy", color: "bg-yellow-100 text-yellow-800" },
+        { value: "PENDING_CHANGE", label: "Chờ xử lý đổi", color: "bg-yellow-100 text-yellow-800" },
+    ];
+
+    // Lọc bookings theo status
+    const filteredBookings = useMemo(() => {
+        if (!bookings) return [];
+        if (selectedStatus === "ALL") return bookings;
+        return bookings.filter(booking => booking.bookingStatus === selectedStatus);
+    }, [bookings, selectedStatus]);
+
+    // Đếm số lượng theo từng status
+    const statusCounts = useMemo(() => {
+        if (!bookings) return {};
+        return bookings.reduce((acc, booking) => {
+            acc[booking.bookingStatus] = (acc[booking.bookingStatus] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+    }, [bookings]);
+
     const getStatusColor = (status: string) => {
-        const statusColors: Record<string, string> = {
-            PENDING: "bg-yellow-100 text-yellow-800",
-            CONFIRMED: "bg-green-100 text-green-800",
-            CANCELLED: "bg-red-100 text-red-800",
-            COMPLETED: "bg-blue-100 text-blue-800",
-            CONFIRMED_CHANGE: "bg-purple-100 text-purple-800",
-            DENIED_CANCELLATION: "bg-orange-100 text-orange-800",
-            DENIED_CHANGE: "bg-pink-100 text-pink-800",
-        };
-        return statusColors[status] || "bg-gray-100 text-gray-800";
+        const option = statusOptions.find(opt => opt.value === status);
+        return option?.color || "bg-gray-100 text-gray-800";
     };
 
     const getStatusLabel = (status: string) => {
-        const statusLabels: Record<string, string> = {
-            PENDING: "Chờ xác nhận",
-            CONFIRMED: "Đã xác nhận",
-            CANCELLED: "Đã hủy",
-            COMPLETED: "Hoàn thành",
-            CONFIRMED_CHANGE: "Đã xác nhận thay đổi",
-            DENIED_CANCELLATION: "Từ chối hủy",
-            DENIED_CHANGE: "Từ chối thay đổi",
-        };
-        return statusLabels[status] || status;
+        const option = statusOptions.find(opt => opt.value === status);
+        return option?.label || status;
     };
 
     return (
@@ -61,19 +76,63 @@ const TourBookingsModal: React.FC<TourBookingsModalProps> = ({ tourId, tourTitle
                     </div>
                 </div>
 
+                {/* Filter Bar */}
+                <div className="bg-gray-50 border-b border-gray-200 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Filter size={18} className="text-gray-600" />
+                        <span className="text-sm font-semibold text-gray-700">Lọc theo trạng thái:</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {statusOptions.map((option) => {
+                            const count = option.value === "ALL"
+                                ? bookings?.length || 0
+                                : statusCounts[option.value] || 0;
+
+                            return (
+                                <button
+                                    key={option.value}
+                                    onClick={() => setSelectedStatus(option.value)}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedStatus === option.value
+                                            ? `${option.color} ring-2 ring-offset-2 ring-indigo-500 shadow-md scale-105`
+                                            : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                                        }`}
+                                >
+                                    {option.label}
+                                    <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${selectedStatus === option.value
+                                            ? "bg-white/40"
+                                            : "bg-gray-100"
+                                        }`}>
+                                        {count}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
                 {/* Content */}
-                <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                <div className="p-6 overflow-y-auto max-h-[calc(90vh-240px)]">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-12">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
                         </div>
-                    ) : bookings && bookings.length > 0 ? (
+                    ) : filteredBookings.length > 0 ? (
                         <div className="space-y-4">
-                            <p className="text-gray-600 mb-4">
-                                Tổng cộng: <span className="font-semibold text-gray-900">{bookings.length}</span> booking
-                            </p>
+                            <div className="flex items-center justify-between mb-4">
+                                <p className="text-gray-600">
+                                    Hiển thị: <span className="font-semibold text-gray-900">{filteredBookings.length}</span> / {bookings?.length || 0} booking
+                                </p>
+                                {selectedStatus !== "ALL" && (
+                                    <button
+                                        onClick={() => setSelectedStatus("ALL")}
+                                        className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                                    >
+                                        Xóa bộ lọc
+                                    </button>
+                                )}
+                            </div>
 
-                            {bookings.map((booking) => (
+                            {filteredBookings.map((booking) => (
                                 <div
                                     key={booking.bookingId}
                                     className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow"
@@ -145,7 +204,7 @@ const TourBookingsModal: React.FC<TourBookingsModalProps> = ({ tourId, tourTitle
                                             </div>
 
                                             <div className="flex items-start gap-3">
-                                                <User size={18} className="text-gray-400 mt-0.5" />
+                                                <Users size={18} className="text-gray-400 mt-0.5" />
                                                 <div>
                                                     <p className="text-xs text-gray-500">Số lượng</p>
                                                     <p className="text-gray-900">
@@ -188,7 +247,20 @@ const TourBookingsModal: React.FC<TourBookingsModalProps> = ({ tourId, tourTitle
                     ) : (
                         <div className="text-center py-12">
                             <Users size={48} className="mx-auto text-gray-300 mb-4" />
-                            <p className="text-gray-500">Chưa có booking nào cho tour này</p>
+                            <p className="text-gray-500">
+                                {selectedStatus === "ALL"
+                                    ? "Chưa có booking nào cho tour này"
+                                    : `Không có booking nào ở trạng thái "${getStatusLabel(selectedStatus)}"`
+                                }
+                            </p>
+                            {selectedStatus !== "ALL" && (
+                                <button
+                                    onClick={() => setSelectedStatus("ALL")}
+                                    className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                                >
+                                    Xem tất cả
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>

@@ -11,8 +11,8 @@ import {
   CircularProgress,
   Stack,
   Paper,
-  Alert, // <--- 1. Import Alert
-  Collapse, // <--- 2. Import Collapse để hiển thị mượt mà hơn
+  Alert,
+  Collapse,
 } from "@mui/material";
 import { Send, Mail, MapPin } from "lucide-react";
 import { toast } from "sonner";
@@ -20,7 +20,6 @@ import { sendContactRequest } from "../services/contact.service";
 
 const ContactPage = () => {
   const [loading, setLoading] = useState(false);
-  // 3. State quản lý thông báo hiển thị trên Form
   const [notification, setNotification] = useState<{
     type: "success" | "error";
     message: string;
@@ -42,16 +41,14 @@ const ContactPage = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    // Tắt thông báo khi người dùng bắt đầu nhập lại
     if (notification) setNotification(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setNotification(null); // Reset thông báo cũ
+    setNotification(null);
 
     if (!formData.customerEmail || !formData.message) {
-      // Hiển thị Alert lỗi validation
       setNotification({
         type: "error",
         message: "Vui lòng điền đầy đủ Email và Nội dung câu hỏi.",
@@ -64,7 +61,6 @@ const ContactPage = () => {
     try {
       await sendContactRequest(formData);
       
-      // 4. Set thông báo thành công
       setNotification({
         type: "success",
         message: "Đã gửi yêu cầu thành công! Ban tư vấn sẽ liên hệ lại sớm.",
@@ -78,7 +74,6 @@ const ContactPage = () => {
         message: "",
       });
     } catch (error) {
-      // 5. Set thông báo thất bại
       setNotification({
         type: "error",
         message: "Gửi thất bại. Vui lòng kiểm tra kết nối và thử lại.",
@@ -108,7 +103,7 @@ const ContactPage = () => {
             alignItems: "start",
           }}
         >
-          {/* Cột trái: Thông tin & Lời chào (GIỮ NGUYÊN) */}
+          {/* Cột trái: Thông tin & Lời chào */}
           <Box>
             <Typography variant="overline" sx={{ color: "#2563EB", fontWeight: 700, letterSpacing: "0.1em", mb: 1, display: "block" }}>
               LIÊN HỆ VỚI CHÚNG TÔI
@@ -174,8 +169,10 @@ const ContactPage = () => {
                       InputProps={{ sx: { borderRadius: "12px", backgroundColor: "#F8FAFC" } }}
                       sx={{ "& fieldset": { borderColor: "#E2E8F0" } }}
                     />
+                    
+                    {/* ĐÃ SỬA: Dùng dấu * mặc định và tô đỏ bằng sx */}
                     <TextField
-                      label="Email liên hệ *"
+                      label="Email liên hệ"
                       name="customerEmail"
                       type="email"
                       required
@@ -185,7 +182,11 @@ const ContactPage = () => {
                       variant="outlined"
                       placeholder="email@example.com"
                       InputProps={{ sx: { borderRadius: "12px", backgroundColor: "#F8FAFC" } }}
-                      sx={{ "& fieldset": { borderColor: "#E2E8F0" } }}
+                      sx={{ 
+                        "& fieldset": { borderColor: "#E2E8F0" },
+                        // Dòng này sẽ tô đỏ dấu * bắt buộc
+                        "& .MuiFormLabel-asterisk": { color: "red" } 
+                      }}
                     />
                   </Box>
 
@@ -207,8 +208,9 @@ const ContactPage = () => {
                     ))}
                   </TextField>
 
+                  {/* ĐÃ SỬA: Dùng dấu * mặc định và tô đỏ bằng sx */}
                   <TextField
-                    label="Nội dung câu hỏi *"
+                    label="Nội dung câu hỏi"
                     name="message"
                     multiline
                     rows={5}
@@ -219,10 +221,13 @@ const ContactPage = () => {
                     variant="outlined"
                     placeholder="Hãy mô tả chi tiết vấn đề của bạn để chúng tôi hỗ trợ tốt nhất..."
                     InputProps={{ sx: { borderRadius: "12px", backgroundColor: "#F8FAFC" } }}
-                    sx={{ "& fieldset": { borderColor: "#E2E8F0" } }}
+                    sx={{ 
+                        "& fieldset": { borderColor: "#E2E8F0" },
+                        // Dòng này sẽ tô đỏ dấu * bắt buộc
+                        "& .MuiFormLabel-asterisk": { color: "red" } 
+                    }}
                   />
 
-                  {/* 6. Hiển thị thông báo Alert tại đây */}
                   <Collapse in={!!notification}>
                     {notification && (
                       <Alert 
