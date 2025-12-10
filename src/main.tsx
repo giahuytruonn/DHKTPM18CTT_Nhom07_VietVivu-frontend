@@ -30,6 +30,7 @@ import EditTourPage from "./pages/EditTourPage";
 import AdminStatisticsPage from "./pages/AdminStatisticsPage";
 import AdminUsersPage from "./pages/AdminUserPage";
 import AdminVideoManagement from "./pages/AdminVideoManagement";
+import AdminContactManagement from "./pages/AdminContactManagement";
 
 import "./index.css";
 import Header from "./components/layout/Header";
@@ -58,7 +59,7 @@ import AdminPromotionsPage from "./pages/AdminPromotionPage";
 import AddPromotionsPage from "./pages/AddPromotionPage";
 import ContactPage from "./pages/ContactPage";
 import MyReviewsPage from "./pages/MyReviewsPage";
-import ChatBox from "./pages/ChatBox";
+// import ChatBox from "./pages/ChatBox";
 
 const queryClient = new QueryClient();
 
@@ -129,8 +130,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <div className="min-h-screen flex flex-col">
                 <Header />
                 <main className="flex-1 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
-                  <ChatBox />
-                  
                   <Routes>
                     {/* Public Routes */}
                     <Route path="/" element={<Home />} />
@@ -271,6 +270,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="promotions/create" element={<AddPromotionsPage />} />
             <Route path="tours/edit/:tourId" element={<EditTourPage />} />
             <Route path="videos" element={<AdminVideoManagement />} />
+            <Route path="contacts" element={<AdminContactManagement />} />
             <Route path="users" element={<AdminUsersPage />} />
 
             <Route

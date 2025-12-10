@@ -15,6 +15,7 @@ import {
   DollarSign,
   FileText,
   LucideVideo,
+  Contact,
 } from "lucide-react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useUser } from "../../hooks/useUser";
@@ -53,6 +54,11 @@ const AdminLayout: React.FC = () => {
       title: "Thêm Tour",
       icon: PlusCircle,
       path: "/admin/tours/create",
+    },
+    {
+      title: "Quản lý Contact",
+      icon: Contact,
+      path: "/admin/contacts",
     },
     {
       title: "Người dùng",

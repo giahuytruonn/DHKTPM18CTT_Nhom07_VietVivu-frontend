@@ -35,7 +35,8 @@ const localGuides = [
     rating: 5,
     reviews: 124,
     languages: ["Tiếng Việt", "English", "Français"],
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
+    avatar:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
     tours: 15,
     email: "chuc.nguyen@vietvivu.com",
     phone: "+84 905 123 456",
@@ -49,7 +50,8 @@ const localGuides = [
     rating: 5,
     reviews: 98,
     languages: ["Tiếng Việt", "English", "Japanese"],
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400",
+    avatar:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400",
     tours: 12,
     email: "duy.tran@vietvivu.com",
     phone: "+84 912 345 678",
@@ -63,7 +65,8 @@ const localGuides = [
     rating: 5,
     reviews: 156,
     languages: ["Tiếng Việt", "English", "Korean"],
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400",
+    avatar:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400",
     tours: 18,
     email: "thaiduy@vietvivu.com",
     phone: "+84 908 765 432",
@@ -77,7 +80,8 @@ const localGuides = [
     rating: 4.9,
     reviews: 87,
     languages: ["Tiếng Việt", "English", "Chinese"],
-    avatar: "https://raw.githubusercontent.com/giahuytruonn/giahuytruonn/refs/heads/main/assets/giahuytruonn.jpg",
+    avatar:
+      "https://raw.githubusercontent.com/giahuytruonn/giahuytruonn/refs/heads/main/assets/giahuytruonn.jpg",
     tours: 10,
     email: "giahuy@vietvivu.com",
     phone: "+84 903 456 789",
@@ -91,7 +95,8 @@ const localGuides = [
     rating: 5,
     reviews: 124,
     languages: ["Tiếng Việt", "English", "Français"],
-    avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400",
+    avatar:
+      "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400",
     tours: 15,
     email: "thanhhuy@vietvivu.com",
     phone: "+84 907 888 999",
@@ -106,8 +111,10 @@ const blogPosts = [
     id: 1,
     date: "28/10/2025",
     title: "5 điểm đến ít người biết ở Hà Nội",
-    excerpt: "Hà Nội không chỉ có Hồ Gươm, Văn Miếu... Hãy cùng khám phá những địa điểm ẩn mình đầy thú vị!",
-    image: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/23/98/95/a0/hidden-gem-cafe-the-best.jpg?w=900&h=500&s=1",
+    excerpt:
+      "Hà Nội không chỉ có Hồ Gươm, Văn Miếu... Hãy cùng khám phá những địa điểm ẩn mình đầy thú vị!",
+    image:
+      "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/23/98/95/a0/hidden-gem-cafe-the-best.jpg?w=900&h=500&s=1",
     author: "Nguyễn Văn A",
     category: "Khám phá",
     readTime: "5 phút",
@@ -116,8 +123,10 @@ const blogPosts = [
     id: 2,
     date: "14/10/2025",
     title: "Tại sao nên đi tour riêng?",
-    excerpt: "Trải nghiệm chân thực, linh hoạt và cá nhân hóa - đó là lý do bạn nên chọn tour riêng!",
-    image: "https://luxtraveldmc.com/blog/wp-content/uploads/2019/04/Benefits-of-Private-tour-to-Vietnam-and-Cambodia-2-e1555400956433.jpg",
+    excerpt:
+      "Trải nghiệm chân thực, linh hoạt và cá nhân hóa - đó là lý do bạn nên chọn tour riêng!",
+    image:
+      "https://luxtraveldmc.com/blog/wp-content/uploads/2019/04/Benefits-of-Private-tour-to-Vietnam-and-Cambodia-2-e1555400956433.jpg",
     author: "Trần Thị B",
     category: "Tips & Tricks",
     readTime: "7 phút",
@@ -126,7 +135,8 @@ const blogPosts = [
     id: 3,
     date: "01/10/2025",
     title: "Khám phá ẩm thực Huế - Cố đô ngàn năm",
-    excerpt: "Từ bún bò Huế đến cơm hến, bánh bèo... Huế là thiên đường của những tín đồ ẩm thực!",
+    excerpt:
+      "Từ bún bò Huế đến cơm hến, bánh bèo... Huế là thiên đường của những tín đồ ẩm thực!",
     image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800",
     author: "Lê Văn C",
     category: "Ẩm thực",
@@ -170,70 +180,84 @@ const SkeletonTour = () => (
 );
 
 export default function Home() {
-
   const navigate = useNavigate();
 
-  const skeletonDestinations = useMemo(() =>
-    Array(12).fill(0).map((_, i) => <SkeletonDestination key={i} />),
+  const skeletonDestinations = useMemo(
+    () =>
+      Array(12)
+        .fill(0)
+        .map((_, i) => <SkeletonDestination key={i} />),
     []
   );
 
-  const skeletonTours = useMemo(() =>
-    Array(3).fill(0).map((_, i) => <SkeletonTour key={i} />),
+  const skeletonTours = useMemo(
+    () =>
+      Array(3)
+        .fill(0)
+        .map((_, i) => <SkeletonTour key={i} />),
     []
   );
 
+  const featuresData = useMemo(
+    () => [
+      {
+        icon: Users,
+        title: "Hướng dẫn viên địa phương",
+        desc: "Người bản địa am hiểu, nhiệt tình",
+      },
+      {
+        icon: Shield,
+        title: "Tour riêng tư",
+        desc: "Chỉ bạn và nhóm của bạn",
+      },
+      {
+        icon: Clock,
+        title: "Linh hoạt hủy",
+        desc: "Hủy miễn phí trước 24h",
+      },
+      {
+        icon: Star,
+        title: "Hỗ trợ 24/7",
+        desc: "Luôn sẵn sàng giúp bạn",
+      },
+    ],
+    []
+  );
 
-  const featuresData = useMemo(() => [
-    {
-      icon: Users,
-      title: "Hướng dẫn viên địa phương",
-      desc: "Người bản địa am hiểu, nhiệt tình",
-    },
-    {
-      icon: Shield,
-      title: "Tour riêng tư",
-      desc: "Chỉ bạn và nhóm của bạn",
-    },
-    {
-      icon: Clock,
-      title: "Linh hoạt hủy",
-      desc: "Hủy miễn phí trước 24h",
-    },
-    {
-      icon: Star,
-      title: "Hỗ trợ 24/7",
-      desc: "Luôn sẵn sàng giúp bạn",
-    },
-  ], []);
-
-  const statsData = useMemo(() => [
-    { value: "500+", label: "Tour đã tổ chức" },
-    { value: "4.9★", label: "Đánh giá trung bình" },
-    { value: "10k+", label: "Du khách hài lòng" },
-    { value: "24/7", label: "Hỗ trợ khách hàng" },
-  ], []);
+  const statsData = useMemo(
+    () => [
+      { value: "500+", label: "Tour đã tổ chức" },
+      { value: "4.9★", label: "Đánh giá trung bình" },
+      { value: "10k+", label: "Du khách hài lòng" },
+      { value: "24/7", label: "Hỗ trợ khách hàng" },
+    ],
+    []
+  );
 
   const handleNavigateToTours = useCallback(() => {
-    navigate('/tours');
+    navigate("/tours");
   }, [navigate]);
 
   const handleNavigateToGuides = useCallback(() => {
-    navigate('/guides');
+    navigate("/guides");
   }, [navigate]);
 
-  const handleToggleFavorite = useCallback((e: React.MouseEvent, itemId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // Implement favorite logic here
-    console.log('Toggle favorite:', itemId);
-  }, []);
+  const handleToggleFavorite = useCallback(
+    (e: React.MouseEvent, itemId: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Implement favorite logic here
+      console.log("Toggle favorite:", itemId);
+    },
+    []
+  );
 
-  const handleDestinationClick = useCallback((destination: string) => {
-    navigate(`/tours?destination=${encodeURIComponent(destination)}`);
-  }, [navigate]);
-
-
+  const handleDestinationClick = useCallback(
+    (destination: string) => {
+      navigate(`/tours?destination=${encodeURIComponent(destination)}`);
+    },
+    [navigate]
+  );
 
   const { data: toursResponse, isLoading } = useQuery({
     queryKey: ["tours-home", 0, 6],
@@ -249,14 +273,19 @@ export default function Home() {
     const set = new Set<string>();
     tours.forEach((t: TourResponse) => {
       if (t.destination) {
-        const parts = t.destination.split(/—|-/).map((s) => s.trim()).filter((s) => s.length > 0);
+        const parts = t.destination
+          .split(/—|-/)
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
         parts.forEach((p) => set.add(p));
       }
     });
     return Array.from(set).slice(0, 12);
   }, [tours]);
 
-  const [destinationImages, setDestinationImages] = useState<Record<string, { url: string; id: string }>>({});
+  const [destinationImages, setDestinationImages] = useState<
+    Record<string, { url: string; id: string }>
+  >({});
 
   const [imagesLoaded, setImagesLoaded] = useState(false);
 
@@ -284,7 +313,7 @@ export default function Home() {
 
         const results = await Promise.all(promises);
 
-        setDestinationImages(prev => {
+        setDestinationImages((prev) => {
           const map = { ...prev };
           results.forEach((r) => {
             map[r.dest] = { url: r.url, id: r.id };
@@ -293,7 +322,7 @@ export default function Home() {
         });
 
         if (batches.indexOf(batch) < batches.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 300));
+          await new Promise((resolve) => setTimeout(resolve, 300));
         }
       }
 
@@ -307,14 +336,21 @@ export default function Home() {
     const img = destinationImages[dest];
     return {
       name: dest,
-      image: img?.url || `https://picsum.photos/seed/loading-${encodeURIComponent(dest)}/800/600`,
+      image:
+        img?.url ||
+        `https://picsum.photos/seed/loading-${encodeURIComponent(
+          dest
+        )}/800/600`,
       id: `destination-${encodeURIComponent(dest)}-${index}`,
     };
   });
 
   const featuredTours = useMemo(() => {
     return tours
-      .filter((t: TourResponse) => Array.isArray(t.imageUrls) && t.imageUrls.length > 0)
+      .filter(
+        (t: TourResponse) =>
+          Array.isArray(t.imageUrls) && t.imageUrls.length > 0
+      )
       .slice(0, 3)
       .map((t: TourResponse) => ({
         ...t,
@@ -340,11 +376,13 @@ export default function Home() {
             Đi theo cách thân thiện hơn
           </h1>
           <p className="text-xl mb-10 max-w-3xl mx-auto text-gray-100 drop-shadow-md">
-            Thật sự hiểu một vùng đất qua những người biết rõ nhất — hướng dẫn viên địa phương.
+            Thật sự hiểu một vùng đất qua những người biết rõ nhất — hướng dẫn
+            viên địa phương.
           </p>
           <SearchBar className="max-w-2xl mx-auto shadow-lg" />
         </div>
       </section>
+      <ChatBox />
 
       {/* ĐIỂM ĐẾN NỔI BẬT */}
       <section className="py-20 bg-white">
@@ -353,17 +391,15 @@ export default function Home() {
             Điểm đến nổi bật
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-            {isLoading || Object.keys(destinationImages).length === 0 ? (
-              skeletonDestinations
-            ) : (
-              destinations.map((dest) => (
-                <DestinationCard
-                  key={dest.id}
-                  dest={dest}
-                  onClick={handleDestinationClick}
-                />
-              ))
-            )}
+            {isLoading || Object.keys(destinationImages).length === 0
+              ? skeletonDestinations
+              : destinations.map((dest) => (
+                  <DestinationCard
+                    key={dest.id}
+                    dest={dest}
+                    onClick={handleDestinationClick}
+                  />
+                ))}
           </div>
         </div>
       </section>
@@ -415,18 +451,16 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {isLoading ? (
-              skeletonTours
-            ) : (
-              featuredTours.map((tour, i) => (
-                <TourCard
-                  key={tour.tourId}
-                  tour={tour}
-                  index={i}
-                  onToggleFavorite={handleToggleFavorite}
-                />
-              ))
-            )}
+            {isLoading
+              ? skeletonTours
+              : featuredTours.map((tour, i) => (
+                  <TourCard
+                    key={tour.tourId}
+                    tour={tour}
+                    index={i}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                ))}
           </div>
         </div>
       </section>
@@ -484,8 +518,9 @@ export default function Home() {
                 Tại sao chọn <span className="text-indigo-600">VietVivu</span>?
               </h2>
               <p className="text-lg text-gray-600 mb-8">
-                Chúng tôi không chỉ là nền tảng đặt tour – chúng tôi là người bạn đồng hành
-                trong mỗi chuyến đi, mang đến trải nghiệm cá nhân hóa và đáng nhớ.
+                Chúng tôi không chỉ là nền tảng đặt tour – chúng tôi là người
+                bạn đồng hành trong mỗi chuyến đi, mang đến trải nghiệm cá nhân
+                hóa và đáng nhớ.
               </p>
               <div className="space-y-4">
                 <Link
@@ -528,9 +563,7 @@ export default function Home() {
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-12">
-            <h2 className="text-3xl font-bold text-indigo-900">
-              Blog du lịch
-            </h2>
+            <h2 className="text-3xl font-bold text-indigo-900">Blog du lịch</h2>
             <Link
               to="/blog"
               className="text-indigo-600 hover:text-indigo-800 flex items-center font-medium transition-colors"
@@ -601,8 +634,8 @@ export default function Home() {
             Trở thành thành viên của VietVivu
           </h2>
           <p className="text-xl mb-8 max-w-3xl mx-auto drop-shadow-md">
-            Bạn yêu du lịch, am hiểu địa phương?
-            Hãy chia sẻ trải nghiệm độc đáo với du khách toàn cầu.
+            Bạn yêu du lịch, am hiểu địa phương? Hãy chia sẻ trải nghiệm độc đáo
+            với du khách toàn cầu.
           </p>
           <Link
             to="/register"
