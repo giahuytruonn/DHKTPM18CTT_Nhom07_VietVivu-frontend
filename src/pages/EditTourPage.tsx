@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
     ArrowLeft, Plus, X, Calendar, DollarSign, MapPin,
     Clock, Users, Image as ImageIcon, Upload, Loader, Trash2, AlertTriangle,
-    Edit
+    Edit, AlertCircle
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../services/api";
@@ -143,6 +143,7 @@ interface TourFormData {
 }
 
 const EditTourPage: React.FC = () => {
+
     const { tourId } = useParams<{ tourId: string }>();
     const navigate = useNavigate();
     const [formData, setFormData] = useState<TourFormData>({
@@ -153,6 +154,7 @@ const EditTourPage: React.FC = () => {
         tourStatus: "OPEN_BOOKING",
 
     });
+
 
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -166,7 +168,11 @@ const EditTourPage: React.FC = () => {
     const [errors, setErrors] = useState<Partial<Record<keyof TourFormData, string>>>({});
 
     const destinationRef = useRef<HTMLDivElement>(null);
+    const minDate = new Date();
+    minDate.setDate(minDate.getDate() + 4);
+    const minDateString = minDate.toISOString().split('T')[0];
     const originalBookingsRef = useRef(0);
+    const originalPeopleBookedRef = useRef(0);
 
     const formatDateForDisplay = (dateStr: string) => {
         if (!dateStr) return "";
@@ -200,6 +206,9 @@ const EditTourPage: React.FC = () => {
             const destinations = tour.destination ? tour.destination.split(" - ") : [];
 
             originalBookingsRef.current = tour.totalBookings || 0;
+            originalPeopleBookedRef.current = tour.initialQuantity - tour.quantity;
+
+            const initialPeopleBooked = tour.initialQuantity - tour.quantity;
 
             setFormData({
                 title: tour.title || "",
@@ -223,6 +232,23 @@ const EditTourPage: React.FC = () => {
             setExistingImages(tour.imageUrls || []);
         }
     }, [tour]);
+
+    useEffect(() => {
+        if (formData.priceAdult > 0) {
+            const calculatedChildPrice = Math.round(formData.priceAdult * 0.5);
+            setFormData(prev => ({ ...prev, priceChild: calculatedChildPrice }));
+        }
+    }, [formData.priceAdult]);
+
+    useEffect(() => {
+        if (tour) {
+            const currentPeopleBooked = tour.initialQuantity - tour.quantity;
+            const newQuantity = Math.max(0, formData.initialQuantity - currentPeopleBooked);
+            if (newQuantity !== formData.quantity) {
+                setFormData(prev => ({ ...prev, quantity: newQuantity }));
+            }
+        }
+    }, [formData.initialQuantity, tour]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -254,7 +280,10 @@ const EditTourPage: React.FC = () => {
             const start = new Date(formData.startDate);
             start.setDate(start.getDate() + formData.durationDays - 1);
             const endDateStr = start.toISOString().split('T')[0];
-            setFormData(prev => ({ ...prev, endDate: endDateStr }));
+            setFormData(prev => ({
+                ...prev,
+                endDate: endDateStr
+            }));
         }
     }, [formData.startDate, formData.durationDays]);
 
@@ -366,19 +395,15 @@ const EditTourPage: React.FC = () => {
         if (!formData.description.trim()) newErrors.description = "Mô tả không được để trống";
 
         // Validate initialQuantity
+        const totalPeopleBooked = tour ? tour.initialQuantity - tour.quantity : 0;
         if (formData.initialQuantity <= 0) {
-            newErrors.initialQuantity = "Số lượng phải lớn hơn 0";
-        } else if (formData.initialQuantity < totalBooked) {
-            newErrors.initialQuantity = `Số lượng ban đầu không được nhỏ hơn số người đã đặt (${totalBooked})`;
+            newErrors.initialQuantity = "Số lượng ban đầu phải lớn hơn 0";
+        } else if (formData.initialQuantity < totalPeopleBooked) {
+            newErrors.initialQuantity = `Số lượng ban đầu phải ≥ ${totalPeopleBooked} (số người đã đặt)`;
         }
 
-        // Validate quantity
-        const maxAvailableQuantity = formData.initialQuantity - totalBooked;
-        if (formData.quantity < 0) {
-            newErrors.quantity = "Số chỗ còn lại không được âm";
-        } else if (formData.quantity > maxAvailableQuantity) {
-            newErrors.quantity = `Số chỗ còn lại không được lớn hơn ${maxAvailableQuantity} (${formData.initialQuantity} - ${totalBooked} đã đặt)`;
-        }
+
+
 
         if (formData.priceAdult <= 0) newErrors.priceAdult = "Giá người lớn phải lớn hơn 0";
         if (formData.priceChild < 0) newErrors.priceChild = "Giá trẻ em không được âm";
@@ -518,23 +543,26 @@ const EditTourPage: React.FC = () => {
         );
     }
 
-    const totalBooked = originalBookingsRef.current;
-    const maxAvailableQuantity = formData.initialQuantity - totalBooked;
+    const totalBookings = originalBookingsRef.current;
+    const totalPeopleBooked = formData.initialQuantity - formData.quantity;
+    const maxAvailableQuantity = formData.initialQuantity - totalPeopleBooked;
 
     const isStatusLocked = () => {
         if (!formData.startDate || !formData.endDate) return false;
 
         const now = new Date();
-        now.setHours(0, 0, 0, 0);
+        now.setHours(0, 0, 0, 0); // Reset về 00:00:00 để so sánh ngày
 
         const startDate = new Date(formData.startDate);
         const endDate = new Date(formData.endDate);
 
-
+        // Tính lockDate = startDate - 2 ngày
         const lockDate = new Date(startDate);
-        lockDate.setDate(lockDate.getDate() - 1);
+        lockDate.setDate(lockDate.getDate() - 2);
 
-
+        // LOCK NẾU:
+        // 1. Hôm nay > endDate (tour đã kết thúc)
+        // 2. Hôm nay > lockDate (đã qua hết ngày trước startDate 2 ngày)
         return now > endDate || now > lockDate;
     };
 
@@ -549,29 +577,31 @@ const EditTourPage: React.FC = () => {
         const startDate = new Date(formData.startDate);
         const endDate = new Date(formData.endDate);
 
-
+        // Tính lockDate = startDate - 2 ngày
         const lockDate = new Date(startDate);
-        lockDate.setDate(lockDate.getDate() - 1);
+        lockDate.setDate(lockDate.getDate() - 2);
 
+        // Case 1: Tour đã kết thúc (sau endDate)
         if (now > endDate) {
             return {
                 type: 'completed',
-                message: `Tour đã hoàn thành (sau ${formatDateForDisplay(formData.endDate)})`,
+                message: `Tour đã hoàn thành (kết thúc ${formatDateForDisplay(formData.endDate)})`,
                 icon: '🔒',
                 color: 'gray'
             };
         }
 
-
+        // Case 2: Tour đang thực hiện (sau lockDate nhưng chưa qua endDate)
         if (now > lockDate) {
             return {
                 type: 'in-progress',
-                message: `Tour đang thực hiện - Trạng thái đã khóa sau ${formatDateForDisplay(lockDate.toISOString().split('T')[0])}`,
+                message: `Tour đang thực hiện - Trạng thái đã khóa từ ${formatDateForDisplay(lockDate.toISOString().split('T')[0])}`,
                 icon: '⚠️',
                 color: 'yellow'
             };
         }
 
+        // Case 3: Còn thời gian chỉnh sửa (trước lockDate)
         return {
             type: 'editable',
             message: `Có thể chỉnh sửa trạng thái đến hết ${formatDateForDisplay(lockDate.toISOString().split('T')[0])}`,
@@ -596,12 +626,32 @@ const EditTourPage: React.FC = () => {
                     <h1 className="text-3xl font-bold text-gray-900">Chỉnh Sửa Tour</h1>
                     <p className="text-gray-600 mt-2">Cập nhật thông tin tour du lịch</p>
 
-                    {totalBooked > 0 && (
+                    {originalPeopleBookedRef.current > 0 && (
                         <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                            <p className="text-sm text-blue-800">
-                                <span className="font-semibold">Lưu ý:</span> Tour này đã có {totalBooked} người đặt.
-                                Số lượng ban đầu tối thiểu: {totalBooked}, Số chỗ còn lại tối đa: {maxAvailableQuantity}
-                            </p>
+                            <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                                    <Users className="w-4 h-4 text-white" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm font-semibold text-blue-900 mb-2">
+                                        Thông tin booking hiện tại
+                                    </p>
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div className="bg-white p-2 rounded border border-blue-200">
+                                            <p className="text-blue-600 text-xs mb-1">Số lượt đặt</p>
+                                            <p className="text-blue-900 font-bold text-lg">{originalBookingsRef.current}</p>
+                                        </div>
+                                        <div className="bg-white p-2 rounded border border-blue-200">
+                                            <p className="text-blue-600 text-xs mb-1">Tổng số người đã đặt</p>
+                                            <p className="text-blue-900 font-bold text-lg">{originalPeopleBookedRef.current}</p>
+                                        </div>
+                                    </div>
+                                    <ul className="text-sm text-blue-800 space-y-1 mt-3">
+                                        <li>• Số lượng ban đầu tối thiểu: <span className="font-bold">{originalPeopleBookedRef.current}</span> người</li>
+                                        <li>• Số chỗ còn lại = Số lượng ban đầu - <span className="font-bold">{originalPeopleBookedRef.current}</span> người</li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -628,13 +678,30 @@ const EditTourPage: React.FC = () => {
                                             <span className="text-xl">{lockInfo.icon}</span>
                                             <div className="flex-1">
                                                 <p className={`font-semibold text-sm ${lockInfo.color === 'gray' ? 'text-gray-900' :
-                                                    lockInfo.color === 'yellow' ? 'text-yellow-800' : 'text-blue-800'
+                                                    lockInfo.color === 'yellow' ? 'text-yellow-800' :
+                                                        'text-blue-800'
                                                     }`}>
                                                     {lockInfo.message}
                                                 </p>
-                                                {locked && (
+
+                                                {/* ✅ THÊM phần này để hiển thị rõ hơn */}
+                                                {!locked && lockInfo.type === 'editable' && (
+                                                    <p className="text-xs text-blue-600 mt-1 font-medium">
+                                                        📅 Ngày khởi hành: {formatDateForDisplay(formData.startDate)}
+                                                        <br />
+                                                        ⏰ Hết hạn chỉnh sửa: 23:59 ngày {lockInfo.message.split('hết ')[1]}
+                                                    </p>
+                                                )}
+
+                                                {locked && lockInfo.type === 'in-progress' && (
+                                                    <p className="text-xs text-yellow-700 mt-1">
+                                                        Trạng thái đã khóa từ 2 ngày trước ngày khởi hành
+                                                    </p>
+                                                )}
+
+                                                {locked && lockInfo.type === 'completed' && (
                                                     <p className="text-xs text-gray-600 mt-1">
-                                                        Trạng thái được tự động cập nhật theo lịch trình tour
+                                                        Trạng thái tự động cập nhật theo lịch trình tour
                                                     </p>
                                                 )}
                                             </div>
@@ -662,41 +729,65 @@ const EditTourPage: React.FC = () => {
                                 {/* Ghi chú ngắn gọn, rõ ràng */}
                                 <p className="text-xs text-gray-500 mt-2">
                                     {locked
-                                        ? "Trạng thái đã bị khóa và sẽ tự động cập nhật theo ngày tour"
-                                        : `Bạn có thể thay đổi trạng thái đến hết ngày ${lockInfo?.message.match(/hết (.+)$/)?.[1] || '...'}`}
+                                        ? "⚠️ Trạng thái đã bị khóa và tự động cập nhật theo ngày tour"
+                                        : lockInfo?.type === 'editable' && formData.startDate
+                                            ? `✅ Bạn có thể thay đổi trạng thái đến hết 23:59 ngày ${(() => {
+                                                const lockDate = new Date(formData.startDate);
+                                                lockDate.setDate(lockDate.getDate() - 2);
+                                                return formatDateForDisplay(lockDate.toISOString().split('T')[0]);
+                                            })()
+                                            } (2 ngày trước khởi hành)`
+                                            : "Vui lòng chọn ngày khởi hành để xem thời hạn chỉnh sửa"
+                                    }
                                 </p>
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Tiêu đề tour</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Tiêu đề tour <span className="text-red-500">*</span>
+                                </label>
                                 <input
                                     type="text"
                                     value={formData.title}
                                     onChange={(e) => handleChange("title", e.target.value)}
-                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 ${errors.title ? 'border-red-500' : 'border-gray-300'
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all ${errors.title ? "border-red-500 bg-red-50" : "border-gray-300"
                                         }`}
+                                    placeholder="VD: Du lịch Đà Nẵng - Hội An 3N2Đ"
                                     disabled={isPending}
                                 />
-                                {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
+                                {errors.title && (
+                                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                                        <AlertCircle className="w-4 h-4" />
+                                        {errors.title}
+                                    </p>
+                                )}
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Mô tả</label>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Mô tả <span className="text-red-500">*</span>
+                                </label>
                                 <textarea
                                     value={formData.description}
                                     onChange={(e) => handleChange("description", e.target.value)}
                                     rows={4}
-                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 ${errors.description ? 'border-red-500' : 'border-gray-300'
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all ${errors.description ? "border-red-500 bg-red-50" : "border-gray-300"
                                         }`}
+                                    placeholder="Mô tả chi tiết về tour..."
                                     disabled={isPending}
                                 />
-                                {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+                                {errors.description && (
+                                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                                        <AlertCircle className="w-4 h-4" />
+                                        {errors.description}
+                                    </p>
+                                )}
                             </div>
 
                             {/* Destination */}
                             <div ref={destinationRef} className="relative">
                                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                     <MapPin className="w-4 h-4 text-indigo-600" />
-                                    Điểm đến
+                                    Điểm đến <span className="text-red-500">*</span>
                                 </label>
 
                                 {formData.selectedDestinations.length > 0 && (
@@ -725,10 +816,17 @@ const EditTourPage: React.FC = () => {
                                         setFilteredDestinations(POPULAR_DESTINATIONS);
                                         setShowDestinationSuggestions(true);
                                     }}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all ${errors.destination ? "border-red-500 bg-red-50" : "border-gray-300"
+                                        }`}
                                     placeholder="Tìm và chọn điểm đến..."
                                     disabled={isPending}
                                 />
+                                {errors.destination && (
+                                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                                        <AlertCircle className="w-4 h-4" />
+                                        {errors.destination}
+                                    </p>
+                                )}
 
                                 {showDestinationSuggestions && (
                                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -777,7 +875,7 @@ const EditTourPage: React.FC = () => {
                             <div>
                                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                     <Clock className="w-4 h-4 text-indigo-600" />
-                                    Thời gian
+                                    Thời gian <span className="text-red-500">*</span>
                                 </label>
                                 <div className="flex gap-2">
                                     <div className="flex-1">
@@ -794,9 +892,10 @@ const EditTourPage: React.FC = () => {
                                                     durationNights: nights
                                                 }));
                                             }}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all ${errors.duration ? "border-red-500 bg-red-50" : "border-gray-300"
+                                                } ${locked ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                                             placeholder="Số ngày"
-                                            disabled={isPending}
+                                            disabled={locked || isPending}
                                         />
                                     </div>
                                     <div className="flex items-center px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg min-w-[120px]">
@@ -805,6 +904,12 @@ const EditTourPage: React.FC = () => {
                                         </span>
                                     </div>
                                 </div>
+                                {errors.duration && (
+                                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                                        <AlertCircle className="w-4 h-4" />
+                                        {errors.duration}
+                                    </p>
+                                )}
                                 <p className="text-xs text-gray-500 mt-1">Nhập số ngày, số đêm sẽ tự động tính</p>
                             </div>
                         </div>
@@ -818,14 +923,16 @@ const EditTourPage: React.FC = () => {
                             <div>
                                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                     <DollarSign className="w-4 h-4 text-green-600" />
-                                    Giá người lớn
+                                    Giá người lớn <span className="text-red-500">*</span>
                                 </label>
                                 <div className="relative">
                                     <input
                                         type="number"
                                         value={formData.priceAdult || ""}
                                         onChange={(e) => handleChange("priceAdult", Number(e.target.value))}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all ${errors.priceAdult ? "border-red-500 bg-red-50" : "border-gray-300"
+                                            }`}
+                                        placeholder="2000000"
                                         disabled={isPending}
                                     />
                                     {formData.priceAdult > 0 && (
@@ -834,6 +941,12 @@ const EditTourPage: React.FC = () => {
                                         </div>
                                     )}
                                 </div>
+                                {errors.priceAdult && (
+                                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                                        <AlertCircle className="w-4 h-4" />
+                                        {errors.priceAdult}
+                                    </p>
+                                )}
                             </div>
 
                             <div>
@@ -862,15 +975,31 @@ const EditTourPage: React.FC = () => {
                             <div>
                                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                     <Users className="w-4 h-4 text-purple-600" />
-                                    Số lượng ban đầu
+                                    Số lượng ban đầu <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="number"
+                                    min={originalPeopleBookedRef.current}
                                     value={formData.initialQuantity}
                                     onChange={(e) => handleChange("initialQuantity", Number(e.target.value))}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all ${errors.initialQuantity ? "border-red-500 bg-red-50" : "border-gray-300"
+                                        }`}
                                     disabled={isPending}
                                 />
+                                {errors.initialQuantity && (
+                                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                                        <AlertCircle className="w-4 h-4" />
+                                        {errors.initialQuantity}
+                                    </p>
+                                )}
+                                {errors.initialQuantity && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.initialQuantity}</p>
+                                )}
+                                {originalPeopleBookedRef.current > 0 && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Tối thiểu: {originalPeopleBookedRef.current} (đã có {originalPeopleBookedRef.current} người đặt từ {originalBookingsRef.current} lượt booking)
+                                    </p>
+                                )}
                             </div>
 
                             <div>
@@ -878,13 +1007,20 @@ const EditTourPage: React.FC = () => {
                                     <Users className="w-4 h-4 text-orange-600" />
                                     Số chỗ còn lại
                                 </label>
-                                <input
-                                    type="number"
-                                    value={formData.quantity}
-                                    onChange={(e) => handleChange("quantity", Number(e.target.value))}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                    disabled={isPending}
-                                />
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        value={formData.quantity}
+                                        readOnly
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed text-gray-700 font-semibold"
+                                    />
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
+                                        Tự động
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    = {formData.initialQuantity} (số lượng ban đầu) - {originalPeopleBookedRef.current} (người đã đặt)
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -897,22 +1033,41 @@ const EditTourPage: React.FC = () => {
                             <div>
                                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                     <Calendar className="w-4 h-4 text-indigo-600" />
-                                    Ngày bắt đầu
+                                    Ngày bắt đầu <span className="text-red-500">*</span>
                                 </label>
                                 <div className="relative">
                                     <input
                                         type="date"
+                                        min={minDateString}
                                         value={formData.startDate}
                                         onChange={(e) => handleChange("startDate", e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                        disabled={isPending}
+                                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all ${errors.startDate ? "border-red-500 bg-red-50" : "border-gray-300"
+                                            } ${locked ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                        disabled={locked || isPending}
                                     />
                                     {formData.startDate && (
                                         <div className="absolute right-12 top-1/2 -translate-y-1/2 text-sm text-gray-600 bg-white px-2 pointer-events-none">
                                             {formatDateForDisplay(formData.startDate)}
                                         </div>
                                     )}
+                                    {locked && (
+                                        <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                                            <AlertTriangle size={12} />
+                                            Không thể chỉnh sửa ngày khi tour đã khóa
+                                        </p>
+                                    )}
+                                    {!locked && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Tối thiểu sau 3 ngày từ ngày hiện tại
+                                        </p>
+                                    )}
                                 </div>
+                                {errors.startDate && (
+                                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                                        <AlertCircle className="w-4 h-4" />
+                                        {errors.startDate}
+                                    </p>
+                                )}
                             </div>
 
                             <div>
@@ -1112,7 +1267,8 @@ const EditTourPage: React.FC = () => {
                             <div className="bg-gray-50 p-3 rounded-lg text-sm space-y-1">
                                 <p><span className="font-medium">Số lượng ban đầu:</span> {formData.initialQuantity}</p>
                                 <p><span className="font-medium">Số chỗ còn lại:</span> {formData.quantity}</p>
-                                <p><span className="font-medium">Đã đặt:</span> {totalBooked}</p>
+                                <p><span className="font-medium">Số lượt đặt:</span> {originalBookingsRef.current}</p>
+                                <p><span className="font-medium">Số người đã đặt:</span> {originalPeopleBookedRef.current}</p>
                                 <p><span className="font-medium">Trạng thái:</span> {
                                     formData.tourStatus === 'OPEN_BOOKING' ? 'Đang mở booking' : 'Đang thực hiện'
                                 }</p>

@@ -480,7 +480,7 @@ const TourDetailPage: React.FC = () => {
                   disabled
                   className="w-full bg-gray-300 text-gray-500 py-4 rounded-xl font-bold text-lg cursor-not-allowed"
                 >
-                  {tour.tourStatus === "IN_PROGRESS" ? "Đang diễn ra" : "Tạm ngưng nhận khách"}
+                  {tour.tourStatus === "IN_PROGRESS" ? "Đang diễn ra" : "Đã hoàn thành"}
                 </button>
               )}
 
