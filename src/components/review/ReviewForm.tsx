@@ -67,6 +67,8 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // VALIDATION CƠ BẢN
     if (rating === 0) {
       toast.warning("Vui lòng chọn số sao đánh giá!");
       return;
@@ -76,13 +78,21 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
       return;
     }
 
+    // --- SỬA ĐOẠN NÀY ---
+    // Logic: Nếu đang Edit mà props bookingId bị rỗng, hãy lấy bookingId từ review cũ
+    const finalBookingId = bookingId || existingReview?.bookingId;
+
+    if (!finalBookingId) {
+        toast.error("Lỗi dữ liệu: Không tìm thấy mã đơn hàng (Booking ID)");
+        return;
+    }
+
     reviewMutation.mutate({
-      bookingId,
+      bookingId: finalBookingId, // Dùng biến đã check kỹ ở trên
       rating,
       comment: comment.trim(),
     });
-  };
-
+};
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
