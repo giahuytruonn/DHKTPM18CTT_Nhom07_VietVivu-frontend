@@ -137,11 +137,10 @@ const AddPromotionsPage: React.FC = () => {
               </h3>
 
               <div className="space-y-6">
-
                 {/* Mã khuyến mãi */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Mã khuyến mãi
+                    Mã khuyến mãi <span className="text-red-500 ml-1">*</span>
                   </label>
                   <input
                     type="text"
@@ -160,14 +159,13 @@ const AddPromotionsPage: React.FC = () => {
                 {/* Mô tả */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Tên chương trình / Mô tả
+                    Tên chương trình / Mô tả{" "}
+                    <span className="text-red-500 ml-1">*</span>
                   </label>
                   <input
                     type="text"
                     value={form.description}
-                    onChange={(e) =>
-                      handleChange("description", e.target.value)
-                    }
+                    onChange={(e) => handleChange("description", e.target.value)}
                     className="w-full px-5 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all outline-none bg-gray-50/50 focus:bg-white"
                     placeholder="VD: Khuyến mãi hè 2025 - Giảm 500k"
                   />
@@ -177,7 +175,8 @@ const AddPromotionsPage: React.FC = () => {
                   {/* Discount */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Mức giảm giá (VNĐ)
+                      Mức giảm giá (VNĐ){" "}
+                      <span className="text-red-500 ml-1">*</span>
                     </label>
                     <div className="relative">
                       <input
@@ -200,7 +199,7 @@ const AddPromotionsPage: React.FC = () => {
                   {/* Quantity */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Số lượng mã
+                      Số lượng mã <span className="text-red-500 ml-1">*</span>
                     </label>
                     <div className="relative">
                       <input
@@ -232,7 +231,7 @@ const AddPromotionsPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Ngày bắt đầu
+                    Ngày bắt đầu <span className="text-red-500 ml-1">*</span>
                   </label>
                   <input
                     type="date"
@@ -243,7 +242,7 @@ const AddPromotionsPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Ngày kết thúc
+                    Ngày kết thúc <span className="text-red-500 ml-1">*</span>
                   </label>
                   <input
                     type="date"
