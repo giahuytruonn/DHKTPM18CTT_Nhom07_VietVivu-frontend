@@ -23,7 +23,7 @@ import toast from "react-hot-toast";
 import { formatDateYMD } from "../utils/date";
 
 // --- IMPORT COMPONENT REVIEW MỚI ---
-import ReviewList from "../components/review/ReviewList"; 
+import ReviewList from "../components/review/ReviewList";
 
 const TourDetailPage: React.FC = () => {
   const { tourId } = useParams<{ tourId: string }>();
@@ -49,8 +49,8 @@ const TourDetailPage: React.FC = () => {
     ? tour.favoriteCount > 50
       ? 4.9
       : tour.favoriteCount > 20
-      ? 4.7
-      : 4.5
+        ? 4.7
+        : 4.5
     : 4.5;
   const reviews = tour ? tour.totalBookings || 0 : 0;
 
@@ -82,8 +82,8 @@ const TourDetailPage: React.FC = () => {
       toast.error(
         (error as { response?: { data?: { message?: string } } }).response?.data
           ?.message ||
-          (error as Error | undefined)?.message ||
-          "Có lỗi xảy ra"
+        (error as Error | undefined)?.message ||
+        "Có lỗi xảy ra"
       );
     },
   });
@@ -154,7 +154,7 @@ const TourDetailPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Container chính */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
         {/* Nút Back */}
         <button
           onClick={() => navigate(-1)}
@@ -186,16 +186,15 @@ const TourDetailPage: React.FC = () => {
               >
                 <ChevronRight className="text-gray-800" size={24} />
               </button>
-              
+
               {/* Dots Indicator */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                 {tour.imageUrls.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setCurrentImageIndex(idx)}
-                    className={`w-2.5 h-2.5 rounded-full transition-all ${
-                      idx === currentImageIndex ? "bg-white w-8" : "bg-white/50 hover:bg-white/80"
-                    }`}
+                    className={`w-2.5 h-2.5 rounded-full transition-all ${idx === currentImageIndex ? "bg-white w-8" : "bg-white/50 hover:bg-white/80"
+                      }`}
                   />
                 ))}
               </div>
@@ -209,11 +208,10 @@ const TourDetailPage: React.FC = () => {
               className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-full hover:bg-white transition-all shadow-lg disabled:opacity-50 z-10"
             >
               <Heart
-                className={`w-6 h-6 transition-colors ${
-                  tour.isFavorited
+                className={`w-6 h-6 transition-colors ${tour.isFavorited
                     ? "text-red-500 fill-red-500"
                     : "text-indigo-600"
-                }`}
+                  }`}
               />
             </button>
           )}
@@ -221,10 +219,10 @@ const TourDetailPage: React.FC = () => {
 
         {/* Layout Chính: 2 Cột */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Cột Trái: Thông tin chi tiết */}
           <div className="lg:col-span-2 space-y-8">
-            
+
             {/* Header Info */}
             <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-4 gap-4">
@@ -232,19 +230,18 @@ const TourDetailPage: React.FC = () => {
                   {tour.title}
                 </h1>
                 <span
-                  className={`px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap ${
-                    tour.tourStatus === "OPEN_BOOKING"
+                  className={`px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap ${tour.tourStatus === "OPEN_BOOKING"
                       ? "bg-green-100 text-green-700"
                       : tour.tourStatus === "IN_PROGRESS"
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
                 >
                   {tour.tourStatus === "OPEN_BOOKING"
                     ? "Đang mở booking"
                     : tour.tourStatus === "IN_PROGRESS"
-                    ? "Đang thực hiện"
-                    : "Đã hoàn thành"}
+                      ? "Đang thực hiện"
+                      : "Đã hoàn thành"}
                 </span>
               </div>
 
@@ -301,7 +298,7 @@ const TourDetailPage: React.FC = () => {
                   <div>
                     <p className="text-xs text-gray-500 uppercase font-semibold">Chỗ còn nhận</p>
                     <p className="font-semibold text-gray-900">
-                      {tour.quantity} / {tour.initialQuantity}
+                      {tour.quantity}
                     </p>
                   </div>
                 </div>
@@ -334,17 +331,27 @@ const TourDetailPage: React.FC = () => {
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
                   Lịch trình tour
                 </h2>
-                <div className="space-y-6 relative before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-0.5 before:bg-indigo-100">
-                  {tour.itinerary.map((item, index) => (
-                    <div key={index} className="flex gap-4">
-                      <div className="shrink-0 w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 bg-gray-50 p-4 rounded-xl">
-                        <p className="text-gray-700">{item}</p>
+                <div className="space-y-6 relative before:absolute">
+                  {tour.itinerary && tour.itinerary.length > 0 && (
+                    <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+                      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                        Lịch trình tour
+                      </h2>
+                      {/* BỎ các class before:... */}
+                      <div className="space-y-6">
+                        {tour.itinerary.map((item, index) => (
+                          <div key={index} className="flex gap-4">
+                            <div className="shrink-0 w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">
+                              {index + 1}
+                            </div>
+                            <div className="flex-1 bg-gray-50 p-4 rounded-xl">
+                              <p className="text-gray-700">{item}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             )}
@@ -353,11 +360,11 @@ const TourDetailPage: React.FC = () => {
             {/* === PHẦN REVIEW (ĐÁNH GIÁ) === */}
             {/* ============================================================ */}
             <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                    Đánh giá từ khách hàng
-                </h2>
-                {/* Gọi Component ReviewList tại đây */}
-                <ReviewList tourId={tourId!} />
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                Đánh giá từ khách hàng
+              </h2>
+              {/* Gọi Component ReviewList tại đây */}
+              <ReviewList tourId={tourId!} />
             </div>
 
           </div>

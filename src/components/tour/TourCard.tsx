@@ -1,6 +1,6 @@
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Clock, Heart, MapPin, Star, Calendar, Users } from "lucide-react";
+import { Clock, Heart, MapPin, Calendar, Users } from "lucide-react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -20,41 +20,109 @@ const TourCard: React.FC<Props> = ({ tour }) => {
   const queryClient = useQueryClient();
   const { authenticated } = useAuthStore();
 
-  const rating =
-    tour.favoriteCount > 50 ? 4.9 : tour.favoriteCount > 20 ? 4.7 : 4.5;
-  const reviews = tour.totalBookings || 0;
+  // LOCAL STATE để UI update ngay lập tức
+  const [localIsFavorited, setLocalIsFavorited] = useState(tour.isFavorited);
+  const [localFavoriteCount, setLocalFavoriteCount] = useState(tour.favoriteCount);
 
   const toggleFavoriteMutation = useMutation({
     mutationFn: async () => {
-      if (tour.isFavorited) {
+      if (localIsFavorited) {
         await removeFromFavorites(tour.tourId);
       } else {
         await addToFavorites(tour.tourId);
       }
     },
-    onSuccess: () => {
-      // CẬP NHẬT: Đã thêm invalidate 'favoriteTours'
-      queryClient.invalidateQueries({ queryKey: ["tours"] });
-      queryClient.invalidateQueries({ queryKey: ["tour", tour.tourId] });
-      queryClient.invalidateQueries({ queryKey: ["favoriteTours"] }); // THÊM DÒNG NÀY
-      toast.success(
-        tour.isFavorited ? "Đã xóa khỏi yêu thích" : "Đã thêm vào yêu thích"
-      );
+    onMutate: async () => {
+      // ⚡ CẬP NHẬT LOCAL STATE NGAY LẬP TỨC
+      setLocalIsFavorited(!localIsFavorited);
+      setLocalFavoriteCount(prev => localIsFavorited ? prev - 1 : prev + 1);
+
+      // Cancel queries
+      await queryClient.cancelQueries({ queryKey: ["allTours"] });
+      await queryClient.cancelQueries({ queryKey: ["tour", tour.tourId] });
+      await queryClient.cancelQueries({ queryKey: ["favoriteTours"] });
+
+      // Lưu snapshot
+      const previousAllTours = queryClient.getQueryData(["allTours"]);
+      const previousTour = queryClient.getQueryData(["tour", tour.tourId]);
+      const previousFavorites = queryClient.getQueryData(["favoriteTours"]);
+
+      // Cập nhật cache cho allTours (structure PageResponse)
+      queryClient.setQueryData(["allTours"], (old: any) => {
+        if (!old) return old;
+
+        // Nếu có items trực tiếp (PageResponse)
+        if (old.items) {
+          return {
+            ...old,
+            items: old.items.map((t: TourResponse) =>
+              t.tourId === tour.tourId
+                ? {
+                  ...t,
+                  isFavorited: !localIsFavorited,
+                  favoriteCount: localIsFavorited
+                    ? t.favoriteCount - 1
+                    : t.favoriteCount + 1,
+                }
+                : t
+            ),
+          };
+        }
+
+        return old;
+      });
+
+      // Cập nhật cache cho tour detail
+      queryClient.setQueryData(["tour", tour.tourId], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          isFavorited: !localIsFavorited,
+          favoriteCount: localIsFavorited
+            ? old.favoriteCount - 1
+            : old.favoriteCount + 1,
+        };
+      });
+
+      return { previousAllTours, previousTour, previousFavorites };
     },
-    onError: (error: unknown) => {
-      const status = (error as { response?: { status?: number } }).response
-        ?.status;
+    onError: (error: unknown, _, context) => {
+      // ⚡ ROLLBACK LOCAL STATE
+      setLocalIsFavorited(tour.isFavorited);
+      setLocalFavoriteCount(tour.favoriteCount);
+
+      // Rollback cache
+      if (context?.previousAllTours) {
+        queryClient.setQueryData(["allTours"], context.previousAllTours);
+      }
+      if (context?.previousTour) {
+        queryClient.setQueryData(["tour", tour.tourId], context.previousTour);
+      }
+      if (context?.previousFavorites) {
+        queryClient.setQueryData(["favoriteTours"], context.previousFavorites);
+      }
+
+      const status = (error as { response?: { status?: number } }).response?.status;
       if (status === 401) {
         toast.error("Vui lòng đăng nhập");
         navigate("/login");
         return;
       }
       const message =
-        (error as { response?: { data?: { message?: string } } }).response?.data
-          ?.message ||
+        (error as { response?: { data?: { message?: string } } }).response?.data?.message ||
         (error as Error | undefined)?.message ||
         "Có lỗi xảy ra";
       toast.error(`Lỗi: ${message}`);
+    },
+    onSuccess: () => {
+      // Refetch để đảm bảo đồng bộ
+      queryClient.invalidateQueries({ queryKey: ["allTours"] });
+      queryClient.invalidateQueries({ queryKey: ["tour", tour.tourId] });
+      queryClient.invalidateQueries({ queryKey: ["favoriteTours"] });
+
+      toast.success(
+        localIsFavorited ? "Đã thêm vào yêu thích" : "Đã xóa khỏi yêu thích"
+      );
     },
   });
 
@@ -96,11 +164,10 @@ const TourCard: React.FC<Props> = ({ tour }) => {
             className="absolute top-4 right-4 bg-white/95 backdrop-blur-md p-2.5 rounded-full hover:bg-white transition-all shadow-md hover:shadow-lg disabled:opacity-60 z-10"
           >
             <Heart
-              className={`w-5 h-5 transition-all ${
-                tour.isFavorited
+              className={`w-5 h-5 transition-all ${localIsFavorited
                   ? "text-red-500 fill-red-500"
                   : "text-indigo-600"
-              }`}
+                }`}
             />
           </button>
         )}
@@ -125,18 +192,18 @@ const TourCard: React.FC<Props> = ({ tour }) => {
           {tour.description}
         </p>
 
+        {/* HIỂN THỊ LOCAL STATE */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="flex items-center">
-            <Star className="w-4 h-4 text-yellow-400 fill-current" />
+            <Users className="w-4 h-4 text-indigo-600" />
             <span className="ml-1.5 text-sm font-medium text-gray-800">
-              {rating.toFixed(1)}
+              {tour.totalBookings || 0} lượt đặt
             </span>
-            <span className="ml-1.5 text-sm text-gray-500">({reviews})</span>
           </div>
           <div className="flex items-center">
             <Heart className="w-4 h-4 text-red-500 fill-current" />
             <span className="ml-1.5 text-sm font-medium text-gray-800">
-              {tour.favoriteCount}
+              {localFavoriteCount} yêu thích
             </span>
           </div>
         </div>
