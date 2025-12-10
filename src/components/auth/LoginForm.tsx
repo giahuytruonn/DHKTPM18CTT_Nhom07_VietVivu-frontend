@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { login } from "../../services/auth.service";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const LoginForm: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -18,8 +19,8 @@ const LoginForm: React.FC = () => {
 
         // CẬP NHẬT: Check role và redirect
         try {
-          const payload = JSON.parse(atob(res.token.split('.')[1]));
-          const isAdmin = payload.scope?.includes('ROLE_ADMIN');
+          const payload = JSON.parse(atob(res.token.split(".")[1]));
+          const isAdmin = payload.scope?.includes("ROLE_ADMIN");
 
           if (isAdmin) {
             navigate("/admin/dashboard", { replace: true });
@@ -32,9 +33,8 @@ const LoginForm: React.FC = () => {
       } else {
         alert("Sai tài khoản hoặc mật khẩu");
       }
-    } catch (err) {
-      console.error(err);
-      alert("Đăng nhập thất bại");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message);
     }
   };
 

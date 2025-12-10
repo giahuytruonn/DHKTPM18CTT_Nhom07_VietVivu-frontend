@@ -42,15 +42,7 @@ const ConfirmOtpPage: React.FC = () => {
       toast.success("OTP hợp lệ");
       navigate("/reset-password", { state: { email, resetToken } });
     } catch (err: any) {
-      console.error("verify-otp error:", err);
-      const srvMsg = err?.response?.data?.message;
-      if (err?.response?.status === 401) {
-        toast.error(srvMsg || "OTP sai");
-      } else if (err?.response?.status === 410) {
-        toast.error(srvMsg || "OTP đã hết hạn");
-      } else {
-        toast.error(srvMsg || "OTP sai hoặc hết hạn");
-      }
+      toast.error(err?.response?.data?.message);
     }
   };
 
@@ -65,19 +57,7 @@ const ConfirmOtpPage: React.FC = () => {
       // optional: persist last sent time for UX
       localStorage.setItem(`otp_last_sent_${email}`, Date.now().toString());
     } catch (err: any) {
-      console.error("resendOtp error:", err);
-      const srvMsg = err?.response?.data?.message;
-      if (err?.response?.status === 429) {
-        toast.error(srvMsg || "Gửi quá nhiều lần. Thử lại sau.");
-        setCountdown(60 * 5);
-        setCanResend(false);
-      } else if (err?.response) {
-        toast.error(srvMsg || `Gửi lại OTP thất bại (${err.response.status})`);
-      } else if (err?.request) {
-        toast.error("Không nhận được phản hồi từ server. Kiểm tra kết nối.");
-      } else {
-        toast.error("Lỗi khi gửi OTP. Vui lòng thử lại.");
-      }
+      toast.error(err?.response?.data?.message);
     } finally {
       setIsSending(false);
     }

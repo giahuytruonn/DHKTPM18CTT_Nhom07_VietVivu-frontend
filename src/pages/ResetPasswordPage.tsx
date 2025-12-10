@@ -40,8 +40,8 @@ const ResetPasswordPage: React.FC = () => {
       await api.post("/users/reset-password", payload);
       toast.success("Đặt mật khẩu thành công");
       navigate("/login");
-    } catch (err) {
-      toast.error("Không thể đặt lại mật khẩu");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message);
     } finally {
       setLoading(false);
     }
